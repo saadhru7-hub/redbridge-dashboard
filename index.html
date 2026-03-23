@@ -836,6 +836,9 @@
 
   <div class="nav-section">
     <div class="nav-label">Tools</div>
+    <a class="nav-item" data-panel="timetable" onclick="showPanel('timetable', this)">
+      <span class="nav-icon">🗒️</span> Timetable
+    </a>
     <a class="nav-item" data-panel="dailyreport" onclick="showPanel('dailyreport', this)">
       <span class="nav-icon">📝</span> Daily Report
     </a>
@@ -2087,6 +2090,48 @@
     </div>
 
 
+    <!-- ── TIMETABLE PANEL ── -->
+    <div class="panel" id="panel-timetable">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--navy);margin-bottom:3px;">🗒️ School Timetable</h2>
+          <div style="font-size:12.5px;color:var(--muted);">Academic Year 2025–2026</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <!-- View toggle -->
+          <div style="display:flex;border:1.5px solid var(--rule);border-radius:9px;overflow:hidden;">
+            <button id="tt-view-school" onclick="ttSetView('school')" style="padding:7px 14px;border:none;background:var(--navy);color:white;font-size:12px;font-weight:700;cursor:pointer;">🏫 Full School</button>
+            <button id="tt-view-personal" onclick="ttSetView('personal')" style="padding:7px 14px;border:none;background:white;color:var(--navy);font-size:12px;font-weight:700;cursor:pointer;">👤 My Timetable</button>
+          </div>
+          <!-- Day filter -->
+          <select id="tt-day-filter" onchange="ttRender()" style="padding:7px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:12.5px;outline:none;">
+            <option value="all">All Days</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+          </select>
+          <!-- Class filter (school view) -->
+          <select id="tt-class-filter" onchange="ttRender()" style="padding:7px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:12.5px;outline:none;">
+            <option value="all">All Classes</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Today highlight bar -->
+      <div id="tt-today-bar" style="margin-bottom:16px;padding:12px 18px;background:linear-gradient(135deg,var(--navy),#1a2448);border-radius:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="font-size:13px;font-weight:700;color:var(--gold);">📅 Today</div>
+        <div id="tt-today-lessons" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+
+      <!-- Timetable grid -->
+      <div id="tt-grid" style="overflow-x:auto;"></div>
+
+    </div>
+
     <!-- ── DAILY REPORT PANEL ── -->
     <div class="panel" id="panel-dailyreport">
 
@@ -2336,7 +2381,7 @@
 
   var panelIcons = {
     dashboard:'🏠', teachers:'👨‍🏫', discipline:'🛡️', academics:'🎯',
-    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', ai:'✨'
+    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', timetable:'🗒️', dailyreport:'📝', calendar:'🗓️', ai:'✨'
   };
 
   function showPanel(id, el) {
@@ -4133,6 +4178,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
 </script>
 
 <script>
+
   // ══════════════════════════════════════════════════════
   // SUPABASE CLIENT
   // ══════════════════════════════════════════════════════
@@ -4531,7 +4577,7 @@ self.addEventListener('fetch', e => {
       title: 'Principal',
       avatar: 'AS',
       access: 'all',
-      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport'],
+      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','timetable','dailyreport'],
       teacherName: 'Sharma Akash',
     },
 
@@ -4543,7 +4589,7 @@ self.addEventListener('fetch', e => {
       title: 'Co-Founder',
       avatar: 'LR',
       access: 'all',
-      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport'],
+      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','timetable','dailyreport'],
     },
     'lucia.scipova': {
       password: 'redbridge2024',
@@ -4552,7 +4598,7 @@ self.addEventListener('fetch', e => {
       title: 'Co-Founder',
       avatar: 'LS',
       access: 'all',
-      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport'],
+      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','timetable','dailyreport'],
     },
 
     // ── ADMIN STAFF ──
@@ -4563,7 +4609,7 @@ self.addEventListener('fetch', e => {
       title: 'Administration',
       avatar: 'AD',
       access: 'limited',
-      panels: ['dashboard','calendar','classes','dailyreport'],
+      panels: ['dashboard','calendar','classes','timetable','dailyreport'],
       readonlyStats: true,
     },
 
@@ -4596,7 +4642,7 @@ self.addEventListener('fetch', e => {
       deptClasses: ['1A','1B','1C','2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
       deptSubjects: ['Maths'],
       deptTeachers: ['Normamatova Sitora Furkatovna','Abdullayeva Gulnara Asatovna'],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport'],
+      panels: ['dashboard','academics','results','teachers','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Abdullayeva Gulnara Asatovna',
     },
@@ -4615,7 +4661,7 @@ self.addEventListener('fetch', e => {
       deptClasses: ['5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'],
       deptSubjects: ['Maths'],
       deptTeachers: ['Ibragimova Nasiba Ismailovna','Yusupov Abdussator Davlatovich'],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport'],
+      panels: ['dashboard','academics','results','teachers','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Ibragimova Nasiba Ismailovna',
     },
@@ -4636,7 +4682,7 @@ self.addEventListener('fetch', e => {
       deptClasses: ['1A','1B','1C','2A','2B','2C','2C','3A','3B','3C','4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A'],
       deptSubjects: ['Science'],
       deptTeachers: ['Banu Umera','Egamberdiyev Zafar','Raximova Xilola','Bahretdinova Elsbeth','Sharma Akash'],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport'],
+      panels: ['dashboard','academics','results','teachers','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Bahretdinova Elsbeth',
     },
@@ -4651,7 +4697,7 @@ self.addEventListener('fetch', e => {
       avatar: 'AF',
       access: 'class',
       classes: ['6A','7A'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Abduazizova Feruza Erkinovna',
     },
@@ -4663,7 +4709,7 @@ self.addEventListener('fetch', e => {
       avatar: 'GA',
       access: 'class',
       classes: ['3A','4A'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Abdullayeva Gulnara Asatovna',
     },
@@ -4675,7 +4721,7 @@ self.addEventListener('fetch', e => {
       avatar: 'BO',
       access: 'class',
       classes: ['5A','5B'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Bobobekova Barno Olimovna',
     },
@@ -4687,7 +4733,7 @@ self.addEventListener('fetch', e => {
       avatar: 'OD',
       access: 'class',
       classes: ['1A','2A'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Djurayeva Oygul Isayevna',
     },
@@ -4699,7 +4745,7 @@ self.addEventListener('fetch', e => {
       avatar: 'EZ',
       access: 'class',
       classes: ['1C','2C'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Egamberdiyev Zafar',
     },
@@ -4711,7 +4757,7 @@ self.addEventListener('fetch', e => {
       avatar: 'NI',
       access: 'class',
       classes: ['8A','8B','9A','10A'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Ibragimova Nasiba Ismailovna',
     },
@@ -4723,7 +4769,7 @@ self.addEventListener('fetch', e => {
       avatar: 'XI',
       access: 'class',
       classes: ['3B','3C'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Isomatov Xushbaxt Sadriddinovich',
     },
@@ -4735,7 +4781,7 @@ self.addEventListener('fetch', e => {
       avatar: 'AJ',
       access: 'class',
       classes: ['7B'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Jamalova Asalya Alisherovna',
     },
@@ -4747,7 +4793,7 @@ self.addEventListener('fetch', e => {
       avatar: 'ZN',
       access: 'class',
       classes: ['4B','4C'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Naimova Zarrina Musinovna',
     },
@@ -4759,7 +4805,7 @@ self.addEventListener('fetch', e => {
       avatar: 'SN',
       access: 'class',
       classes: ['1B','2B'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Normamatova Sitora Furkatovna',
     },
@@ -4771,7 +4817,7 @@ self.addEventListener('fetch', e => {
       avatar: 'XR',
       access: 'class',
       classes: ['6C','7C'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Raximova Xilola',
     },
@@ -4783,7 +4829,7 @@ self.addEventListener('fetch', e => {
       avatar: 'AY',
       access: 'class',
       classes: ['6B'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','timetable','dailyreport'],
       readonlyStats: true,
       teacherName: 'Yusupov Abdussator Davlatovich',
     },
@@ -6383,9 +6429,273 @@ self.addEventListener('fetch', e => {
   // Run on load and every 30 seconds
   setTimeout(updateCloudStatus, 1500);
   setInterval(updateCloudStatus, 30000);
+
+
+  // ══════════════════════════════════════════════════════
+  // TIMETABLE PANEL
+  // ══════════════════════════════════════════════════════
+
+  var _ttView = 'school'; // 'school' or 'personal'
+
+  var PERIOD_TIMES = {
+    1:'08:10–09:00', 2:'09:45–10:35', 3:'10:40–11:30',
+    4:'11:35–12:25', 5:'13:45–14:35', 6:'14:40–15:30', 7:'16:00–16:50'
+  };
+  var BREAK_AFTER = {
+    1:'☕ Breakfast · 45 min', 4:'🍽️ Lunch · 80 min', 6:'🥪 Snack · 30 min'
+  };
+  var DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  var DAY_SHORT = {Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri'};
+
+  // Subject colour coding
+  var SUBJ_COLORS = {
+    'ENGLISH':        '#1e40af', 'SCIENCE':        '#15803d', 'MATHS':          '#7c3aed',
+    'MATHS in ENG':   '#6d28d9', 'CAMBRIDGE MATHS':'#7c3aed', 'PHYSICS':        '#0e7490',
+    'CHEMISTRY':      '#b45309', 'BIOLOGY':        '#166534', 'RUSSIAN':        '#991b1b',
+    'RUSSIAN LANGUAGE':'#991b1b','GP-HISTORY':     '#92400e', 'GP-GEOGRAPHY':   '#92400e',
+    'GP (HIST-GEO)':  '#92400e', 'ICT':            '#0f766e', 'ART':            '#be185d',
+    'PHYSICAL EDU.':  '#065f46', 'LITERATURE':     '#7e22ce', 'ACTIVE ENGLISH': '#1d4ed8',
+    'UZBEK LANGUAGE': '#b91c1c', 'ECONOMICS':      '#0369a1', 'BUSINESS':       '#0369a1',
+    'TECHNICAL DRAWING':'#374151','CRAFT':          '#92400e',
+  };
+
+  function ttSubjColor(subj) {
+    var key = (subj||'').toUpperCase();
+    return SUBJ_COLORS[key] || '#374151';
+  }
+
+  function ttInitPanel() {
+    // Populate class filter
+    var sel = document.getElementById('tt-class-filter');
+    if (sel && sel.options.length <= 1) {
+      var classes = ['1A','1B','1C','2A','2B','2C','3A','3B','3C',
+        '4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'];
+      classes.forEach(function(c) {
+        var o = document.createElement('option');
+        o.value = c; o.textContent = 'Class ' + c;
+        sel.appendChild(o);
+      });
+    }
+
+    // Set today's day filter
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var today = days[new Date().getDay()];
+    if (today === 'Sunday' || today === 'Saturday') today = 'Monday';
+    var dayFilter = document.getElementById('tt-day-filter');
+    if (dayFilter) dayFilter.value = today;
+
+    // Hide class filter for personal view
+    var u = _currentUser;
+    if (u && u.access !== 'all' && u.role !== 'admin') {
+      _ttView = 'personal';
+      ttSetView('personal');
+    } else {
+      ttSetView('school');
+    }
+
+    ttRenderTodayBar(today);
+    ttRender();
+  }
+
+  function ttSetView(view) {
+    _ttView = view;
+    var btnSchool   = document.getElementById('tt-view-school');
+    var btnPersonal = document.getElementById('tt-view-personal');
+    var clsFilter   = document.getElementById('tt-class-filter');
+
+    if (btnSchool)   { btnSchool.style.background   = view==='school'  ?'var(--navy)':'white'; btnSchool.style.color   = view==='school'  ?'white':'var(--navy)'; }
+    if (btnPersonal) { btnPersonal.style.background = view==='personal'?'var(--navy)':'white'; btnPersonal.style.color = view==='personal'?'white':'var(--navy)'; }
+    if (clsFilter)   clsFilter.style.display = view==='school' ? '' : 'none';
+    ttRender();
+  }
+
+  function ttRenderTodayBar(today) {
+    var bar = document.getElementById('tt-today-lessons');
+    if (!bar) return;
+    var u = _currentUser;
+    var lessons = [];
+
+    if (_ttView === 'personal' || (u && u.access !== 'all')) {
+      // Teacher's personal today
+      var teacherName = u && u.teacherName;
+      if (teacherName && typeof TEACHER_SCHEDULE !== 'undefined') {
+        lessons = (TEACHER_SCHEDULE[teacherName] || {})[today] || [];
+      }
+    } else {
+      // Show all periods happening today (one per period)
+      for (var p = 1; p <= 7; p++) {
+        lessons.push({period: p, time: PERIOD_TIMES[p], summary: true});
+      }
+    }
+
+    if (!lessons.length) {
+      bar.innerHTML = '<span style="font-size:12px;color:rgba(255,255,255,0.5);">No lessons today</span>';
+      return;
+    }
+
+    var html = '';
+    lessons.forEach(function(l) {
+      if (l.summary) {
+        html += '<div style="padding:4px 10px;background:rgba(255,255,255,0.1);border-radius:6px;font-size:11px;color:white;font-weight:600;">P'+l.period+' '+PERIOD_TIMES[l.period]+'</div>';
+      } else {
+        var col = ttSubjColor(l.subject);
+        html += '<div style="padding:4px 12px;background:'+col+';border-radius:6px;font-size:11px;color:white;font-weight:700;cursor:pointer;" onclick="showPanel(\'dailyreport\',null);setTimeout(function(){drQuickFill('+JSON.stringify(l).replace(/"/g,"'").replace(/'/g,"\\'")+'_NOFIX)},100);">P'+l.period+' '+l.class+' '+l.subject+'</div>';
+      }
+    });
+    bar.innerHTML = html;
+  }
+
+  function ttRender() {
+    var grid    = document.getElementById('tt-grid');
+    var dayFilt = (document.getElementById('tt-day-filter')||{}).value || 'all';
+    var clsFilt = (document.getElementById('tt-class-filter')||{}).value || 'all';
+    if (!grid) return;
+
+    var days = dayFilt === 'all' ? DAYS : [dayFilt];
+    var u    = _currentUser;
+
+    if (_ttView === 'personal') {
+      ttRenderPersonal(grid, days, u);
+    } else {
+      ttRenderSchool(grid, days, clsFilt);
+    }
+  }
+
+  // ── PERSONAL TIMETABLE ──
+  function ttRenderPersonal(grid, days, u) {
+    var teacherName = u && u.teacherName;
+    if (!teacherName || typeof TEACHER_SCHEDULE === 'undefined') {
+      grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">No timetable found for your account.</div>';
+      return;
+    }
+    var sched = TEACHER_SCHEDULE[teacherName] || {};
+
+    var html = '<div style="display:grid;grid-template-columns:80px repeat('+days.length+',1fr);gap:2px;min-width:400px;">';
+
+    // Header row
+    html += '<div style="padding:8px;background:var(--cream);border-radius:8px 0 0 0;"></div>';
+    days.forEach(function(day) {
+      var isToday = day === ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+      html += '<div style="padding:10px 8px;text-align:center;font-weight:700;font-size:12px;background:'+(isToday?'var(--navy)':'var(--cream)')+';color:'+(isToday?'white':'var(--slate)')+';border-radius:4px;">'+day+'</div>';
+    });
+
+    // Period rows
+    for (var p = 1; p <= 7; p++) {
+      // Period label
+      html += '<div style="padding:8px 6px;background:var(--cream);font-size:10px;font-weight:700;color:var(--muted);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">' +
+        '<div style="color:var(--navy);font-size:12px;font-weight:900;">P'+p+'</div>' +
+        '<div>'+PERIOD_TIMES[p]+'</div></div>';
+
+      days.forEach(function(day) {
+        var dayLessons = sched[day] || [];
+        var lesson = dayLessons.find(function(l){ return l.period === p; });
+        if (lesson) {
+          var col = ttSubjColor(lesson.subject);
+          html += '<div onclick="showPanel(\'dailyreport\',null);setTimeout(function(){drQuickFill({class:\''+lesson.class+'\',subject:\''+lesson.subject+'\',period:'+lesson.period+',time:\''+lesson.time+'\',room:\''+lesson.room+'\'})},150);" style="padding:8px 10px;background:'+col+'18;border:1.5px solid '+col+'44;border-radius:8px;cursor:pointer;transition:all 0.15s;" onmouseenter="this.style.background=\''+col+'33\'" onmouseleave="this.style.background=\''+col+'18\'">' +
+            '<div style="font-size:11.5px;font-weight:700;color:'+col+';">'+lesson.subject+'</div>' +
+            '<div style="font-size:10px;color:var(--muted);margin-top:2px;">Class '+lesson.class+
+            (lesson.room ? ' · Rm '+lesson.room : '')+'</div>' +
+            '<div style="margin-top:5px;"><span style="font-size:9px;background:'+col+';color:white;padding:2px 7px;border-radius:10px;font-weight:700;">📝 Fill Report</span></div>' +
+          '</div>';
+        } else {
+          html += '<div style="padding:8px;background:#f9f9f9;border-radius:8px;border:1px dashed #e5e7eb;text-align:center;font-size:10px;color:#d1d5db;">—</div>';
+        }
+      });
+
+      // Break row after certain periods
+      if (BREAK_AFTER[p]) {
+        html += '<div style="padding:6px;background:#fef9e7;border-radius:6px;font-size:10px;color:#92400e;font-weight:600;text-align:center;">'+BREAK_AFTER[p]+'</div>';
+        for (var d2=0; d2<days.length; d2++) {
+          html += '<div style="padding:6px;background:#fef9e7;border-radius:6px;font-size:10px;color:#92400e;text-align:center;">'+BREAK_AFTER[p].split(' ')[0]+'</div>';
+        }
+      }
+    }
+    html += '</div>';
+
+    // Weekly summary
+    var totalLessons = 0;
+    DAYS.forEach(function(d){ totalLessons += (sched[d]||[]).length; });
+    html += '<div style="margin-top:16px;padding:14px 18px;background:var(--cream);border-radius:12px;display:flex;gap:20px;flex-wrap:wrap;">' +
+      '<div style="text-align:center;"><div style="font-size:22px;font-weight:900;font-family:Playfair Display,serif;color:var(--navy);">'+totalLessons+'</div><div style="font-size:11px;color:var(--muted);font-weight:600;">Lessons/week</div></div>' +
+      '<div style="text-align:center;"><div style="font-size:22px;font-weight:900;font-family:Playfair Display,serif;color:var(--navy);">'+Object.keys(sched).length+'</div><div style="font-size:11px;color:var(--muted);font-weight:600;">Teaching days</div></div>' +
+      '<div style="flex:1;font-size:12px;color:var(--muted);display:flex;align-items:center;">Click any lesson cell to jump to Daily Report and fill marks for that class.</div>' +
+    '</div>';
+
+    grid.innerHTML = html;
+  }
+
+  // ── FULL SCHOOL TIMETABLE ──
+  function ttRenderSchool(grid, days, clsFilt) {
+    var ALL_CLASSES = ['1A','1B','1C','2A','2B','2C','3A','3B','3C',
+      '4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'];
+    var classes = clsFilt === 'all' ? ALL_CLASSES : [clsFilt];
+
+    // For each day, show a grid of Period × Class
+    var html = '';
+    days.forEach(function(day) {
+      var isToday = day === ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+      html += '<div style="margin-bottom:24px;">';
+      html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+        '<div style="padding:6px 16px;background:'+(isToday?'var(--navy)':'var(--slate)')+';color:white;border-radius:8px;font-weight:700;font-size:14px;">'+day+(isToday?' · Today':'')+'</div>' +
+        '</div>';
+
+      // Table
+      html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11.5px;">';
+
+      // Header: periods
+      html += '<thead><tr><th style="padding:8px 12px;background:var(--navy);color:white;font-weight:700;text-align:left;min-width:80px;border-radius:6px 0 0 0;">Period</th>';
+      classes.forEach(function(cls) {
+        html += '<th style="padding:8px 10px;background:var(--navy);color:white;font-weight:700;text-align:center;min-width:100px;">'+cls+'</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      for (var p = 1; p <= 7; p++) {
+        html += '<tr style="border-bottom:1px solid var(--cream);">';
+        html += '<td style="padding:8px 12px;background:var(--cream);font-weight:700;font-size:11px;color:var(--slate);white-space:nowrap;">' +
+          '<div style="font-size:12px;font-weight:900;color:var(--navy);">P'+p+'</div>' +
+          '<div style="font-size:9.5px;">'+PERIOD_TIMES[p]+'</div></td>';
+
+        classes.forEach(function(cls) {
+          var lesson = (TIMETABLE[cls]||{})[day]&&(TIMETABLE[cls]||{})[day][p];
+          if (lesson) {
+            var col = ttSubjColor(lesson.subject);
+            html += '<td style="padding:6px 8px;text-align:center;background:white;">' +
+              '<div style="background:'+col+'15;border:1px solid '+col+'33;border-radius:6px;padding:5px 6px;">' +
+              '<div style="font-weight:700;color:'+col+';font-size:11px;">'+lesson.subject+'</div>' +
+              '<div style="font-size:9.5px;color:var(--muted);margin-top:1px;">'+(lesson.teacher ? lesson.teacher.split(' ')[0] : '')+'</div>' +
+              (lesson.room ? '<div style="font-size:9px;color:#9ca3af;">Rm '+lesson.room+'</div>' : '') +
+              '</div></td>';
+          } else {
+            html += '<td style="padding:6px 8px;text-align:center;background:white;color:#e5e7eb;font-size:11px;">—</td>';
+          }
+        });
+        html += '</tr>';
+
+        // Break rows
+        if (BREAK_AFTER[p]) {
+          html += '<tr style="background:#fef9e7;"><td colspan="'+(classes.length+1)+'" style="padding:5px 12px;font-size:10.5px;color:#92400e;font-weight:600;text-align:center;">'+BREAK_AFTER[p]+'</td></tr>';
+        }
+      }
+      html += '</tbody></table></div>';
+      html += '</div>';
+    });
+
+    grid.innerHTML = html || '<div style="padding:40px;text-align:center;color:var(--muted);">No timetable data found.</div>';
+  }
+
+  // Hook showPanel for timetable init
+  var _ttOrigShowPanel = showPanel;
+  showPanel = function(id, el) {
+    _ttOrigShowPanel(id, el);
+    if (id === 'timetable') setTimeout(ttInitPanel, 50);
+  };
+
+
+
 </script>
 
 <script>
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
       var swCode = "const CACHE='redbridge-v1';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(clients.claim());});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));});";
@@ -6393,6 +6703,7 @@ self.addEventListener('fetch', e => {
       navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function(){});
     });
   }
+
 </script>
 </body>
 </html>
