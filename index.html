@@ -692,6 +692,83 @@
   if (manifestLink) manifestLink.href = manifestUrl;
 </script>
 
+
+<style id="print-styles">
+@media print {
+  /* Hide everything except the active panel or modal */
+  body { background: white !important; }
+  .sidebar, .topbar, .topbar-right, #sb-status,
+  .nav-section, .sidebar-footer, .sidebar-logo,
+  .btn, button:not(.print-keep),
+  #new-action-modal, #student-report-modal .modal-footer,
+  .no-print { display: none !important; }
+
+  /* Show only the main content */
+  .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+  .panel { display: block !important; padding: 12px !important; }
+  .panel:not(.active) { display: none !important; }
+
+  /* Student report modal - print all content */
+  #student-report-modal {
+    position: static !important;
+    display: block !important;
+    background: white !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  #student-report-modal > div {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-height: none !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+  #sr-body {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Teacher report modal */
+  #teacher-report-modal {
+    position: static !important;
+    display: block !important;
+    background: white !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  #teacher-report-modal > div {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-height: none !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* Cards and tables */
+  .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
+  table { break-inside: auto; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+
+  /* Force page breaks for long content */
+  .two-col { display: block !important; }
+  .two-col > * { width: 100% !important; margin-bottom: 16px; }
+
+  /* Ensure colours print */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  /* Scale to fit page */
+  @page { margin: 1cm; size: A4; }
+
+  /* Remove max-heights that hide content */
+  [style*="max-height"], .card-body, #sr-subjects, #sr-trend,
+  #sr-discipline, #sr-scores { max-height: none !important; overflow: visible !important; }
+
+  /* Hide backdrop */
+  #student-report-modal::before,
+  #teacher-report-modal::before { display: none !important; }
+}
+</style>
 </head>
 <body>
 <!-- ══════════════════════════════════════════════════════ -->
@@ -2170,12 +2247,9 @@
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div>
                   <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Class</div>
-                  <div style="display:flex;gap:8px;align-items:stretch;">
-                    <select id="dr-class" onchange="drLoadStudents();" style="flex:1;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
-                      <option value="">— Select class —</option>
-                    </select>
-                    <button onclick="drLoadStudents()" style="padding:9px 14px;border-radius:9px;border:none;background:var(--navy);color:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Load ↓</button>
-                  </div>
+                  <select id="dr-class" onchange="drLoadStudents();" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                    <option value="">— Select class —</option>
+                  </select>
                 </div>
                 <div>
                   <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Subject</div>
@@ -3322,78 +3396,9 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   // ── TEACHER CLASS STUDENT DATA ──
   const teacherClassStudents = {}; // removed to reduce file size
 
-  function renderIncidentLog() {
-    var body = document.getElementById('incident-log-body');
-    if (!body) return;
-    var html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    html += '<thead><tr style="background:var(--cream);">';
-    html += '<th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid var(--rule);">Student / Class</th>';
-    html += '<th style="padding:9px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid var(--rule);">Incident</th>';
-    html += '<th style="padding:9px 8px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid var(--rule);">Stage</th>';
-    html += '<th style="padding:9px 8px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid var(--rule);">Date</th>';
-    html += '<th style="padding:9px 8px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid var(--rule);">Status</th>';
-    html += '<th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid var(--rule);">Notes</th>';
-    html += '</tr></thead><tbody>';
+  
 
-    incidentLog.forEach(function(inc, i) {
-      var bg  = i % 2 === 0 ? 'var(--white)' : 'var(--cream)';
-      var sc  = stageColor[inc.stage] || 'var(--slate)';
-      var ss  = statusStyle[inc.status] || statusStyle.open;
-      var border = 'border-bottom:1px solid var(--cream);';
-      html += '<tr style="background:' + bg + ';">';
-      html += '<td style="padding:9px 14px;font-weight:600;' + border + '">' + inc.student + '</td>';
-      html += '<td style="padding:9px 12px;' + border + '">' + inc.type + '</td>';
-      html += '<td style="padding:9px 8px;text-align:center;' + border + '"><span style="display:inline-block;width:26px;height:26px;border-radius:50%;background:' + sc + ';color:white;font-weight:700;font-size:12px;line-height:26px;text-align:center;">' + inc.stage + '</span></td>';
-      html += '<td style="padding:9px 8px;text-align:center;font-family:DM Mono,monospace;font-size:12px;color:var(--muted);' + border + '">' + inc.date + '</td>';
-      html += '<td style="padding:9px 8px;text-align:center;' + border + '"><span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;' + ss + '">' + inc.status.charAt(0).toUpperCase() + inc.status.slice(1) + '</span></td>';
-      html += '<td style="padding:9px 14px;font-size:12px;color:var(--muted);' + border + '">' + inc.notes + '</td>';
-      html += '</tr>';
-    });
-
-    html += '</tbody></table>';
-    body.innerHTML = html;
-  }
-
-  function showAddIncident() {
-    var form = document.getElementById('add-incident-form');
-    if (form) form.style.display = 'block';
-  }
-
-  function hideAddIncident() {
-    var form = document.getElementById('add-incident-form');
-    if (form) form.style.display = 'none';
-    ['inc-student','inc-type','inc-notes'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-  }
-
-  function logIncident() {
-    var student = (document.getElementById('inc-student') || {}).value || '';
-    var type    = (document.getElementById('inc-type')    || {}).value || '';
-    var stage   = parseInt((document.getElementById('inc-stage') || {}).value || '1');
-    var notes   = (document.getElementById('inc-notes')   || {}).value || '';
-    if (!student.trim() || !type.trim()) {
-      showToast('Please fill in Student Name and Incident Type.');
-      return;
-    }
-    var today = new Date();
-    var dateStr = 'Mar ' + today.getDate();
-    incidentLog.unshift({
-      id: 'i' + Date.now(),
-      student: student.trim(),
-      type: type.trim(),
-      stage: stage,
-      date: dateStr,
-      status: 'open',
-      notes: notes.trim() || '—'
-    });
-    hideAddIncident();
-    renderIncidentLog();
-    showToast('Incident logged: ' + student.trim());
-  }
-
-  // Render on panel switch
+  
   // ── TEACHER PERFORMANCE DETAIL ──
   const teacherDetail = {"Banu Umera": {"English": {"green": 76, "yellow": 16, "red": 8, "total": 63, "classes": ["1A", "1B", "1C"], "pass": 92}, "Science": {"green": 90, "yellow": 7, "red": 2, "total": 42, "classes": ["1A", "1B"], "pass": 97}}, "Djurayeva Oygul Isayevna": {"Russian Language": {"green": 48, "yellow": 42, "red": 10, "total": 108, "classes": ["1A", "1B", "1C", "2A", "2B", "2C"], "pass": 90}}, "Normamatova Sitora Furkatovna": {"Maths": {"green": 66, "yellow": 27, "red": 7, "total": 108, "classes": ["1A", "1B", "1C", "2A", "2B", "2C"], "pass": 93}}, "Egamberdiyev Zafar": {"Cambridge Maths": {"green": 66, "yellow": 27, "red": 7, "total": 108, "classes": ["1A", "1B", "1C", "2A", "2B", "2C"], "pass": 93}, "Science": {"green": 81, "yellow": 19, "red": 0, "total": 21, "classes": ["1C"], "pass": 100}}, "Mishra Soniya": {"English": {"green": 35, "yellow": 55, "red": 10, "total": 106, "classes": ["2A", "2B", "2C", "3A", "3B", "3C"], "pass": 90}}, "Raximova Xilola": {"Science": {"green": 53, "yellow": 42, "red": 5, "total": 62, "classes": ["2A", "2B", "2C", "7C"], "pass": 95}, "English": {"green": 32, "yellow": 47, "red": 20, "total": 59, "classes": ["6B", "6C", "7C"], "pass": 79}}, "Naimova Zarrina Musinovna": {"Russian Language": {"green": 53, "yellow": 43, "red": 4, "total": 150, "classes": ["3A", "3B", "3C", "4A", "4B", "4C", "5B"], "pass": 96}}, "Abdullayeva Gulnara Asatovna": {"Maths": {"green": 51, "yellow": 48, "red": 1, "total": 151, "classes": ["3A", "3B", "3C", "4A", "4B", "4C", "5A"], "pass": 99}}, "Neitngale Nansi Thote": {"Cambridge Maths": {"green": 44, "yellow": 38, "red": 17, "total": 151, "classes": ["3A", "3B", "3C", "4A", "4B", "4C", "5A"], "pass": 82}}, "Bahretdinova Elsbeth": {"Science": {"green": 44, "yellow": 37, "red": 19, "total": 235, "classes": ["3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C"], "pass": 81}, "Economics": {"green": 79, "yellow": 7, "red": 14, "total": 14, "classes": ["9A"], "pass": 86}}, "Bulgak Emine": {"GP (Hist-Geo)": {"green": 28, "yellow": 50, "red": 22, "total": 325, "classes": ["3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7B", "7C", "8A", "8B"], "pass": 78}}, "Halkouj Houssam": {"English": {"green": 47, "yellow": 33, "red": 20, "total": 133, "classes": ["4A", "4B", "4C", "5A", "5B", "6A"], "pass": 80}}, "Abduazizova Feruza Erkinovna": {"Russian Language": {"green": 59, "yellow": 36, "red": 4, "total": 143, "classes": ["5A", "6A", "6B", "6C", "7A", "7B", "7C"], "pass": 95}}, "Ibragimova Nasiba Ismailovna": {"Maths": {"green": 35, "yellow": 36, "red": 29, "total": 66, "classes": ["5B", "8A", "8B", "9A"], "pass": 71}}, "Hella Manzoor Ahmad": {"Cambridge Maths": {"green": 42, "yellow": 19, "red": 39, "total": 84, "classes": ["5B", "6A", "6B", "6C"], "pass": 61}}, "Yusupov Abdussator Davlatovich": {"Maths": {"green": 33, "yellow": 35, "red": 32, "total": 113, "classes": ["6A", "6B", "6C", "7A", "7B", "7C"], "pass": 68}}, "Sharma Akash": {"English": {"green": 45, "yellow": 37, "red": 18, "total": 97, "classes": ["7A", "7B", "8A", "8B", "9A", "10A"], "pass": 82}, "Science": {"green": 34, "yellow": 40, "red": 25, "total": 87, "classes": ["7A", "7B", "8A", "8B", "9A"], "pass": 74}}, "Yaqoob Adeel": {"Cambridge Maths": {"green": 54, "yellow": 30, "red": 16, "total": 106, "classes": ["7A", "7B", "7C", "8A", "8B", "9A", "10A"], "pass": 84}}, "Jamalova Asalya Alisherovna": {"Physics": {"green": 50, "yellow": 31, "red": 19, "total": 102, "classes": ["7A", "7B", "7C", "8A", "8B", "9A", "10A"], "pass": 81}}, "Rizabaeva Rukhsora Ravshanovna": {"Chemistry": {"green": 31, "yellow": 51, "red": 18, "total": 96, "classes": ["7A", "7B", "7C", "8A", "8B", "9A"], "pass": 82}}, "Raxmanova Aziza": {"Biology": {"green": 26, "yellow": 62, "red": 13, "total": 94, "classes": ["7A", "7B", "7C", "8A", "8B", "9A"], "pass": 88}}, "Rakhimova Sabina Robertovna": {"Russian Language": {"green": 45, "yellow": 33, "red": 22, "total": 51, "classes": ["8A", "8B", "9A", "10A"], "pass": 78}}};
 
@@ -5554,7 +5559,26 @@ self.addEventListener('fetch', e => {
   }
 
   function printStudentReport() {
+    // Make modal visible for printing
+    var modal = document.getElementById('student-report-modal');
+    if (modal) {
+      modal.setAttribute('data-printing','1');
+      modal.style.position = 'static';
+      modal.style.overflow = 'visible';
+      var inner = modal.querySelector('#sr-body');
+      if (inner) inner.style.maxHeight = 'none';
+    }
     window.print();
+    // Restore after print
+    setTimeout(function() {
+      if (modal) {
+        modal.style.position = 'fixed';
+        modal.style.overflow = 'hidden';
+        var inner2 = modal.querySelector('#sr-body');
+        if (inner2) inner2.style.maxHeight = '';
+        modal.removeAttribute('data-printing');
+      }
+    }, 2000);
   }
 
   // ══════════════════════════════════════════════════════
@@ -6037,15 +6061,20 @@ self.addEventListener('fetch', e => {
 
     var popup = document.createElement('div');
     popup.id = 'dr-mark-popup';
-    popup.style.cssText = 'position:fixed;z-index:9500;background:white;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,0.22);padding:20px 22px 16px;min-width:280px;font-family:\'Plus Jakarta Sans\',sans-serif;';
+    popup.style.cssText = 'position:fixed;z-index:9500;background:white;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,0.22);padding:16px 18px 12px;min-width:260px;max-width:320px;max-height:90vh;overflow-y:auto;font-family:\'DM Sans\',sans-serif;font-size:13px;';
 
     // Position near cell
     var rect = cell.getBoundingClientRect();
-    var top = rect.bottom + 8;
-    var left = rect.left - 100;
+    var popupH = 380; // estimated height
+    var popupW = 280;
+    var top  = rect.bottom + 6;
+    var left = rect.left - 80;
+    // Keep within viewport
     if (left < 8) left = 8;
-    if (top + 260 > window.innerHeight) top = rect.top - 268;
-    popup.style.top = top + 'px';
+    if (left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
+    if (top + popupH > window.innerHeight - 8) top = Math.max(8, rect.top - popupH - 6);
+    if (top < 8) top = 8;
+    popup.style.top  = top  + 'px';
     popup.style.left = left + 'px';
 
     popup.innerHTML =
@@ -6329,6 +6358,29 @@ self.addEventListener('fetch', e => {
     });
   }
   function _drRenderReports(filtered, sub, list) {
+    // Normalise field names: Supabase uses teacher_name/class, local uses teacher/cls
+    filtered = filtered.map(function(r){
+      return {
+        id:       r.id || r.timestamp || '',
+        teacher:  r.teacher || r.teacher_name || '',
+        cls:      r.cls || r['class'] || '',
+        subject:  r.subject || '',
+        date:     r.date || (r.created_at||'').slice(0,10) || '',
+        period:   r.period || '',
+        topic:    r.topic || '',
+        remark:   r.remark || '',
+        homework: r.homework || '',
+        students: r.students || [],
+      };
+    });
+    // Deduplicate: same class+subject+date+period = same lesson
+    var _seen = {};
+    filtered = filtered.filter(function(r){
+      var key = (r.cls||'')+'|'+(r.subject||'')+'|'+(r.date||'')+'|'+(r.period||'')+'|'+(r.topic||'');
+      if(_seen[key]) return false;
+      _seen[key] = true;
+      return true;
+    });
     if (sub) sub.textContent = filtered.length + ' report' + (filtered.length!==1?'s':'') + ' found';
     if (!list) return;
 
