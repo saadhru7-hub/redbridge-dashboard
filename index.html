@@ -4019,6 +4019,7 @@ document.getElementById('current-date').textContent = new Date().toLocaleDateStr
 
 
 
+
 // ── PWA SERVICE WORKER ──
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
@@ -6270,8 +6271,10 @@ self.addEventListener('fetch', e => {
     var wrap = document.getElementById('dr-students-wrap');
     var editingId = wrap ? wrap._editingId : null;
     if (editingId) {
-      // Remove the old report first
-      dailyReports = dailyReports.filter(function(r){ return r.id !== editingId; });
+      // Remove from localStorage
+      dailyReports = dailyReports.filter(function(r){ return String(r.id) !== String(editingId); });
+      // Delete old from Supabase so new save replaces it
+      sbFetch('daily_reports', 'DELETE', null, 'id=eq.'+editingId).catch(function(){});
       if (wrap) wrap._editingId = null;
     }
 
@@ -6378,6 +6381,8 @@ self.addEventListener('fetch', e => {
       var k=(r.cls||'')+'|'+(r.subject||'')+'|'+(r.date||'')+'|'+(r.period||'');
       if(_s[k])return false;_s[k]=true;return true;
     });
+    // Cache all rendered reports so drEditReport can find them
+    window._reportCache = filtered;
     if (sub) sub.textContent = filtered.length + ' report' + (filtered.length!==1?'s':'') + ' found';
     if (!list) return;
 
@@ -6826,23 +6831,32 @@ self.addEventListener('fetch', e => {
   function drDeleteReport(id) {
     if (!confirm('Delete this report? This cannot be undone.')) return;
     // Remove from localStorage
-    dailyReports = dailyReports.filter(function(r){ return r.id !== id; });
+    dailyReports = dailyReports.filter(function(r){ return String(r.id) !== String(id); });
     saveDailyReports();
-    // Remove from Supabase if it has a numeric id (Supabase records)
-    if (typeof id === 'number' || (typeof id === 'string' && !id.startsWith('dr_'))) {
-      sbFetch('daily_reports', 'DELETE', null, 'id=eq.'+id).catch(function(){});
+    // Remove from Supabase — try both numeric and string ids
+    sbFetch('daily_reports', 'DELETE', null, 'id=eq.'+id)
+      .then(function(){ showToast('Report deleted ✓'); })
+      .catch(function(){ showToast('Report deleted locally ✓'); });
+    // Remove from cache
+    if (window._reportCache) {
+      window._reportCache = window._reportCache.filter(function(r){ return String(r.id) !== String(id); });
     }
     drFilterReports();
-    showToast('Report deleted ✓');
   }
 
   function drEditReport(id) {
-    // Find the report
+    // Find the report — check cache (Supabase) first, then localStorage
     var rep = null;
-    for (var i = 0; i < dailyReports.length; i++) {
-      if (dailyReports[i].id === id) { rep = dailyReports[i]; break; }
+    var cache = window._reportCache || [];
+    for (var ci = 0; ci < cache.length; ci++) {
+      if (String(cache[ci].id) === String(id)) { rep = cache[ci]; break; }
     }
-    if (!rep) { showToast('Report not found in local storage. Reload and try again.'); return; }
+    if (!rep) {
+      for (var li = 0; li < dailyReports.length; li++) {
+        if (String(dailyReports[li].id) === String(id)) { rep = dailyReports[li]; break; }
+      }
+    }
+    if (!rep) { showToast('Could not load report. Please try again.'); return; }
 
     // Switch to fill tab
     switchDailyTab('fill');
@@ -6901,6 +6915,7 @@ self.addEventListener('fetch', e => {
       }, 600);
     }, 300);
   }
+
 
 
 </script>
