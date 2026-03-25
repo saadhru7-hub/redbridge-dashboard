@@ -693,80 +693,13 @@
 </script>
 
 
+
 <style id="print-styles">
 @media print {
-  /* Hide everything except the active panel or modal */
-  body { background: white !important; }
-  .sidebar, .topbar, .topbar-right, #sb-status,
-  .nav-section, .sidebar-footer, .sidebar-logo,
-  .btn, button:not(.print-keep),
-  #new-action-modal, #student-report-modal .modal-footer,
-  .no-print { display: none !important; }
-
-  /* Show only the main content */
-  .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-  .panel { display: block !important; padding: 12px !important; }
-  .panel:not(.active) { display: none !important; }
-
-  /* Student report modal - print all content */
-  #student-report-modal {
-    position: static !important;
-    display: block !important;
-    background: white !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-  #student-report-modal > div {
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    max-height: none !important;
-    width: 100% !important;
-    overflow: visible !important;
-  }
-  #sr-body {
-    overflow: visible !important;
-    max-height: none !important;
-  }
-
-  /* Teacher report modal */
-  #teacher-report-modal {
-    position: static !important;
-    display: block !important;
-    background: white !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-  #teacher-report-modal > div {
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    max-height: none !important;
-    width: 100% !important;
-    overflow: visible !important;
-  }
-
-  /* Cards and tables */
-  .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
-  table { break-inside: auto; }
-  tr { break-inside: avoid; }
-  thead { display: table-header-group; }
-
-  /* Force page breaks for long content */
-  .two-col { display: block !important; }
-  .two-col > * { width: 100% !important; margin-bottom: 16px; }
-
-  /* Ensure colours print */
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-
-  /* Scale to fit page */
-  @page { margin: 1cm; size: A4; }
-
-  /* Remove max-heights that hide content */
-  [style*="max-height"], .card-body, #sr-subjects, #sr-trend,
-  #sr-discipline, #sr-scores { max-height: none !important; overflow: visible !important; }
-
-  /* Hide backdrop */
-  #student-report-modal::before,
-  #teacher-report-modal::before { display: none !important; }
+  /* By default hide everything */
+  body > * { display: none !important; }
+  /* Only show print frame if it exists */
+  #print-frame { display: block !important; }
 }
 </style>
 </head>
@@ -5559,1276 +5492,211 @@ self.addEventListener('fetch', e => {
   }
 
   function printStudentReport() {
-    // Make modal visible for printing
+    // Build clean standalone HTML for printing
     var modal = document.getElementById('student-report-modal');
-    if (modal) {
-      modal.setAttribute('data-printing','1');
-      modal.style.position = 'static';
-      modal.style.overflow = 'visible';
-      var inner = modal.querySelector('#sr-body');
-      if (inner) inner.style.maxHeight = 'none';
-    }
-    window.print();
-    // Restore after print
-    setTimeout(function() {
-      if (modal) {
-        modal.style.position = 'fixed';
-        modal.style.overflow = 'hidden';
-        var inner2 = modal.querySelector('#sr-body');
-        if (inner2) inner2.style.maxHeight = '';
-        modal.removeAttribute('data-printing');
-      }
-    }, 2000);
-  }
+    if (!modal) return;
 
-  // ══════════════════════════════════════════════════════
-  // TEACHER PROGRESS REPORT
-  // ══════════════════════════════════════════════════════
+    var name    = (document.getElementById('sr-name')  ||{}).textContent || '';
+    var meta    = (document.getElementById('sr-meta')  ||{}).textContent || '';
+    var pct     = (document.getElementById('sr-pct')   ||{}).textContent || '';
+    var rating  = (document.getElementById('sr-rating-badge')||{}).textContent || '';
+    var traffic = (document.getElementById('sr-traffic-summary')||{}).innerHTML || '';
+    var subjsEl = document.getElementById('sr-subjects');
+    var trendEl = document.getElementById('sr-trend');
+    var discEl  = document.getElementById('sr-discipline');
+    var scoresEl= document.getElementById('sr-scores');
+    var extraEl = document.getElementById('sr-extra');
 
-  function openTeacherReport(r) {
-    var name = r.teacher || r.name || '';
-    // Get teacher detail
-    var tData = teacherDetail[name] || {};
-    var subjects = Object.keys(tData);
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">';
+    html += '<title>Student Report — ' + name + '</title>';
+    html += '<style>';
+    html += 'body{font-family:Arial,sans-serif;font-size:13px;color:#1a1a2e;margin:20px;background:white;}';
+    html += 'h1{font-size:20px;font-weight:900;color:#0a0f2e;margin:0 0 4px;}';
+    html += '.meta{font-size:12px;color:#666;margin-bottom:16px;}';
+    html += '.section{margin-bottom:18px;}';
+    html += '.section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px;}';
+    html += '.ring{display:inline-block;background:#f0f0f0;border-radius:50%;width:80px;height:80px;line-height:80px;text-align:center;font-size:22px;font-weight:900;color:#0a0f2e;margin-right:16px;vertical-align:middle;}';
+    html += '.badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d;}';
+    html += '.subj-row{display:flex;align-items:center;padding:6px 10px;border-left:3px solid #0a0f2e;margin-bottom:4px;background:#fafafa;}';
+    html += '.subj-name{flex:1;font-weight:600;}';
+    html += '.subj-pct{font-weight:700;font-size:14px;min-width:50px;text-align:right;}';
+    html += '.bar-wrap{width:80px;height:7px;background:#eee;border-radius:4px;overflow:hidden;margin:0 10px;}';
+    html += '.bar{height:100%;border-radius:4px;}';
+    html += '.disc-row{display:flex;align-items:center;padding:5px 10px;margin-bottom:3px;background:#fafafa;}';
+    html += '.disc-name{flex:1;}';
+    html += '.pill{padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;}';
+    html += '.green{background:#dcfce7;color:#15803d;} .yellow{background:#fef9c3;color:#92400e;} .red{background:#fee2e2;color:#b91c1c;} .grey{background:#f3f4f6;color:#6b7280;}';
+    html += '.trend-row{display:flex;align-items:center;padding:4px 0;font-size:12px;}';
+    html += '.header-bar{background:#0a0f2e;color:white;padding:14px 20px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;gap:14px;}';
+    html += '.avatar{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#c9972f,#8b2252);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:white;flex-shrink:0;}';
+    html += '.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}';
+    html += '.score-pill{display:inline-block;padding:8px 12px;border-radius:10px;text-align:center;margin:4px;min-width:80px;}';
+    html += '.score-subj{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;}';
+    html += '.score-val{font-size:18px;font-weight:900;}';
+    html += '@media print{body{margin:10px;}@page{margin:1cm;size:A4;}}';
+    html += '</style></head><body>';
 
-    // Avatar
-    var parts = name.split(' ');
-    var initials = (parts[0][0]||'')+(parts[1]?parts[1][0]:'');
-    var _tra=document.getElementById('tr-avatar'); if(_tra) _tra.textContent = initials;
-    var _trn=document.getElementById('tr-name'); if(_trn) _trn.textContent = name;
+    // Header
+    var initials = name.split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('');
+    html += '<div class="header-bar">';
+    html += '<div class="avatar">'+initials+'</div>';
+    html += '<div><div style="font-size:18px;font-weight:900;">'+name+'</div>';
+    html += '<div style="font-size:12px;color:#c9972f;margin-top:2px;">'+meta+'</div></div>';
+    html += '<div style="margin-left:auto;text-align:right;">';
+    html += '<div style="font-size:28px;font-weight:900;">'+pct+'</div>';
+    html += '<div style="font-size:10px;color:#aaa;">average score</div>';
+    html += '</div></div>';
 
-    // Overall combined score
-    var pass = r.combined || r.pass || 0;
-    var totalStudents = r.total || 0;
-    var subjectsStr = (r.subjects||subjects).join(' · ');
-    var _trm=document.getElementById('tr-meta'); if(_trm) _trm.textContent = subjectsStr + ' · ' + (r.classes||[]).length + ' classes';
-    var _trp=document.getElementById('tr-pct'); if(_trp) _trp.textContent = pass + '%';
-    var rat = perfRating(pass);
-    var badge = document.getElementById('tr-rating-badge');
-    badge.textContent = rat[0]; badge.style.color = rat[1]; badge.style.background = rat[2];
-    setTimeout(function(){
-      var ring = document.getElementById('tr-ring');
-      if(ring){ ring.style.strokeDashoffset = 289-(289*pass/100); ring.style.stroke = rat[1]; }
-    }, 100);
+    // Rating + traffic summary
+    html += '<div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;">';
+    html += '<span class="badge">'+rating+'</span>';
+    html += '<span style="font-size:13px;">'+traffic.replace(/<[^>]*>/g,'')+'</span>';
+    html += '</div>';
 
-    // Traffic summary
-    var tg=r.green||0, tr2=r.red||0, ty=100-tg-tr2;
-    document.getElementById('tr-traffic-summary').innerHTML =
-      '<span style="color:#16a34a;font-size:11px;font-weight:700;">🟢 '+tg+'%</span>' +
-      '<span style="color:#ca8a04;font-size:11px;font-weight:700;">🟡 '+(ty>0?ty:0)+'%</span>' +
-      '<span style="color:#dc2626;font-size:11px;font-weight:700;">🔴 '+tr2+'%</span>';
+    html += '<div class="two-col">';
 
-    // Observation score
-    var obsEl = document.getElementById('tr-obs-score');
-    var obsData = observationLog ? observationLog.filter(function(o){ return o.teacher===name; }) : [];
-    if (obsData.length) {
-      var avgObs = Math.round(obsData.reduce(function(a,b){return a+b.total;},0)/obsData.length*10)/10;
-      obsEl.innerHTML = '<div style="font-size:10px;color:#8a8a8a;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Observation Avg</div>' +
-        '<div style="font-size:20px;font-weight:900;font-family:Playfair Display,serif;color:#c9972f;">'+avgObs+'<span style="font-size:12px;font-weight:400;color:#8a8a8a;">/24</span></div>';
-    } else {
-      obsEl.innerHTML = '<div style="font-size:11px;color:#8a8a8a;">Not yet observed</div>';
-    }
-
-    // ── SUBJECTS ──
-    var subjEl = document.getElementById('tr-subjects');
-    subjEl.innerHTML = '';
-    subjects.forEach(function(subj) {
-      var sd = tData[subj] || {};
-      var p = sd.pass || 0;
-      var rat2 = perfRating(p);
-      var row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;background:#faf8f3;border-radius:10px;';
-      row.innerHTML =
-        '<div style="flex:1;">' +
-          '<div style="font-weight:700;font-size:13px;color:#3d3a2e;">'+subj+'</div>' +
-          '<div style="font-size:11px;color:#8a8a8a;">Classes: '+(sd.classes||[]).join(', ')+'</div>' +
-        '</div>' +
-        '<div style="display:flex;gap:6px;font-size:11px;font-weight:700;">' +
-          '<span style="color:#16a34a;">🟢 '+sd.green+'%</span>' +
-          '<span style="color:#ca8a04;">🟡 '+(100-sd.green-sd.red)+'%</span>' +
-          '<span style="color:#dc2626;">🔴 '+sd.red+'%</span>' +
-        '</div>' +
-        '<span style="background:'+rat2[2]+';color:'+rat2[1]+';font-weight:900;font-size:14px;padding:4px 12px;border-radius:20px;white-space:nowrap;">'+p+'%</span>';
-      subjEl.appendChild(row);
-    });
-
-    // ── CLASS CARDS ──
-    var clsEl = document.getElementById('tr-classes');
-    clsEl.innerHTML = '';
-    var allClasses = [];
-    subjects.forEach(function(subj){ (tData[subj].classes||[]).forEach(function(c){ if(!allClasses.includes(c)) allClasses.push(c); }); });
-    allClasses.sort();
-    allClasses.forEach(function(cls) {
-      // Find class pass rate from resultsData
-      var bestSubj = subjects[0];
-      var students = (resultsData[cls]||{})['February'] || (resultsData[cls]||{})['January'] || [];
-      var g=0,y=0,r2=0;
-      students.forEach(function(s){
-        var clr = (s.traffic_light||{})[bestSubj];
-        if(clr==='green')g++; else if(clr==='yellow')y++; else if(clr==='red')r2++;
-      });
-      var t=g+y+r2||1;
-      var cp = Math.round((g+y)/t*100);
-      var crat = perfRating(cp);
-      var col = cp>=80?'#16a34a':cp>=60?'#ca8a04':'#dc2626';
-      var card = document.createElement('div');
-      card.style.cssText = 'background:white;border:1.5px solid #e8e0cc;border-radius:12px;padding:14px;text-align:center;';
-      card.innerHTML =
-        '<div style="font-size:11px;font-weight:700;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Class '+cls+'</div>' +
-        '<div style="font-family:Playfair Display,serif;font-size:28px;font-weight:900;color:'+col+';">'+cp+'%</div>' +
-        '<div style="font-size:10px;color:#8a8a8a;margin-bottom:8px;">'+students.length+' students</div>' +
-        '<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;">' +
-          '<div style="width:'+Math.round(g/t*100)+'%;background:#16a34a;"></div>' +
-          '<div style="width:'+Math.round(y/t*100)+'%;background:#ca8a04;"></div>' +
-          '<div style="width:'+Math.round(r2/t*100)+'%;background:#dc2626;"></div>' +
-        '</div>';
-      clsEl.appendChild(card);
-    });
-
-    // ── OBSERVATIONS ──
-    var obsListEl = document.getElementById('tr-observations');
-    obsListEl.innerHTML = '';
-    if (!obsData.length) {
-      obsListEl.innerHTML = '<div style="font-size:12px;color:#8a8a8a;text-align:center;padding:20px;">No observations recorded yet.<br>Use the Observation Rubric tab to add one.</div>';
-    } else {
-      obsData.slice(0,4).forEach(function(o) {
-        var rat3 = obsRating(o.total);
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#faf8f3;border-radius:8px;';
-        row.innerHTML =
-          '<div style="font-family:DM Mono,monospace;font-size:11px;color:#8a8a8a;width:60px;">'+o.date+'</div>' +
-          '<div style="flex:1;"><div style="font-size:12px;font-weight:600;color:#3d3a2e;">'+o.cls+' · '+o.subject+'</div></div>' +
-          '<span style="background:'+rat3[2]+';color:'+rat3[1]+';font-weight:700;font-size:11px;padding:2px 9px;border-radius:20px;">'+o.total+'/24</span>';
-        obsListEl.appendChild(row);
-      });
-    }
-
-    // ── STUDENT DISTRIBUTION ──
-    var distEl = document.getElementById('tr-distribution');
-    distEl.innerHTML = '';
-    var totalG=0, totalY=0, totalR=0;
-    subjects.forEach(function(subj) {
-      var sd = tData[subj] || {};
-      var t2 = sd.total||0;
-      totalG += Math.round(sd.green*t2/100);
-      totalY += Math.round((100-sd.green-sd.red)*t2/100);
-      totalR += Math.round(sd.red*t2/100);
-    });
-    var grand = totalG+totalY+totalR||1;
-    [['🟢 Excelling (Green)', totalG, '#16a34a'],
-     ['🟡 Developing (Yellow)', totalY, '#ca8a04'],
-     ['🔴 Need Support (Red)', totalR, '#dc2626']].forEach(function(item) {
-      var pct2 = Math.round(item[1]/grand*100);
-      var row = document.createElement('div');
-      row.innerHTML =
-        '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
-          '<span style="font-size:12px;color:#f5f0e8;font-weight:600;">'+item[0]+'</span>' +
-          '<span style="font-size:12px;font-weight:700;color:'+item[2]+';">'+item[1]+' ('+pct2+'%)</span>' +
-        '</div>' +
-        '<div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;margin-bottom:6px;">' +
-          '<div style="width:'+pct2+'%;height:100%;background:'+item[2]+';border-radius:4px;transition:width 1s ease;"></div>' +
-        '</div>';
-      distEl.appendChild(row);
-    });
-
-    // Show modal
-    var m = document.getElementById('teacher-report-modal');
-    m.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeTeacherReport() {
-    var m = document.getElementById('teacher-report-modal');
-    if(m) m.style.display = 'none';
-    document.body.style.overflow = '';
-  }
-
-  // Close on backdrop click
-  document.addEventListener('DOMContentLoaded', function() {
-    ['student-report-modal','teacher-report-modal'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if(el) el.addEventListener('click', function(e){ if(e.target===this){ this.style.display='none'; document.body.style.overflow=''; }});
-    });
-  });
-
-
-
-  // ══════════════════════════════════════════════════════
-  // DAILY REPORT SYSTEM
-  // ══════════════════════════════════════════════════════
-
-  var dailyReports = (function() {
-    try { var d = localStorage.getItem('redbridge_daily'); return d ? JSON.parse(d) : []; }
-    catch(e) { return []; }
-  })();
-
-  function saveDailyReports() {
-    try { localStorage.setItem('redbridge_daily', JSON.stringify(dailyReports)); } catch(e) {}
-  }
-
-  // ALL classes in school
-  var ALL_CLASSES = ['1A','1B','1C','2A','2B','2C','3A','3B','3C',
-    '4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'];
-
-  // Class teacher map — who is teacher of which class
-  var CLASS_TEACHER_MAP = {
-    '1A':'Djurayeva Oygul Isayevna','1B':'Normamatova Sitora Furkatovna',
-    '1C':'Egamberdiyev Zafar','2A':'Djurayeva Oygul Isayevna',
-    '2B':'Normamatova Sitora Furkatovna','2C':'Egamberdiyev Zafar',
-    '3A':'Abdullayeva Gulnara Asatovna','3B':'Isomatov Xushbaxt Sadriddinovich',
-    '3C':'Isomatov Xushbaxt Sadriddinovich','4A':'Abdullayeva Gulnara Asatovna',
-    '4B':'Naimova Zarrina Musinovna','4C':'Naimova Zarrina Musinovna',
-    '5A':'Bobobekova Barno Olimovna','5B':'Bobobekova Barno Olimovna',
-    '6A':'Abduazizova Feruza Erkinovna','6B':'Yusupov Abdussator Davlatovich',
-    '6C':'Raximova Xilola','7A':'Abduazizova Feruza Erkinovna',
-    '7B':'Jamalova Asalya Alisherovna','7C':'Raximova Xilola',
-    '8A':'Ibragimova Nasiba Ismailovna','8B':'Ibragimova Nasiba Ismailovna',
-    '9A':'Ibragimova Nasiba Ismailovna','10A':'Ibragimova Nasiba Ismailovna',
-  };
-
-  function drGetAllowedClasses() {
-    var u = _currentUser;
-    if (!u) return ALL_CLASSES;
-    // For principal/founders/admin: return all classes but sorted by today's timetable first
-    if (u.access === 'all' || u.role === 'admin') {
-      var todayLessons = drGetTodayLessons();
-      var todayCls = todayLessons.map(function(l){ return l.class; })
-        .filter(function(c,i,a){ return a.indexOf(c)===i; }); // unique
-      var rest = ALL_CLASSES.filter(function(c){ return todayCls.indexOf(c)===-1; });
-      return todayCls.concat(rest);
-    }
-    // Get classes from TEACHER_SCHEDULE (timetable) for this teacher
-    var teacherName = u.teacherName || u.name;
-    if (teacherName && typeof TEACHER_SCHEDULE !== 'undefined' && TEACHER_SCHEDULE[teacherName]) {
-      var sched = TEACHER_SCHEDULE[teacherName];
-      var clsSet = {};
-      Object.values(sched).forEach(function(dayLessons) {
-        dayLessons.forEach(function(l) { clsSet[l.class] = true; });
-      });
-      var clsList = Object.keys(clsSet).sort();
-      if (clsList.length) return clsList;
-    }
-    // Fallback: use assigned classes from user profile
-    if (u.access === 'class' && u.classes) return u.classes;
-    if (u.role === 'dept_head' && u.teacherClasses && u.teacherClasses.length) return u.teacherClasses;
-    return u.classes || ALL_CLASSES;
-  }
-
-  // Get today's lessons for the current teacher
-  function drGetTodayLessons() {
-    var u = _currentUser;
-    if (!u) return [];
-    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var today = days[new Date().getDay()];
-    if (today === 'Sunday' || today === 'Saturday') today = 'Monday'; // use Monday on weekends
-    if (typeof TEACHER_SCHEDULE === 'undefined') return [];
-    // Try teacherName first, then name, then search by partial match
-    var teacherName = u.teacherName || null;
-    var sched = {};
-    if (teacherName && TEACHER_SCHEDULE[teacherName]) {
-      sched = TEACHER_SCHEDULE[teacherName];
-    } else {
-      // Try matching by first word of name (e.g. "Sharma" from "Mr. Akash Sharma")
-      var nameParts = (u.name || '').split(' ');
-      for (var k in TEACHER_SCHEDULE) {
-        for (var p=0; p<nameParts.length; p++) {
-          if (nameParts[p].length > 3 && k.indexOf(nameParts[p]) !== -1) {
-            sched = TEACHER_SCHEDULE[k];
-            break;
-          }
+    // Subject Performance
+    html += '<div class="section"><div class="section-title">Subject Performance</div>';
+    if (subjsEl) {
+      var rows = subjsEl.querySelectorAll('div[style*="border-left"]');
+      rows.forEach(function(row) {
+        var subjName  = (row.querySelector('div[style*="font-weight:700"]') || {}).textContent || '';
+        var subjLabel = (row.querySelector('div[style*="font-size:10"]') || row.querySelector('div[style*="font-size:10.5"]') || {}).textContent || '';
+        var pctEl     = row.querySelector('div[style*="font-size:15px"], div[style*="font-size:1"]');
+        var pctTxt    = pctEl ? pctEl.textContent : '';
+        var tlEl      = row.querySelector('div[style*="border-radius:6px"]');
+        var clrStyle  = tlEl ? tlEl.style.background : '#f3f4f6';
+        var clrClass  = clrStyle.includes('dcfce7')||clrStyle.includes('16a34a') ? 'green' :
+                        clrStyle.includes('fef9c3')||clrStyle.includes('ca8a04') ? 'yellow' :
+                        clrStyle.includes('fee2e2')||clrStyle.includes('dc2626') ? 'red' : 'grey';
+        var pctNum = parseInt(pctTxt) || 0;
+        var barColor = clrClass==='green'?'#16a34a':clrClass==='yellow'?'#ca8a04':clrClass==='red'?'#dc2626':'#9ca3af';
+        html += '<div class="subj-row" style="border-left-color:'+barColor+';">';
+        html += '<div class="subj-name">'+subjName+'<br><span style="font-size:10px;color:'+barColor+';">'+subjLabel+'</span></div>';
+        if (pctNum > 0) {
+          html += '<div class="bar-wrap"><div class="bar" style="width:'+pctNum+'%;background:'+barColor+';"></div></div>';
+          html += '<div class="subj-pct" style="color:'+barColor+';">'+pctTxt+'</div>';
         }
-        if (Object.keys(sched).length) break;
-      }
-    }
-    return sched[today] || [];
-  }
-
-  function drInitPanel() {
-    var now = new Date();
-    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    var today = days[now.getDay()];
-    var dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-
-    var dateEl = document.getElementById('dr-date');
-    if (dateEl && !dateEl.value) dateEl.value = dateStr;
-
-    var dd = document.getElementById('dr-date-display');
-    if (dd) dd.textContent = today + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
-
-    // Show today's timetable at top
-    drRenderTodaySchedule(today);
-
-    var clsSel = document.getElementById('dr-class');
-    if (!clsSel) return;
-    var allowed = drGetAllowedClasses();
-    clsSel.innerHTML = '<option value="">— Select class —</option>';
-    allowed.forEach(function(cls) {
-      var opt = document.createElement('option');
-      opt.value = cls; opt.textContent = 'Class ' + cls;
-      clsSel.appendChild(opt);
-    });
-    if (allowed.length === 1) { clsSel.value = allowed[0]; drLoadStudents(); }
-    drPopulateFilters(allowed);
-    drFilterReports();
-  }
-
-  function drRenderTodaySchedule(today) {
-    var wrap = document.getElementById('dr-today-schedule');
-    if (!wrap) return;
-    var todayLessons = drGetTodayLessons();
-    wrap.innerHTML = '';
-    if (!todayLessons.length) {
-      wrap.innerHTML = '<div style="font-size:12.5px;color:#8a8a8a;padding:10px 0;">No lessons scheduled today (' + today + ').</div>';
-      return;
-    }
-    todayLessons.forEach(function(l) {
-      var card = document.createElement('div');
-      card.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 14px;background:#ffffff;border:1.5px solid #d4c9b0;border-radius:10px;cursor:pointer;transition:all 0.15s;margin-bottom:6px;';
-      card.innerHTML =
-        '<div style="width:36px;height:36px;border-radius:8px;background:#0a0f2e;display:flex;align-items:center;justify-content:center;font-weight:900;color:white;font-size:13px;flex-shrink:0;">P'+l.period+'</div>' +
-        '<div style="flex:1;">' +
-          '<div style="font-weight:700;font-size:13px;color:#0a0f2e;">'+l.subject+'</div>' +
-          '<div style="font-size:11.5px;color:#8a8a8a;">Class '+l.class+' &middot; '+l.time+(l.room?' &middot; Room '+l.room:'')+' </div>' +
-        '</div>' +
-        '<div style="font-size:11px;font-weight:700;color:#c9972f;background:#fef9e7;padding:3px 10px;border-radius:20px;">Fill Report →</div>';
-      card.addEventListener('mouseenter', function(){ this.style.borderColor='#c9972f'; this.style.background='#fffdf5'; });
-      card.addEventListener('mouseleave', function(){ this.style.borderColor='#d4c9b0'; this.style.background='#ffffff'; });
-      (function(lesson){ card.addEventListener('click', function(){ drQuickFill(lesson); }); })(l);
-      wrap.appendChild(card);
-    });
-  }
-
-    function drQuickFill(lesson) {
-    var clsSel  = document.getElementById('dr-class');
-    var subjSel = document.getElementById('dr-subject');
-    var perSel  = document.getElementById('dr-period');
-    if (clsSel)  clsSel.value  = lesson.class;
-    if (perSel)  perSel.value  = String(lesson.period);
-    if (subjSel) {
-      var subjNorm = lesson.subject.toUpperCase();
-      var matched  = false;
-      for (var i=0; i<subjSel.options.length; i++) {
-        if (subjSel.options[i].text.toUpperCase().indexOf(subjNorm.split(' ')[0]) !== -1) {
-          subjSel.selectedIndex = i; matched = true; break;
-        }
-      }
-      if (!matched) subjSel.value = '';
-    }
-    drLoadStudents();
-    var form = document.getElementById('dr-class');
-    if (form) form.scrollIntoView({behavior:'smooth',block:'center'});
-    showToast('Loaded: Class ' + lesson.class + ' ' + lesson.subject + ' P' + lesson.period);
-  }
-
-  function drPopulateFilters(allowed) {
-    var fc = document.getElementById('dr-filter-class');
-    var fs = document.getElementById('dr-filter-subject');
-    if (!fc || !fs) return;
-    fc.innerHTML = '<option value="">All Classes</option>';
-    (allowed || ALL_CLASSES).forEach(function(cls) {
-      var o = document.createElement('option');
-      o.value = cls; o.textContent = 'Class ' + cls;
-      fc.appendChild(o);
-    });
-    var subjects = ['English','Maths','Cambridge Maths','Science','Physics',
-      'Chemistry','Biology','Russian Language','GP (Hist-Geo)','Economics',
-      'Physical Education','Art','ICT'];
-    fs.innerHTML = '<option value="">All Subjects</option>';
-    subjects.forEach(function(s) {
-      var o = document.createElement('option');
-      o.value = s; o.textContent = s;
-      fs.appendChild(o);
-    });
-  }
-
-  function drLoadStudents() {
-    var cls = (document.getElementById('dr-class')||{}).value;
-    var wrap = document.getElementById('dr-students-wrap');
-    var sub  = document.getElementById('dr-students-subtitle');
-    if (!cls || !wrap) return;
-
-    // Get students from resultsData
-    var months = resultsData[cls] || {};
-    var students = months['February'] || months['January'] || [];
-
-    if (!students.length) {
-      wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px;">No student data for Class '+cls+'</div>';
-      return;
-    }
-
-    if (sub) sub.textContent = 'Class ' + cls + ' · ' + students.length + ' students';
-
-    var html = '<div style="overflow-x:auto;">';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    html += '<thead>';
-    html += '<tr style="background:var(--navy);">' +
-      '<th style="padding:9px 14px;text-align:left;color:white;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;min-width:160px;">Student</th>' +
-      '<th style="padding:9px 10px;text-align:center;color:#90c0ff;font-size:10.5px;font-weight:700;letter-spacing:0.05em;border-left:1px solid rgba(255,255,255,0.15);width:56px;">CW</th>' +
-      '<th style="padding:9px 10px;text-align:center;color:#fde68a;font-size:10.5px;font-weight:700;letter-spacing:0.05em;border-left:1px solid rgba(255,255,255,0.15);width:56px;">HW</th>' +
-      '<th style="padding:9px 10px;text-align:center;color:#fca5a5;font-size:10.5px;font-weight:700;letter-spacing:0.05em;border-left:1px solid rgba(255,255,255,0.15);width:56px;">Disc</th>' +
-      '<th style="padding:9px 10px;text-align:center;color:#d1d5db;font-size:10.5px;font-weight:700;letter-spacing:0.05em;border-left:1px solid rgba(255,255,255,0.15);width:52px;">Abs</th>' +
-      '</tr>';
-    html += '</thead><tbody>';
-
-    students.forEach(function(st, i) {
-      var bg = i%2===0 ? 'var(--white)' : '#f8fafc';
-      var sid = 'st_' + i;
-      html += '<tr style="background:'+bg+';border-bottom:1px solid #f1f5f9;">';
-      html += '<td style="padding:7px 14px;font-weight:600;font-size:12.5px;white-space:nowrap;color:var(--ink);">' +
-        '<span style="font-size:10.5px;color:var(--muted);font-weight:500;margin-right:6px;">'+(i+1<10?'0'+(i+1):i+1)+'</span>'+
-        st.surname+' '+st.firstname+'</td>';
-
-      // ── CW cell ──
-      html += '<td style="padding:5px 6px;text-align:center;border-left:1px solid #f1f5f9;">' +
-        '<div id="cw_cell_'+sid+'" onclick="drOpenMarkPopup(\'cw\',\''+sid+'\',\''+st.surname+' '+st.firstname+'\')" ' +
-        'style="width:36px;height:36px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;cursor:pointer;margin:0 auto;color:#94a3b8;transition:all 0.15s;font-family:\'Outfit\',sans-serif;" ' +
-        'onmouseenter="this.style.borderColor=\'#7c3aed\';this.style.background=\'#ede9fe\'" ' +
-        'onmouseleave="if(!this.dataset.mark||this.dataset.mark==\'0\'){this.style.borderColor=\'#e2e8f0\';this.style.background=\'white\'}" ' +
-        'data-mark="0">—</div>' +
-        '<input type="hidden" id="cw_mark_'+sid+'" value="0">' +
-        '<input type="hidden" id="cw_remark_'+sid+'" value="">' +
-        '<input type="hidden" id="cw_late_'+sid+'" value="">' +
-        '</td>';
-
-      // ── HW cell ──
-      html += '<td style="padding:5px 6px;text-align:center;border-left:1px solid #f1f5f9;">' +
-        '<div id="hw_cell_'+sid+'" onclick="drOpenMarkPopup(\'hw\',\''+sid+'\',\''+st.surname+' '+st.firstname+'\')" ' +
-        'style="width:36px;height:36px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;cursor:pointer;margin:0 auto;color:#94a3b8;transition:all 0.15s;font-family:\'Outfit\',sans-serif;" ' +
-        'onmouseenter="this.style.borderColor=\'#a16207\';this.style.background=\'#fef9c3\'" ' +
-        'onmouseleave="if(!this.dataset.mark||this.dataset.mark==\'0\'){this.style.borderColor=\'#e2e8f0\';this.style.background=\'white\'}" ' +
-        'data-mark="0">—</div>' +
-        '<input type="hidden" id="hw_mark_'+sid+'" value="0">' +
-        '<input type="hidden" id="hw_remark_'+sid+'" value="">' +
-        '</td>';
-
-      // ── Disc cell ──
-      html += '<td style="padding:5px 6px;text-align:center;border-left:1px solid #f1f5f9;">' +
-        '<div id="disc_cell_'+sid+'" onclick="drOpenMarkPopup(\'disc\',\''+sid+'\',\''+st.surname+' '+st.firstname+'\')" ' +
-        'style="width:36px;height:36px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;cursor:pointer;margin:0 auto;color:#94a3b8;transition:all 0.15s;font-family:\'Outfit\',sans-serif;" ' +
-        'onmouseenter="this.style.borderColor=\'#b91c1c\';this.style.background=\'#fee2e2\'" ' +
-        'onmouseleave="if(!this.dataset.mark||this.dataset.mark==\'0\'){this.style.borderColor=\'#e2e8f0\';this.style.background=\'white\'}" ' +
-        'data-mark="0">—</div>' +
-        '<input type="hidden" id="disc_mark_'+sid+'" value="0">' +
-        '<input type="hidden" id="disc_remark_'+sid+'" value="">' +
-        '</td>';
-
-      // ── Abs checkbox ──
-      html += '<td style="padding:5px 6px;text-align:center;border-left:1px solid #f1f5f9;">' +
-        '<input type="checkbox" id="absent_'+sid+'" onchange="drToggleAbsent(\''+sid+'\',this)" ' +
-        'style="width:18px;height:18px;cursor:pointer;accent-color:var(--danger);">' +
-        '</td>';
-
-      html += '</tr>';
-    });
-
-    html += '</tbody></table></div>';
-
-    // Store student names for saving
-    wrap.innerHTML = html;
-    wrap._students = students;
-
-    // Wire mark buttons after render
-    setTimeout(function() {
-      var u = _currentUser;
-    }, 50);
-  }
-
-  // ── MARK POPUP SYSTEM ─────────────────────────────────────────────────────
-  var _drPopup = { sec: null, sid: null };
-
-  var _sectionColors = {
-    cw:   { border:'#7c3aed', bg:'#ede9fe', active:'#7c3aed', label:'Classwork' },
-    hw:   { border:'#a16207', bg:'#fef9c3', active:'#a16207', label:'Homework'  },
-    disc: { border:'#b91c1c', bg:'#fee2e2', active:'#b91c1c', label:'Discipline'}
-  };
-
-  function drOpenMarkPopup(sec, sid, studentName) {
-    // Close any open popup first
-    drCloseMarkPopup();
-
-    _drPopup.sec = sec; _drPopup.sid = sid;
-
-    var cell = document.getElementById(sec+'_cell_'+sid);
-    if (!cell) return;
-
-    var col = _sectionColors[sec];
-    var currentMark = parseInt(document.getElementById(sec+'_mark_'+sid).value) || 0;
-    var currentRemark = document.getElementById(sec+'_remark_'+sid).value || '';
-    var isLate = document.getElementById(sec+'_late_'+sid) ? document.getElementById(sec+'_late_'+sid).value === 'late' : false;
-    var isLeftEarly = document.getElementById(sec+'_late_'+sid) ? document.getElementById(sec+'_late_'+sid).value === 'early' : false;
-    var isAbsent = (document.getElementById('absent_'+sid)||{}).checked;
-
-    var popup = document.createElement('div');
-    popup.id = 'dr-mark-popup';
-    popup.style.cssText = 'position:fixed;z-index:9500;background:white;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,0.22);padding:16px 18px 12px;min-width:260px;max-width:320px;max-height:90vh;overflow-y:auto;font-family:\'DM Sans\',sans-serif;font-size:13px;';
-
-    // Position near cell
-    var rect = cell.getBoundingClientRect();
-    var popupH = 380; // estimated height
-    var popupW = 280;
-    var top  = rect.bottom + 6;
-    var left = rect.left - 80;
-    // Keep within viewport
-    if (left < 8) left = 8;
-    if (left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
-    if (top + popupH > window.innerHeight - 8) top = Math.max(8, rect.top - popupH - 6);
-    if (top < 8) top = 8;
-    popup.style.top  = top  + 'px';
-    popup.style.left = left + 'px';
-
-    popup.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">' +
-        '<div style="font-size:13px;font-weight:700;color:#1e293b;">' + studentName + '</div>' +
-        '<div style="display:flex;align-items:center;gap:8px;">' +
-          '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:' + col.active + ';background:' + col.bg + ';padding:3px 10px;border-radius:20px;">' + col.label + '</span>' +
-          '<button onclick="drCloseMarkPopup()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;line-height:1;padding:0;">✕</button>' +
-        '</div>' +
-      '</div>' +
-      // Grade buttons 2–5 + del
-      '<div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">' +
-        [2,3,4,5].map(function(n) {
-          var markCol = n >= 4 ? '#16a34a' : n === 3 ? '#ca8a04' : '#dc2626';
-          var isActive = currentMark === n;
-          return '<button onclick="drPopupSetMark('+n+')" data-grade="'+n+'" style="width:44px;height:44px;border-radius:10px;border:2px solid '+(isActive?markCol:'#e2e8f0')+';background:'+(isActive?markCol:'white')+';color:'+(isActive?'white':markCol)+';font-size:18px;font-weight:900;cursor:pointer;font-family:\'Outfit\',sans-serif;transition:all 0.12s;">'+n+'</button>';
-        }).join('') +
-        '<button onclick="drPopupDelMark()" style="width:44px;height:44px;border-radius:10px;border:2px solid #e2e8f0;background:white;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:-0.02em;">del</button>' +
-      '</div>' +
-      // Checkboxes
-      '<div style="display:flex;gap:16px;margin-bottom:12px;">' +
-        '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#475569;cursor:pointer;">' +
-          '<input type="checkbox" id="popup-late" '+(isLate?'checked':'')+' style="width:15px;height:15px;accent-color:#7c3aed;cursor:pointer;">Late</label>' +
-        '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#475569;cursor:pointer;">' +
-          '<input type="checkbox" id="popup-early" '+(isLeftEarly?'checked':'')+' style="width:15px;height:15px;accent-color:#7c3aed;cursor:pointer;">Left early</label>' +
-        '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#475569;cursor:pointer;">' +
-          '<input type="checkbox" id="popup-absence" '+(isAbsent?'checked':'')+' style="width:15px;height:15px;accent-color:#ef4444;cursor:pointer;">Absence</label>' +
-      '</div>' +
-      // Comment box
-      '<textarea id="popup-comment" placeholder="Add a comment…" rows="2" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:\'Plus Jakarta Sans\',sans-serif;font-size:12.5px;resize:none;outline:none;box-sizing:border-box;color:#1e293b;">'+currentRemark+'</textarea>' +
-      '<div style="display:flex;gap:8px;margin-top:10px;">' +
-        '<button onclick="drPopupSave()" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--primary);color:white;font-weight:700;font-size:13px;cursor:pointer;">Save comment</button>' +
-        '<button onclick="drPopupDeleteComment()" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-weight:600;font-size:13px;cursor:pointer;">Delete comment</button>' +
-      '</div>';
-
-    document.body.appendChild(popup);
-
-    // Close on outside click
-    setTimeout(function() {
-      document.addEventListener('mousedown', _drOutsideClick);
-    }, 10);
-  }
-
-  function _drOutsideClick(e) {
-    var popup = document.getElementById('dr-mark-popup');
-    if (popup && !popup.contains(e.target)) { drCloseMarkPopup(); }
-  }
-
-  function drPopupSetMark(val) {
-    var popup = document.getElementById('dr-mark-popup');
-    if (!popup) return;
-    var markCol = val >= 4 ? '#16a34a' : val === 3 ? '#ca8a04' : '#dc2626';
-    popup.querySelectorAll('[data-grade]').forEach(function(b) {
-      var bv = parseInt(b.getAttribute('data-grade'));
-      var bc = bv >= 4 ? '#16a34a' : bv === 3 ? '#ca8a04' : '#dc2626';
-      b.style.background  = bv === val ? bc : 'white';
-      b.style.color       = bv === val ? 'white' : bc;
-      b.style.borderColor = bv === val ? bc : '#e2e8f0';
-    });
-    // Store pending value
-    popup._pendingMark = val;
-  }
-
-  function drPopupDelMark() {
-    var popup = document.getElementById('dr-mark-popup');
-    if (!popup) return;
-    popup._pendingMark = 0;
-    popup.querySelectorAll('[data-grade]').forEach(function(b) {
-      var bv = parseInt(b.getAttribute('data-grade'));
-      var bc = bv >= 4 ? '#16a34a' : bv === 3 ? '#ca8a04' : '#dc2626';
-      b.style.background = 'white'; b.style.color = bc; b.style.borderColor = '#e2e8f0';
-    });
-  }
-
-  function drPopupSave() {
-    var popup = document.getElementById('dr-mark-popup');
-    if (!popup) return;
-    var sec = _drPopup.sec; var sid = _drPopup.sid;
-
-    var val     = popup._pendingMark !== undefined ? popup._pendingMark : (parseInt(document.getElementById(sec+'_mark_'+sid).value)||0);
-    var comment = (document.getElementById('popup-comment')||{}).value || '';
-    var late    = (document.getElementById('popup-late')||{}).checked;
-    var early   = (document.getElementById('popup-early')||{}).checked;
-    var absent  = (document.getElementById('popup-absence')||{}).checked;
-
-    // Write to hidden inputs
-    document.getElementById(sec+'_mark_'+sid).value   = val;
-    document.getElementById(sec+'_remark_'+sid).value = comment;
-    if (document.getElementById(sec+'_late_'+sid))
-      document.getElementById(sec+'_late_'+sid).value = late ? 'late' : early ? 'early' : '';
-
-    // Handle absence checkbox
-    var absCb = document.getElementById('absent_'+sid);
-    if (absCb && absCb.checked !== absent) { absCb.checked = absent; drToggleAbsent(sid, absCb); }
-
-    // Update the cell visual
-    drUpdateCell(sec, sid, val, comment, late, early, absent);
-    drCloseMarkPopup();
-  }
-
-  function drPopupDeleteComment() {
-    var popup = document.getElementById('dr-mark-popup');
-    if (!popup) return;
-    var commentEl = document.getElementById('popup-comment');
-    if (commentEl) commentEl.value = '';
-    document.getElementById(_drPopup.sec+'_remark_'+_drPopup.sid).value = '';
-  }
-
-  function drUpdateCell(sec, sid, val, comment, late, early, absent) {
-    var cell = document.getElementById(sec+'_cell_'+sid);
-    if (!cell) return;
-    var col = _sectionColors[sec];
-
-    if (absent) {
-      cell.textContent = 'A';
-      cell.style.background   = '#fee2e2';
-      cell.style.borderColor  = '#ef4444';
-      cell.style.color        = '#ef4444';
-      cell.dataset.mark = 'A';
-      return;
-    }
-
-    var markCol = val >= 4 ? '#16a34a' : val === 3 ? '#ca8a04' : val >= 2 ? '#dc2626' : '';
-    var badge = '';
-    if (late)  badge = '<span style="position:absolute;top:1px;right:2px;font-size:7px;font-weight:900;color:#7c3aed;line-height:1;">L</span>';
-    if (early) badge = '<span style="position:absolute;top:1px;right:2px;font-size:7px;font-weight:900;color:#a16207;line-height:1;">E</span>';
-
-    if (val > 0) {
-      cell.style.background  = markCol;
-      cell.style.borderColor = markCol;
-      cell.style.color       = 'white';
-      cell.style.position    = 'relative';
-      cell.innerHTML = val + badge;
-      cell.dataset.mark = val;
-      // restore hover guard
-      cell.onmouseenter = null; cell.onmouseleave = null;
-    } else {
-      cell.style.background  = comment ? col.bg : 'white';
-      cell.style.borderColor = comment ? col.border : '#e2e8f0';
-      cell.style.color       = comment ? col.active : '#94a3b8';
-      cell.style.position    = 'relative';
-      cell.innerHTML = comment ? '✎' + badge : '—';
-      cell.dataset.mark = 0;
-    }
-  }
-
-  function drCloseMarkPopup() {
-    var popup = document.getElementById('dr-mark-popup');
-    if (popup) popup.remove();
-    document.removeEventListener('mousedown', _drOutsideClick);
-    _drPopup = { sec: null, sid: null };
-  }
-
-  // Keep old name for compatibility
-  function drSetMark(sid, val, btn) {}
-  function drSetMark3(section, sid, val) {}
-
-  function drToggleAbsent(sid, checkbox) {
-    ['cw','hw','disc'].forEach(function(sec) {
-      var cell = document.getElementById(sec+'_cell_'+sid);
-      if (!cell) return;
-      if (checkbox.checked) {
-        drUpdateCell(sec, sid, 0, '', false, false, true);
-        cell.onclick = null; // disable opening popup while absent
-      } else {
-        var val     = parseInt(document.getElementById(sec+'_mark_'+sid).value) || 0;
-        var comment = document.getElementById(sec+'_remark_'+sid).value || '';
-        drUpdateCell(sec, sid, val, comment, false, false, false);
-        // Restore click handler
-        (function(s, id, name) {
-          var nameEl = cell.closest('tr').querySelector('td:first-child');
-          var studentName = nameEl ? nameEl.textContent.trim() : '';
-          cell.onclick = function() { drOpenMarkPopup(s, id, studentName); };
-        })(sec, sid);
-      }
-    });
-  }
-
-  function saveDailyReport() {
-    var cls     = (document.getElementById('dr-class')||{}).value || '';
-    var subject = (document.getElementById('dr-subject')||{}).value || '';
-    var date    = (document.getElementById('dr-date')||{}).value || '';
-    var period  = (document.getElementById('dr-period')||{}).value || '1';
-    var topic   = (document.getElementById('dr-topic')||{}).value || '';
-    var remark  = (document.getElementById('dr-remark')||{}).value || '';
-    var homework= (document.getElementById('dr-homework')||{}).value || '';
-
-    if (!cls)     { showToast('Please select a class.'); return; }
-    if (!subject) { showToast('Please select a subject.'); return; }
-
-    // Collect student marks
-    var wrap = document.getElementById('dr-students-wrap');
-    var students = wrap ? wrap._students || [] : [];
-    var studentEntries = [];
-
-    students.forEach(function(st, i) {
-      var sid = 'st_' + i;
-      var absentEl = document.getElementById('absent_' + sid);
-      var absent   = absentEl ? absentEl.checked : false;
-      function getMark(sec){ var g=document.getElementById(sec+'_mark_'+sid); return g?parseInt(g.value||0):0; }
-      function getRemark(sec){ var r=document.getElementById(sec+'_remark_'+sid); return r?r.value:''; }
-      studentEntries.push({
-        name:       st.surname + ' ' + st.firstname,
-        absent:     absent,
-        cw_mark:    absent ? 'A' : (getMark('cw')||'—'),
-        cw_remark:  getRemark('cw'),
-        hw_mark:    absent ? 'A' : (getMark('hw')||'—'),
-        hw_remark:  getRemark('hw'),
-        disc_mark:  absent ? 'A' : (getMark('disc')||'—'),
-        disc_remark:getRemark('disc'),
+        html += '<span class="pill '+clrClass+'" style="margin-left:8px;">'+(clrClass==='green'?'🟢':clrClass==='yellow'?'🟡':clrClass==='red'?'🔴':'—')+'</span>';
+        html += '</div>';
       });
-    });
-
-    var report = {
-      id:       'dr_' + Date.now(),
-      teacher:  _currentUser ? _currentUser.name : 'Unknown',
-      cls:      cls,
-      subject:  subject,
-      date:     date,
-      period:   period,
-      topic:    topic,
-      remark:   remark,
-      homework: homework,
-      students: studentEntries,
-      timestamp: new Date().toISOString(),
-    };
-
-    dailyReports.unshift(report);
-    saveDailyReports();
-    sbSaveDailyReport(report).then(function(){
-      showToast('✅ Report saved — Class '+cls+' · '+subject);
-    }).catch(function(){
-      showToast('Report saved locally — Class '+cls+' · '+subject+' ✓');
-    });
-    drFilterReports();
-
-    // Switch to view tab
-    switchDailyTab('view');
-
-    // Reset form
-    document.getElementById('dr-class').value   = '';
-    document.getElementById('dr-subject').value = '';
-    document.getElementById('dr-topic').value   = '';
-    document.getElementById('dr-remark').value  = '';
-    document.getElementById('dr-homework').value= '';
-    document.getElementById('dr-students-wrap').innerHTML =
-      '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">👆 Select a class above to load the student list</div>';
-    document.getElementById('dr-students-subtitle').textContent = 'Select a class to load students';
-
-    // Reinit class dropdown
-    var allowed = drGetAllowedClasses();
-    var clsSel = document.getElementById('dr-class');
-    if (clsSel) {
-      clsSel.innerHTML = '<option value="">— Select class —</option>';
-      allowed.forEach(function(c){ var o=document.createElement('option'); o.value=c; o.textContent='Class '+c; clsSel.appendChild(o); });
-    }
-  }
-
-  function drFilterReports() {
-    var cls     = (document.getElementById('dr-filter-class')||{}).value || '';
-    var subject = (document.getElementById('dr-filter-subject')||{}).value || '';
-    var allowed = drGetAllowedClasses();
-    var list    = document.getElementById('dr-reports-list');
-    var sub     = document.getElementById('dr-view-subtitle');
-
-    if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Loading...</div>';
-    sbLoadDailyReports({cls:cls,subject:subject}).then(function(sbReps){
-      var ids     = new Set(sbReps.map(function(r){ return r.id; }));
-      var local   = dailyReports.filter(function(r){ return !ids.has(r.id); });
-      var all     = sbReps.concat(local);
-      var filtered = all.filter(function(r){
-        var c = r.cls||r.class;
-        return allowed.indexOf(c)!==-1&&(!cls||c===cls)&&(!subject||r.subject===subject);
-      });
-      _drRenderReports(filtered, sub, list);
-    }).catch(function(){
-      var filtered = dailyReports.filter(function(r){
-        return allowed.indexOf(r.cls)!==-1&&(!cls||r.cls===cls)&&(!subject||r.subject===subject);
-      });
-      _drRenderReports(filtered, sub, list);
-    });
-  }
-  function _drRenderReports(filtered, sub, list) {
-    // Normalise field names: Supabase uses teacher_name/class, local uses teacher/cls
-    filtered = filtered.map(function(r){
-      return {
-        id:       r.id || r.timestamp || '',
-        teacher:  r.teacher || r.teacher_name || '',
-        cls:      r.cls || r['class'] || '',
-        subject:  r.subject || '',
-        date:     r.date || (r.created_at||'').slice(0,10) || '',
-        period:   r.period || '',
-        topic:    r.topic || '',
-        remark:   r.remark || '',
-        homework: r.homework || '',
-        students: r.students || [],
-      };
-    });
-    // Deduplicate: same class+subject+date+period = same lesson
-    var _seen = {};
-    filtered = filtered.filter(function(r){
-      var key = (r.cls||'')+'|'+(r.subject||'')+'|'+(r.date||'')+'|'+(r.period||'')+'|'+(r.topic||'');
-      if(_seen[key]) return false;
-      _seen[key] = true;
-      return true;
-    });
-    if (sub) sub.textContent = filtered.length + ' report' + (filtered.length!==1?'s':'') + ' found';
-    if (!list) return;
-
-    if (!filtered.length) {
-      list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">No reports found.</div>';
-      return;
-    }
-
-    var html = '';
-    filtered.forEach(function(rep) {
-      var marksGiven = rep.students ? rep.students.filter(function(s){ return s.mark !== '—' && s.mark !== 0; }).length : 0;
-      var absent     = rep.students ? rep.students.filter(function(s){ return s.absent; }).length : 0;
-      var avgMark    = rep.students ? (function(){
-        var nums = rep.students.filter(function(s){ return !s.absent && typeof s.mark === 'number' && s.mark > 0; });
-        return nums.length ? (nums.reduce(function(a,b){ return a+(b.mark||0); },0)/nums.length).toFixed(1) : '—';
-      })() : '—';
-
-      html += '<div style="border-bottom:1.5px solid var(--cream);">';
-      // Report header row
-      html += '<div style="display:flex;align-items:center;gap:12px;padding:14px 20px;cursor:pointer;" onclick="drToggleReport(\''+rep.id+'\')">';
-      html += '<div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--navy),#1a2448);display:flex;align-items:center;justify-content:center;font-weight:900;font-family:\'Playfair Display\',serif;color:white;font-size:14px;flex-shrink:0;">'+rep.cls+'</div>';
-      html += '<div style="flex:1;">';
-      html += '<div style="font-weight:700;font-size:13.5px;color:var(--navy);">'+rep.subject+' <span style="font-weight:400;color:var(--muted);">· Period '+rep.period+'</span></div>';
-      html += '<div style="font-size:12px;color:var(--muted);margin-top:2px;">'+rep.teacher+' · '+rep.date+'</div>';
-      if (rep.topic) html += '<div style="font-size:12px;color:var(--slate);margin-top:2px;font-style:italic;">📖 '+rep.topic+'</div>';
-      html += '</div>';
-      html += '<div style="display:flex;gap:10px;align-items:center;">';
-      if (avgMark !== '—') html += '<div style="text-align:center;"><div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:900;color:var(--gold);">'+avgMark+'</div><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;">Avg Mark</div></div>';
-      if (absent > 0) html += '<div style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;">'+absent+' absent</div>';
-      html += '<div style="font-size:18px;color:var(--muted);" id="dr-arrow-'+rep.id+'">›</div>';
-      html += '</div>';
-      html += '</div>';
-
-      // Expandable detail
-      html += '<div id="dr-detail-'+rep.id+'" style="display:none;padding:0 20px 16px;background:var(--cream);">';
-
-      // Remarks & homework
-      if (rep.remark) {
-        html += '<div style="padding:10px 14px;background:var(--white);border-radius:8px;margin-bottom:10px;font-size:13px;">';
-        html += '<span style="font-weight:700;color:var(--navy);">📝 Class Remark: </span>'+rep.remark+'</div>';
-      }
-      if (rep.homework) {
-        html += '<div style="padding:10px 14px;background:#fef3c7;border-radius:8px;margin-bottom:10px;font-size:13px;">';
-        html += '<span style="font-weight:700;color:#92400e;">📚 Homework: </span>'+rep.homework+'</div>';
-      }
-
-      // Student marks table
-      if (rep.students && rep.students.length) {
-        html += '<div style="overflow-x:auto;">';
-        html += '<table style="width:100%;border-collapse:collapse;font-size:12.5px;background:var(--white);border-radius:8px;overflow:hidden;">';
-        html += '<thead><tr style="background:var(--navy);color:white;">';
-        html += '<th style="padding:8px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;">Student</th>';
-        html += '<th style="padding:7px 8px;text-align:center;font-weight:600;font-size:10px;color:#90c0ff;">📖 CW</th>';
-        html += '<th style="padding:7px 8px;text-align:center;font-weight:600;font-size:10px;color:#fde68a;">📚 HW</th>';
-        html += '<th style="padding:7px 8px;text-align:center;font-weight:600;font-size:10px;color:#fca5a5;">🛡️ Disc</th>';
-        html += '<th style="padding:7px 12px;text-align:left;font-weight:600;font-size:10px;color:#d1d5db;">Remarks</th>';
-        html += '</tr></thead><tbody>';
-        rep.students.forEach(function(s, si) {
-          var bg2 = si%2===0?'var(--white)':'#fafaf7';
-          var markCol = s.absent?'#b91c1c':typeof s.mark==='number'&&s.mark>=4?'#16a34a':typeof s.mark==='number'&&s.mark===3?'#ca8a04':typeof s.mark==='number'&&s.mark<=2&&s.mark>0?'#dc2626':'var(--muted)';
-          var cwCol  = s.absent?'#b91c1c':typeof s.cw_mark==='number'&&s.cw_mark>=4?'#16a34a':typeof s.cw_mark==='number'&&s.cw_mark===3?'#ca8a04':typeof s.cw_mark==='number'&&s.cw_mark<=2&&s.cw_mark>0?'#dc2626':'var(--muted)';
-          var hwCol  = s.absent?'#b91c1c':typeof s.hw_mark==='number'&&s.hw_mark>=4?'#16a34a':typeof s.hw_mark==='number'&&s.hw_mark===3?'#ca8a04':typeof s.hw_mark==='number'&&s.hw_mark<=2&&s.hw_mark>0?'#dc2626':'var(--muted)';
-          var discCol= s.absent?'#b91c1c':typeof s.disc_mark==='number'&&s.disc_mark>=4?'#16a34a':typeof s.disc_mark==='number'&&s.disc_mark===3?'#ca8a04':typeof s.disc_mark==='number'&&s.disc_mark<=2&&s.disc_mark>0?'#dc2626':'var(--muted)';
-          var remarks = [s.cw_remark,s.hw_remark,s.disc_remark].filter(Boolean).join(' · ');
-          html += '<tr style="background:'+bg2+';">';
-          html += '<td style="padding:6px 12px;font-weight:600;font-size:12.5px;">'+s.name+'</td>';
-          html += '<td style="padding:6px 8px;text-align:center;font-weight:900;color:'+cwCol+';font-size:14px;">'+(s.absent?'A':s.cw_mark||'—')+'</td>';
-          html += '<td style="padding:6px 8px;text-align:center;font-weight:900;color:'+hwCol+';font-size:14px;">'+(s.absent?'A':s.hw_mark||'—')+'</td>';
-          html += '<td style="padding:6px 8px;text-align:center;font-weight:900;color:'+discCol+';font-size:14px;">'+(s.absent?'A':s.disc_mark||'—')+'</td>';
-          html += '<td style="padding:6px 12px;color:var(--muted);font-size:11.5px;">'+remarks+'</td>';
-          html += '</tr>';
-        });
-        html += '</tbody></table></div>';
-      }
-      html += '</div>';
-      html += '</div>';
-    });
-
-    list.innerHTML = html;
-  }
-
-  function drToggleReport(id) {
-    var detail = document.getElementById('dr-detail-' + id);
-    var arrow  = document.getElementById('dr-arrow-' + id);
-    if (!detail) return;
-    var open = detail.style.display !== 'none';
-    detail.style.display = open ? 'none' : 'block';
-    if (arrow) arrow.textContent = open ? '›' : '⌄';
-  }
-
-  function drExportReports() {
-    var allowed = drGetAllowedClasses();
-    var data = dailyReports.filter(function(r){ return allowed.indexOf(r.cls)!==-1; });
-    if (!data.length) { showToast('No reports to export.'); return; }
-    var lines = ['Date,Teacher,Class,Subject,Period,Topic,Avg Mark,Absent,Class Remark,Homework'];
-    data.forEach(function(r) {
-      var nums = (r.students||[]).filter(function(s){ return !s.absent && typeof s.mark==='number' && s.mark>0; });
-      var avg  = nums.length ? (nums.reduce(function(a,b){return a+b.mark;},0)/nums.length).toFixed(1) : '';
-      var ab   = (r.students||[]).filter(function(s){ return s.absent; }).length;
-      lines.push([r.date,r.teacher,r.cls,r.subject,r.period,
-        '"'+(r.topic||'').replace(/"/g,'""')+'"', avg, ab,
-        '"'+(r.remark||'').replace(/"/g,'""')+'"',
-        '"'+(r.homework||'').replace(/"/g,'""')+'"',
-      ].join(','));
-    });
-    var blob = new Blob([lines.join('\n')], {type:'text/csv'});
-    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = 'daily_reports_redbridge.csv'; a.click();
-    showToast('Reports exported ✓');
-  }
-
-  function switchDailyTab(tab) {
-    var submit = document.getElementById('dr-submit-section');
-    var view   = document.getElementById('dr-view-section');
-    var btnSub = document.getElementById('dr-tab-submit');
-    var btnView= document.getElementById('dr-tab-view');
-    if (tab === 'submit') {
-      if (submit) submit.style.display = '';
-      if (view)   view.style.display   = 'none';
-      if (btnSub)  { btnSub.className  = 'btn btn-primary'; }
-      if (btnView) { btnView.className = 'btn btn-outline'; }
-    } else {
-      if (submit) submit.style.display = 'none';
-      if (view)   view.style.display   = '';
-      if (btnSub)  { btnSub.className  = 'btn btn-outline'; }
-      if (btnView) { btnView.className = 'btn btn-primary'; }
-      drFilterReports();
-    }
-  }
-
-  // Hook into showPanel to init daily report when opened
-  var _drOrigShowPanel = showPanel;
-  showPanel = function(id, el) {
-    _drOrigShowPanel(id, el);
-    if (id === 'dailyreport') {
-      setTimeout(drInitPanel, 50);
-    }
-  };
-
-
-  // ══ SUPABASE CLIENT ══
-  var _SB_URL='https://rqbdfwdegblwzbdqjsdo.supabase.co',_SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYmRmd2RlZ2Jsd3piZHFqc2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMjEzMzgsImV4cCI6MjA4OTc5NzMzOH0.GdfidDRBpdD1tZEam7_gjWaj5basR60FOjUOxvL6V2k';
-  function sbFetch(table,method,body,params){
-    var url=_SB_URL+'/rest/v1/'+table+(params?'?'+params:'');
-    var opts={method:method||'GET',headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Content-Type':'application/json','Prefer':method==='POST'?'return=representation':''}};
-    if(body) opts.body=JSON.stringify(body);
-    return fetch(url,opts).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t);});return r.status===204?{}:r.json();});
-  }
-  function sbSaveDailyReport(rep){
-    return sbFetch('daily_reports','POST',{teacher_name:rep.teacher,teacher_username:_currentUser?_currentUser.username:'',class:rep.cls,subject:rep.subject,date:rep.date,period:rep.period,topic:rep.topic||'',remark:rep.remark||'',homework:rep.homework||'',students:rep.students||[]});
-  }
-  function sbLoadDailyReports(f){
-    var u=_currentUser;if(!u)return Promise.resolve([]);
-    var p='order=created_at.desc&limit=200';
-    if(u.access!=='all'&&u.role!=='admin')p+='&teacher_username=eq.'+encodeURIComponent(u.username);
-    if(f&&f.cls)p+='&class=eq.'+encodeURIComponent(f.cls);
-    if(f&&f.subject)p+='&subject=eq.'+encodeURIComponent(f.subject);
-    return sbFetch('daily_reports','GET',null,p);
-  }
-  function sbSaveObservation(obs){
-    return sbFetch('observations','POST',{observer:obs.observer||(_currentUser?_currentUser.name:''),teacher:obs.teacher,class:obs.cls,subject:obs.subject,date:obs.date,scores:obs.scores,total:obs.total,strengths:obs.strengths||'',development:obs.development||'',action:obs.action||''});
-  }
-  function sbLoadObservations(){return sbFetch('observations','GET',null,'order=created_at.desc&limit=100');}
-  function sbSaveAction(a){return sbFetch('actions','POST',{created_by:_currentUser?_currentUser.name:'',type:a.type,description:a.description||'',assigned_to:a.assigned_to||'',due_date:a.due_date||null,priority:a.priority||'medium'});}
-  function sbTest(){return sbFetch('daily_reports','GET',null,'limit=1').then(function(){return true;}).catch(function(){return false;});}
-  function updateCloudStatus(){
-    var dot=document.getElementById('sb-dot'),label=document.getElementById('sb-label');
-    if(dot)dot.style.background='#f59e0b';if(label)label.textContent='Checking...';
-    sbTest().then(function(ok){
-      if(dot)dot.style.background=ok?'#16a34a':'#ef4444';
-      if(label)label.textContent=ok?'Cloud ✓':'Offline';
-    }).catch(function(){if(dot)dot.style.background='#ef4444';if(label)label.textContent='Offline';});
-  }
-  setTimeout(updateCloudStatus,1500);
-  setInterval(updateCloudStatus,30000);
-
-
-  // ══════════════════════════════════════════════════════
-  // TIMETABLE PANEL
-  // ══════════════════════════════════════════════════════
-
-  var _ttView = 'school'; // 'school' or 'personal'
-
-  var PERIOD_TIMES = {
-    1:'08:10–09:00', 2:'09:45–10:35', 3:'10:40–11:30',
-    4:'11:35–12:25', 5:'13:45–14:35', 6:'14:40–15:30', 7:'16:00–16:50'
-  };
-  var BREAK_AFTER = {
-    1:'☕ Breakfast · 45 min', 4:'🍽️ Lunch · 80 min', 6:'🥪 Snack · 30 min'
-  };
-  var DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-  var DAY_SHORT = {Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri'};
-
-  // Subject colour coding
-  var SUBJ_COLORS = {
-    'ENGLISH':        '#1e40af', 'SCIENCE':        '#15803d', 'MATHS':          '#7c3aed',
-    'MATHS in ENG':   '#6d28d9', 'CAMBRIDGE MATHS':'#7c3aed', 'PHYSICS':        '#0e7490',
-    'CHEMISTRY':      '#b45309', 'BIOLOGY':        '#166534', 'RUSSIAN':        '#991b1b',
-    'RUSSIAN LANGUAGE':'#991b1b','GP-HISTORY':     '#92400e', 'GP-GEOGRAPHY':   '#92400e',
-    'GP (HIST-GEO)':  '#92400e', 'ICT':            '#0f766e', 'ART':            '#be185d',
-    'PHYSICAL EDU.':  '#065f46', 'LITERATURE':     '#7e22ce', 'ACTIVE ENGLISH': '#1d4ed8',
-    'UZBEK LANGUAGE': '#b91c1c', 'ECONOMICS':      '#0369a1', 'BUSINESS':       '#0369a1',
-    'TECHNICAL DRAWING':'#374151','CRAFT':          '#92400e',
-  };
-
-  function ttSubjColor(subj) {
-    var key = (subj||'').toUpperCase();
-    return SUBJ_COLORS[key] || '#374151';
-  }
-
-  function ttInitPanel() {
-    // Populate class filter
-    var sel = document.getElementById('tt-class-filter');
-    if (sel && sel.options.length <= 1) {
-      var classes = ['1A','1B','1C','2A','2B','2C','3A','3B','3C',
-        '4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'];
-      classes.forEach(function(c) {
-        var o = document.createElement('option');
-        o.value = c; o.textContent = 'Class ' + c;
-        sel.appendChild(o);
-      });
-    }
-
-    // Set today's day filter
-    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var today = days[new Date().getDay()];
-    if (today === 'Sunday' || today === 'Saturday') today = 'Monday';
-    var dayFilter = document.getElementById('tt-day-filter');
-    if (dayFilter) dayFilter.value = today;
-
-    // Hide class filter for personal view
-    var u = _currentUser;
-    if (u && u.access !== 'all' && u.role !== 'admin') {
-      _ttView = 'personal';
-      ttSetView('personal');
-    } else {
-      ttSetView('school');
-    }
-
-    ttRenderTodayBar(today);
-    ttRender();
-  }
-
-  function ttSetView(view) {
-    _ttView = view;
-    var btnSchool   = document.getElementById('tt-view-school');
-    var btnPersonal = document.getElementById('tt-view-personal');
-    var clsFilter   = document.getElementById('tt-class-filter');
-
-    if (btnSchool)   { btnSchool.style.background   = view==='school'  ?'var(--navy)':'white'; btnSchool.style.color   = view==='school'  ?'white':'var(--navy)'; }
-    if (btnPersonal) { btnPersonal.style.background = view==='personal'?'var(--navy)':'white'; btnPersonal.style.color = view==='personal'?'white':'var(--navy)'; }
-    if (clsFilter)   clsFilter.style.display = view==='school' ? '' : 'none';
-    ttRender();
-  }
-
-  function ttRenderTodayBar(today) {
-    var bar = document.getElementById('tt-today-lessons');
-    if (!bar) return;
-    var u = _currentUser;
-    var lessons = [];
-
-    if (_ttView === 'personal' || (u && u.access !== 'all')) {
-      // Teacher's personal today
-      var teacherName = u && u.teacherName;
-      if (teacherName && typeof TEACHER_SCHEDULE !== 'undefined') {
-        lessons = (TEACHER_SCHEDULE[teacherName] || {})[today] || [];
-      }
-    } else {
-      // Show all periods happening today (one per period)
-      for (var p = 1; p <= 7; p++) {
-        lessons.push({period: p, time: PERIOD_TIMES[p], summary: true});
-      }
-    }
-
-    if (!lessons.length) {
-      bar.innerHTML = '<span style="font-size:12px;color:rgba(255,255,255,0.5);">No lessons today</span>';
-      return;
-    }
-
-    var html = '';
-    lessons.forEach(function(l) {
-      if (l.summary) {
-        html += '<div style="padding:4px 10px;background:rgba(255,255,255,0.1);border-radius:6px;font-size:11px;color:white;font-weight:600;">P'+l.period+' '+PERIOD_TIMES[l.period]+'</div>';
-      } else {
-        var col = ttSubjColor(l.subject);
-        html += '<div style="padding:4px 12px;background:'+col+';border-radius:6px;font-size:11px;color:white;font-weight:700;cursor:pointer;" onclick="showPanel(\'dailyreport\',null);setTimeout(function(){drQuickFill('+JSON.stringify(l).replace(/"/g,"'").replace(/'/g,"\\'")+'_NOFIX)},100);">P'+l.period+' '+l.class+' '+l.subject+'</div>';
-      }
-    });
-    bar.innerHTML = html;
-  }
-
-  function ttRender() {
-    var grid    = document.getElementById('tt-grid');
-    var dayFilt = (document.getElementById('tt-day-filter')||{}).value || 'all';
-    var clsFilt = (document.getElementById('tt-class-filter')||{}).value || 'all';
-    if (!grid) return;
-
-    var days = dayFilt === 'all' ? DAYS : [dayFilt];
-    var u    = _currentUser;
-
-    if (_ttView === 'personal') {
-      ttRenderPersonal(grid, days, u);
-    } else {
-      ttRenderSchool(grid, days, clsFilt);
-    }
-  }
-
-  // ── PERSONAL TIMETABLE ──
-  function ttRenderPersonal(grid, days, u) {
-    var teacherName = u && u.teacherName;
-    if (!teacherName || typeof TEACHER_SCHEDULE === 'undefined') {
-      grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">No timetable found for your account.</div>';
-      return;
-    }
-    var sched = TEACHER_SCHEDULE[teacherName] || {};
-
-    var html = '<div style="display:grid;grid-template-columns:80px repeat('+days.length+',1fr);gap:2px;min-width:400px;">';
-
-    // Header row
-    html += '<div style="padding:8px;background:var(--cream);border-radius:8px 0 0 0;"></div>';
-    days.forEach(function(day) {
-      var isToday = day === ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
-      html += '<div style="padding:10px 8px;text-align:center;font-weight:700;font-size:12px;background:'+(isToday?'var(--navy)':'var(--cream)')+';color:'+(isToday?'white':'var(--slate)')+';border-radius:4px;">'+day+'</div>';
-    });
-
-    // Period rows
-    for (var p = 1; p <= 7; p++) {
-      // Period label
-      html += '<div style="padding:8px 6px;background:var(--cream);font-size:10px;font-weight:700;color:var(--muted);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">' +
-        '<div style="color:var(--navy);font-size:12px;font-weight:900;">P'+p+'</div>' +
-        '<div>'+PERIOD_TIMES[p]+'</div></div>';
-
-      days.forEach(function(day) {
-        var dayLessons = sched[day] || [];
-        var lesson = dayLessons.find(function(l){ return l.period === p; });
-        if (lesson) {
-          var col = ttSubjColor(lesson.subject);
-          html += '<div onclick="showPanel(\'dailyreport\',null);setTimeout(function(){drQuickFill({class:\''+lesson.class+'\',subject:\''+lesson.subject+'\',period:'+lesson.period+',time:\''+lesson.time+'\',room:\''+lesson.room+'\'})},150);" style="padding:8px 10px;background:'+col+'18;border:1.5px solid '+col+'44;border-radius:8px;cursor:pointer;transition:all 0.15s;" onmouseenter="this.style.background=\''+col+'33\'" onmouseleave="this.style.background=\''+col+'18\'">' +
-            '<div style="font-size:11.5px;font-weight:700;color:'+col+';">'+lesson.subject+'</div>' +
-            '<div style="font-size:10px;color:var(--muted);margin-top:2px;">Class '+lesson.class+
-            (lesson.room ? ' · Rm '+lesson.room : '')+'</div>' +
-            '<div style="margin-top:5px;"><span style="font-size:9px;background:'+col+';color:white;padding:2px 7px;border-radius:10px;font-weight:700;">📝 Fill Report</span></div>' +
-          '</div>';
-        } else {
-          html += '<div style="padding:8px;background:#f9f9f9;border-radius:8px;border:1px dashed #e5e7eb;text-align:center;font-size:10px;color:#d1d5db;">—</div>';
-        }
-      });
-
-      // Break row after certain periods
-      if (BREAK_AFTER[p]) {
-        html += '<div style="padding:6px;background:#fef9e7;border-radius:6px;font-size:10px;color:#92400e;font-weight:600;text-align:center;">'+BREAK_AFTER[p]+'</div>';
-        for (var d2=0; d2<days.length; d2++) {
-          html += '<div style="padding:6px;background:#fef9e7;border-radius:6px;font-size:10px;color:#92400e;text-align:center;">'+BREAK_AFTER[p].split(' ')[0]+'</div>';
-        }
-      }
     }
     html += '</div>';
 
-    // Weekly summary
-    var totalLessons = 0;
-    DAYS.forEach(function(d){ totalLessons += (sched[d]||[]).length; });
-    html += '<div style="margin-top:16px;padding:14px 18px;background:var(--cream);border-radius:12px;display:flex;gap:20px;flex-wrap:wrap;">' +
-      '<div style="text-align:center;"><div style="font-size:22px;font-weight:900;font-family:Playfair Display,serif;color:var(--navy);">'+totalLessons+'</div><div style="font-size:11px;color:var(--muted);font-weight:600;">Lessons/week</div></div>' +
-      '<div style="text-align:center;"><div style="font-size:22px;font-weight:900;font-family:Playfair Display,serif;color:var(--navy);">'+Object.keys(sched).length+'</div><div style="font-size:11px;color:var(--muted);font-weight:600;">Teaching days</div></div>' +
-      '<div style="flex:1;font-size:12px;color:var(--muted);display:flex;align-items:center;">Click any lesson cell to jump to Daily Report and fill marks for that class.</div>' +
-    '</div>';
-
-    grid.innerHTML = html;
-  }
-
-  // ── FULL SCHOOL TIMETABLE ──
-  function ttRenderSchool(grid, days, clsFilt) {
-    var ALL_CLASSES = ['1A','1B','1C','2A','2B','2C','3A','3B','3C',
-      '4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'];
-    var classes = clsFilt === 'all' ? ALL_CLASSES : [clsFilt];
-
-    // For each day, show a grid of Period × Class
-    var html = '';
-    days.forEach(function(day) {
-      var isToday = day === ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
-      html += '<div style="margin-bottom:24px;">';
-      html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
-        '<div style="padding:6px 16px;background:'+(isToday?'var(--navy)':'var(--slate)')+';color:white;border-radius:8px;font-weight:700;font-size:14px;">'+day+(isToday?' · Today':'')+'</div>' +
-        '</div>';
-
-      // Table
-      html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11.5px;">';
-
-      // Header: periods
-      html += '<thead><tr><th style="padding:8px 12px;background:var(--navy);color:white;font-weight:700;text-align:left;min-width:80px;border-radius:6px 0 0 0;">Period</th>';
-      classes.forEach(function(cls) {
-        html += '<th style="padding:8px 10px;background:var(--navy);color:white;font-weight:700;text-align:center;min-width:100px;">'+cls+'</th>';
+    // Discipline
+    html += '<div class="section"><div class="section-title">Discipline & Conduct</div>';
+    if (discEl) {
+      var drows = discEl.querySelectorAll('div[style*="border-radius:8px"]');
+      drows.forEach(function(row) {
+        var iconEl = row.querySelector('div[style*="font-size:18px"], div[style*="font-size:14"]');
+        var nameEl2 = row.querySelector('div[style*="font-size:13px"]');
+        var meanEl = row.querySelector('div[style*="font-size:10.5px"]');
+        var tlEl2  = row.querySelector('div[style*="border-radius:7px"], div[style*="border-radius:6px"]');
+        if (!nameEl2) return;
+        var clrStyle2 = tlEl2 ? tlEl2.style.background : '#f3f4f6';
+        var clrClass2 = clrStyle2.includes('dcfce7')||clrStyle2.includes('16a34a') ? 'green' :
+                        clrStyle2.includes('fef9c3')||clrStyle2.includes('ca8a04') ? 'yellow' :
+                        clrStyle2.includes('fee2e2')||clrStyle2.includes('dc2626') ? 'red' : 'grey';
+        html += '<div class="disc-row">';
+        html += '<span style="margin-right:8px;">'+(iconEl?iconEl.textContent:'•')+'</span>';
+        html += '<span class="disc-name">'+nameEl2.textContent+'</span>';
+        html += '<span class="pill '+clrClass2+'">'+(meanEl?meanEl.textContent:'')+'</span>';
+        html += '</div>';
       });
-      html += '</tr></thead><tbody>';
+    }
+    html += '</div></div>'; // end two-col
 
-      for (var p = 1; p <= 7; p++) {
-        html += '<tr style="border-bottom:1px solid var(--cream);">';
-        html += '<td style="padding:8px 12px;background:var(--cream);font-weight:700;font-size:11px;color:var(--slate);white-space:nowrap;">' +
-          '<div style="font-size:12px;font-weight:900;color:var(--navy);">P'+p+'</div>' +
-          '<div style="font-size:9.5px;">'+PERIOD_TIMES[p]+'</div></td>';
+    // Trend
+    html += '<div class="section"><div class="section-title">Month-on-Month Trend</div>';
+    if (trendEl) {
+      var trows = trendEl.querySelectorAll('div[style*="display:flex"]');
+      trows.forEach(function(row) {
+        html += '<div class="trend-row">'+row.innerHTML+'</div>';
+      });
+    }
+    html += '</div>';
 
-        classes.forEach(function(cls) {
-          var lesson = (TIMETABLE[cls]||{})[day]&&(TIMETABLE[cls]||{})[day][p];
-          if (lesson) {
-            var col = ttSubjColor(lesson.subject);
-            html += '<td style="padding:6px 8px;text-align:center;background:white;">' +
-              '<div style="background:'+col+'15;border:1px solid '+col+'33;border-radius:6px;padding:5px 6px;">' +
-              '<div style="font-weight:700;color:'+col+';font-size:11px;">'+lesson.subject+'</div>' +
-              '<div style="font-size:9.5px;color:var(--muted);margin-top:1px;">'+(lesson.teacher ? lesson.teacher.split(' ')[0] : '')+'</div>' +
-              (lesson.room ? '<div style="font-size:9px;color:#9ca3af;">Rm '+lesson.room+'</div>' : '') +
-              '</div></td>';
-          } else {
-            html += '<td style="padding:6px 8px;text-align:center;background:white;color:#e5e7eb;font-size:11px;">—</td>';
-          }
-        });
-        html += '</tr>';
+    // Scores
+    html += '<div class="section"><div class="section-title">Assessment Scores</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;">';
+    if (scoresEl) {
+      var pills = scoresEl.querySelectorAll('div[style*="border-radius:10px"]');
+      pills.forEach(function(pill) {
+        html += '<div class="score-pill" style="background:'+pill.style.background+';border:'+pill.style.border+';">';
+        var sn = pill.querySelector('div[style*="text-transform"]');
+        var sv = pill.querySelector('div[style*="font-size:2"], div[style*="font-size:22"]');
+        html += '<div class="score-subj">'+(sn?sn.textContent:'')+'</div>';
+        html += '<div class="score-val">'+(sv?sv.textContent:'')+'</div>';
+        html += '</div>';
+      });
+    }
+    html += '</div></div>';
 
-        // Break rows
-        if (BREAK_AFTER[p]) {
-          html += '<tr style="background:#fef9e7;"><td colspan="'+(classes.length+1)+'" style="padding:5px 12px;font-size:10.5px;color:#92400e;font-weight:600;text-align:center;">'+BREAK_AFTER[p]+'</td></tr>';
-        }
-      }
-      html += '</tbody></table></div>';
+    // Extracurricular
+    if (extraEl && extraEl.children.length > 0 && extraEl.textContent.trim()) {
+      html += '<div class="section"><div class="section-title">Extracurricular</div>';
+      html += '<div style="background:#1a1a2e;color:white;padding:10px 14px;border-radius:8px;">'+extraEl.innerHTML+'</div>';
       html += '</div>';
-    });
+    }
 
-    grid.innerHTML = html || '<div style="padding:40px;text-align:center;color:var(--muted);">No timetable data found.</div>';
-  }
+    // Footer
+    html += '<div style="margin-top:20px;padding-top:10px;border-top:1px solid #eee;font-size:10px;color:#aaa;display:flex;justify-content:space-between;">';
+    html += '<span>Redbridge International School, Samarkand</span>';
+    html += '<span>Printed: '+new Date().toLocaleDateString('en-GB')+'</span>';
+    html += '</div>';
 
-  // Hook showPanel for timetable init
-  var _ttOrigShowPanel = showPanel;
-  showPanel = function(id, el) {
-    _ttOrigShowPanel(id, el);
-    if (id === 'timetable') setTimeout(ttInitPanel, 50);
-  };
-
-
-</script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      var swCode = "const CACHE='redbridge-v1';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(clients.claim());});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));});";
-      var blob = new Blob([swCode],{type:'application/javascript'});
-      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function(){});
-    });
-  }
-</script>
+    html += '
+<!-- ── NEW ACTION MODAL ── -->
+<div id="new-action-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(10,15,46,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:16px;width:min(560px,96vw);box-shadow:0 24px 60px rgba(0,0,0,0.3);">
+    <div style="background:#0a0f2e;padding:16px 22px;border-radius:16px 16px 0 0;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:white;">New Action</div>
+      <button onclick="closeNewActionModal()" style="width:32px;height:32px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);cursor:pointer;font-size:15px;color:white;">X</button>
+    </div>
+    <div style="padding:16px 22px 0;display:flex;gap:8px;flex-wrap:wrap;">
+      <button onclick="quickAction('incident')"    style="padding:7px 14px;border-radius:8px;border:1.5px solid #e5e7eb;background:white;font-size:12px;font-weight:600;cursor:pointer;">Shield Log Incident</button>
+      <button onclick="quickAction('observation')" style="padding:7px 14px;border-radius:8px;border:1.5px solid #e5e7eb;background:white;font-size:12px;font-weight:600;cursor:pointer;">Lens Observation</button>
+      <button onclick="quickAction('alert')"       style="padding:7px 14px;border-radius:8px;border:1.5px solid #e5e7eb;background:white;font-size:12px;font-weight:600;cursor:pointer;">Bell View Alerts</button>
+      <button onclick="quickAction('ai')"          style="padding:7px 14px;border-radius:8px;border:1.5px solid #e5e7eb;background:white;font-size:12px;font-weight:600;cursor:pointer;">AI Ask AI</button>
+    </div>
+    <div style="padding:16px 22px;">
+      <div style="font-size:11px;font-weight:700;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Custom Action</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#8a8a8a;text-transform:uppercase;margin-bottom:4px;">Type</div>
+          <select id="action-type" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #e5e7eb;font-size:13px;outline:none;">
+            <option value="task">Task</option>
+            <option value="followup">Follow Up</option>
+            <option value="meeting">Meeting</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#8a8a8a;text-transform:uppercase;margin-bottom:4px;">Assigned To</div>
+          <input id="action-assigned" type="text" placeholder="Teacher or staff name" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #e5e7eb;font-size:13px;outline:none;">
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:#8a8a8a;text-transform:uppercase;margin-bottom:4px;">Description</div>
+        <textarea id="action-desc" placeholder="What needs to be done..." style="width:100%;height:70px;border-radius:8px;border:1.5px solid #e5e7eb;padding:8px 10px;font-size:13px;resize:none;outline:none;"></textarea>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:#8a8a8a;text-transform:uppercase;margin-bottom:4px;">Due Date</div>
+        <input id="action-due" type="date" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e5e7eb;font-size:13px;outline:none;">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button onclick="closeNewActionModal()" style="padding:9px 20px;border-radius:8px;border:1.5px solid #e5e7eb;background:white;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+        <button onclick="saveNewAction()" style="padding:9px 22px;border-radius:8px;border:none;background:#0a0f2e;color:white;font-size:13px;font-weight:700;cursor:pointer;">Save Action</button>
+      </div>
+    </div>
+    <div style="padding:0 22px 16px;">
+      <div style="font-size:11px;font-weight:700;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Recent Actions</div>
+      <div id="action-log-list" style="max-height:160px;overflow-y:auto;border:1.5px solid #e5e7eb;border-radius:8px;padding:4px 0;">
+        <div style="font-size:12px;color:#8a8a8a;text-align:center;padding:16px;">No actions logged yet.</div>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- ══════════════════════════════════════════════════════ -->
 <!-- STUDENT PROGRESS REPORT MODAL -->
 <!-- ══════════════════════════════════════════════════════ -->
