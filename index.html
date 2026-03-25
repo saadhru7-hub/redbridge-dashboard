@@ -2324,48 +2324,36 @@
 
     <!-- ── AI ASSISTANT PANEL ── -->
     <div class="panel" id="panel-ai">
-      <div style="margin-bottom:20px;">
-        <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:#0a0f2e;margin-bottom:4px;">Principal's Handbook</div>
-        <div style="font-size:13px;color:#6b7280;">Evidence-based guidance for school leadership</div>
+      <div class="card ai-panel" style="max-width:100%;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">✦ AI Principal's Assistant</div>
+            <div class="card-subtitle">Powered by Claude — ask about discipline, teacher strategies, Cambridge standards, or academic planning</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="quick-prompts">
+            <button class="quick-prompt" onclick="sendQuick(this)">Draft an improvement plan for Mr. Okafor</button>
+            <button class="quick-prompt" onclick="sendQuick(this)">How do I handle the academic dishonesty case?</button>
+            <button class="quick-prompt" onclick="sendQuick(this)">Strategies to improve ICT pass rates</button>
+            <button class="quick-prompt" onclick="sendQuick(this)">Write a letter to parents about attendance</button>
+            <button class="quick-prompt" onclick="sendQuick(this)">Best practices for parent-teacher meetings</button>
+            <button class="quick-prompt" onclick="sendQuick(this)">Cambridge AS-Level grading benchmarks</button>
+          </div>
+
+          <div class="chat-messages" id="chat-messages">
+            <div class="msg ai">
+              <div class="msg-avatar">✦</div>
+              <div class="msg-bubble">Good morning, Mr. Sharma. I'm your AI Principal's Assistant. I can help you with discipline protocols, teacher improvement strategies, academic monitoring, Cambridge alignment, and drafting professional communications. How can I support you today?</div>
+            </div>
+          </div>
+
+          <div class="chat-input-row">
+            <input class="chat-input" id="chat-input" type="text" placeholder="Ask anything about school leadership, discipline, academics…" onkeydown="if(event.key==='Enter')sendMessage()">
+            <button class="send-btn" id="send-btn" onclick="sendMessage()">Send →</button>
+          </div>
+        </div>
       </div>
-      <input id="handbook-search" type="text" placeholder="Search topics..." oninput="handbookFilter(this.value)" style="width:100%;padding:10px 16px;border-radius:10px;border:1.5px solid #e5e7eb;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:white;margin-bottom:16px;">
-      <div id="handbook-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">
-<div class="hb-card" data-cat="teacher development" data-title="improve a teacher's performance" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">📈</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Improve a teacher's performance</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Teacher Development</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><ol style="margin:0;padding-left:18px;"><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Schedule a private, non-evaluative conversation to understand their perspective first.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Share specific observations with evidence — avoid general statements.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Co-create a 4-week improvement plan with clear measurable targets.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Arrange peer observations — pair them with a strong teacher in the same subject.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Check in weekly for 10 minutes. Celebrate small wins to build confidence.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">If no improvement after 6 weeks, escalate to a formal support plan with HR.</li></ol><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> Most underperforming teachers need support, not blame. A private structured approach yields better results than public pressure.</div></div></div>
-<div class="hb-card" data-cat="discipline" data-title="handle academic dishonesty" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">🛡️</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Handle academic dishonesty</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Discipline</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><ol style="margin:0;padding-left:18px;"><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Gather all evidence before confronting the student — test papers, witness accounts.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Meet with the student privately. Allow them to explain before presenting evidence.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Apply the school policy consistently. Document everything in writing.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Inform parents within 24 hours with a written summary and consequence.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">For Cambridge assessments, follow CAIE Suspected Malpractice regulations strictly.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Use the incident as a teaching moment — run a class session on academic integrity.</li></ol><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> Consistency is key. If one student is treated differently it undermines trust across the whole school.</div></div></div>
-<div class="hb-card" data-cat="academic monitoring" data-title="improve ict pass rates" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">💻</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Improve ICT pass rates</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Academic Monitoring</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><ol style="margin:0;padding-left:18px;"><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Analyse red/yellow students by class — identify if it is one teacher or school-wide.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Review lesson delivery: is ICT taught practically or just theoretically?</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Ensure students have sufficient computer access — minimum 2 practical lessons per week.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Run after-school revision sessions for students in the yellow or red band.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Share Cambridge past papers and mark schemes with students from Term 1.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Set monthly progress tests and track against the traffic light system.</li></ol><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> ICT struggles are usually practical access issues or syllabus coverage gaps — both are fixable quickly.</div></div></div>
-<div class="hb-card" data-cat="communication" data-title="write a letter to parents about attendance" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">✉️</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Write a letter to parents about attendance</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Communication</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><div style="background:#f8f7f4;border-radius:8px;padding:14px;font-size:12px;line-height:1.7;white-space:pre-wrap;font-family:Georgia,serif;color:#374151;margin-bottom:10px;max-height:220px;overflow-y:auto;">Dear Parent/Guardian of [Student Name],
-
-I am writing to bring to your attention that [Student Name]'s attendance has fallen to [X]% this term, which is below our minimum requirement of 85%.
-
-Consistent attendance is essential for academic progress. Missing school disrupts learning, affects exam preparation, and impacts relationships with peers and teachers.
-
-We would like to invite you to a brief meeting at your earliest convenience to discuss how we can support [Student Name] together.
-
-Please contact the school office to arrange a suitable time.
-
-Yours sincerely,
-Mr. Akash Sharma
-Principal, Redbridge International School</div><button onclick="var t=document.getElementById('tmpl3').textContent;navigator.clipboard.writeText(t);showToast('Copied to clipboard ✓')" style="padding:6px 14px;border-radius:7px;border:none;background:#0a0f2e;color:white;font-size:11px;font-weight:700;cursor:pointer;">Copy Letter</button><span id="tmpl3" style="display:none;">Dear Parent/Guardian of [Student Name],
-
-I am writing to bring to your attention that [Student Name]'s attendance has fallen to [X]% this term, which is below our minimum requirement of 85%.
-
-Consistent attendance is essential for academic progress. Missing school disrupts learning, affects exam preparation, and impacts relationships with peers and teachers.
-
-We would like to invite you to a brief meeting at your earliest convenience to discuss how we can support [Student Name] together.
-
-Please contact the school office to arrange a suitable time.
-
-Yours sincerely,
-Mr. Akash Sharma
-Principal, Redbridge International School</span><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> Send this letter at 90% attendance as an early warning — do not wait until it becomes critical.</div></div></div>
-<div class="hb-card" data-cat="cambridge standards" data-title="draft a cambridge improvement plan" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">🎓</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Draft a Cambridge improvement plan</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Cambridge Standards</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><ol style="margin:0;padding-left:18px;"><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Run a gap analysis: compare current student performance against Cambridge grade boundaries.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Identify the 3 weakest topics per subject using mock exam data.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Brief each subject teacher on their specific targets for the next assessment window.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Introduce fortnightly Cambridge-style timed questions in all Grade 8-10 classes.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Schedule a dedicated Cambridge prep week 4 weeks before each examination session.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Track progress using the monthly traffic light system — red students get weekly teacher check-ins.</li></ol><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> Cambridge results improve most when teachers understand the mark scheme and actively teach to it.</div></div></div>
-<div class="hb-card" data-cat="parent relations" data-title="handle a parent complaint" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">🤝</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Handle a parent complaint</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Parent Relations</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><ol style="margin:0;padding-left:18px;"><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Acknowledge the complaint within 24 hours — even if just to confirm receipt.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Listen fully before responding. Do not defend the school immediately.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Investigate: speak to the teacher, student and witnesses separately.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Meet the parent in person with a written summary of your findings.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Offer a concrete resolution, not just an apology.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Follow up in writing after the meeting confirming what was agreed.</li></ol><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> Most parent complaints escalate because they feel unheard, not because the original issue is serious.</div></div></div>
-<div class="hb-card" data-cat="discipline" data-title="improve student discipline school-wide" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">🏫</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Improve student discipline school-wide</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Discipline</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><ol style="margin:0;padding-left:18px;"><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Ensure all staff consistently apply the same 3-stage framework — inconsistency is the biggest problem.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Start each term with a whole-school assembly restating expectations clearly.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Recognise and reward positive behaviour publicly — notice boards, certificates, announcements.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Train teachers on de-escalation techniques — most confrontations can be avoided.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Track incidents by class and teacher — patterns reveal where support is needed.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Involve student prefects in creating the behaviour charter.</li></ol><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> Discipline improves fastest when students feel respected and know exactly what is expected of them.</div></div></div>
-<div class="hb-card" data-cat="student welfare" data-title="support a struggling student" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">🎯</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Support a struggling student</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Student Welfare</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><ol style="margin:0;padding-left:18px;"><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Meet the student privately to understand root cause — academic, social, or home-related.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Speak to their class teacher and parents to build a full picture.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Create a simple support plan: 2-3 specific actions, reviewed monthly.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Assign a trusted teacher as their mentor — someone they feel comfortable with.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Reduce pressure by breaking targets into small weekly goals.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Monitor their traffic light performance monthly and celebrate any improvement.</li></ol><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> Struggling students often just need one adult who believes in them. That mentoring relationship makes the biggest difference.</div></div></div>
-<div class="hb-card" data-cat="administration" data-title="prepare for a school inspection" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">🔍</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Prepare for a school inspection</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Administration</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><ol style="margin:0;padding-left:18px;"><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Ensure all lesson plans, assessment records and student portfolios are up to date.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Brief all teachers: inspectors will visit classrooms unannounced — lessons should be learner-centred.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Prepare a school self-evaluation document highlighting strengths and areas for improvement.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Ensure student safeguarding records, attendance registers and incident logs are complete.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Walk the school with fresh eyes — corridors and noticeboards reflect school culture.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Brief students on how to speak confidently about their learning when asked.</li></ol><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> The best inspection preparation is simply running a well-organised school every day — last-minute fixes are always visible.</div></div></div>
-<div class="hb-card" data-cat="teaching and learning" data-title="best practices for student motivation" style="background:white;border-radius:12px;border:1.5px solid #e5e7eb;overflow:hidden;"><div onclick="handbookToggle(this)" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none;"><div style="font-size:22px;flex-shrink:0;">⭐</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0a0f2e;">Best practices for student motivation</div><div style="font-size:11px;color:#6b7280;margin-top:2px;">Teaching and Learning</div></div><div class="hb-chevron" style="font-size:11px;color:#9ca3af;">&#9660;</div></div><div class="hb-body" style="display:none;padding:0 16px 16px;"><ol style="margin:0;padding-left:18px;"><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Make learning relevant — connect every lesson topic to real-world applications students care about.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Use competitive elements like class leaderboards and monthly achievement awards.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Give students voice — let them choose project topics or presentation formats occasionally.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Provide fast specific feedback: 'your introduction was excellent because...' not just 'good job'.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Set stretch targets just above current ability — too easy or too hard both kill motivation.</li><li style="margin-bottom:8px;font-size:12.5px;line-height:1.55;color:#374151;">Celebrate effort and improvement, not just achievement — this builds a growth mindset.</li></ol><div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border-left:3px solid #c9972f;border-radius:0 8px 8px 0;font-size:11.5px;color:#92400e;line-height:1.5;"><strong>Principal's Tip:</strong> Motivated students are made, not born. Environment and teacher relationships account for 70% of student motivation.</div></div></div>
-      </div>
-      <div id="handbook-empty" style="display:none;padding:40px;text-align:center;color:#6b7280;font-size:13px;">No topics found.</div>
     </div>
 
   </div><!-- /content -->
@@ -2403,31 +2391,7 @@ document.getElementById('current-date').textContent = new Date().toLocaleDateStr
     if (iconEl) iconEl.textContent = panelIcons[id] || '◈';
   }
 
-  // ── PRINCIPAL'S HANDBOOK ─────────────────────────────────────────────────
-  function handbookToggle(header) {
-    var card = header.parentElement;
-    var body = card.querySelector('.hb-body');
-    var chev = card.querySelector('.hb-chevron');
-    var open = body.style.display !== 'none';
-    document.querySelectorAll('.hb-body').forEach(function(b){ b.style.display='none'; });
-    document.querySelectorAll('.hb-chevron').forEach(function(c){ c.style.transform=''; });
-    if (!open) {
-      body.style.display = 'block';
-      if (chev) chev.style.transform = 'rotate(180deg)';
-    }
-  }
-  function handbookFilter(q) {
-    var term = q.toLowerCase().trim();
-    var visible = 0;
-    document.querySelectorAll('.hb-card').forEach(function(card) {
-      var show = !term || (card.getAttribute('data-title')||'').includes(term) || (card.getAttribute('data-cat')||'').includes(term);
-      card.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-    var empty = document.getElementById('handbook-empty');
-    if (empty) empty.style.display = visible === 0 ? 'block' : 'none';
-  }
-  function sendQuick(btn) { showPanel('ai', document.querySelector('[data-panel="ai"]')); }
+  function sendQuick(btn){ showPanel('ai', document.querySelector('[data-panel="ai"]')); }
   const staffData = [
     { no:1,  name:"Abdullayeva Gulnara Asatovna",         date:"4 Sep 2024",   iso:"2024-09-04", cohort:"Working" },
     { no:2,  name:"Bahretdinova Elsbeth",                 date:"4 Sep 2024",   iso:"2024-09-04", cohort:"Working" },
@@ -4016,10 +3980,6 @@ document.getElementById('current-date').textContent = new Date().toLocaleDateStr
 </script>
 
 <script>
-
-
-
-
 // ── PWA SERVICE WORKER ──
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
@@ -6362,11 +6322,13 @@ self.addEventListener('fetch', e => {
         var c = r.cls||r.class;
         return allowed.indexOf(c)!==-1&&(!cls||c===cls)&&(!subject||r.subject===subject);
       });
+      window._allLoadedReports = filtered; // store before render
       _drRenderReports(filtered, sub, list);
     }).catch(function(){
       var filtered = dailyReports.filter(function(r){
         return allowed.indexOf(r.cls)!==-1&&(!cls||r.cls===cls)&&(!subject||r.subject===subject);
       });
+      window._allLoadedReports = filtered;
       _drRenderReports(filtered, sub, list);
     });
   }
@@ -6381,8 +6343,9 @@ self.addEventListener('fetch', e => {
       var k=(r.cls||'')+'|'+(r.subject||'')+'|'+(r.date||'')+'|'+(r.period||'');
       if(_s[k])return false;_s[k]=true;return true;
     });
-    // Cache all rendered reports so drEditReport can find them
+    // Cache all rendered reports so drEditReport and drDeleteReport can find them
     window._reportCache = filtered;
+    window._allLoadedReports = filtered;  // backup reference
     if (sub) sub.textContent = filtered.length + ' report' + (filtered.length!==1?'s':'') + ' found';
     if (!list) return;
 
@@ -6829,94 +6792,110 @@ self.addEventListener('fetch', e => {
 
 
   function drDeleteReport(id) {
-    if (!confirm('Delete this report? This cannot be undone.')) return;
-    // Remove from localStorage
+    // Use inline confirm toast instead of browser confirm() which is blocked in some contexts
+    var existing = document.getElementById('dr-confirm-toast');
+    if (existing) existing.remove();
+
+    var toast = document.createElement('div');
+    toast.id = 'dr-confirm-toast';
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;'
+      + 'background:#1a1a2e;color:white;padding:14px 20px;border-radius:12px;'
+      + 'box-shadow:0 8px 32px rgba(0,0,0,0.35);display:flex;align-items:center;gap:12px;'
+      + 'font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;min-width:280px;';
+    toast.innerHTML = '<span>Delete this report permanently?</span>'
+      + '<button onclick="drConfirmDelete(\''+id+'\');document.getElementById(\'dr-confirm-toast\').remove();" '
+      + 'style="padding:6px 14px;border-radius:7px;border:none;background:#dc2626;color:white;'
+      + 'font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">Yes, Delete</button>'
+      + '<button onclick="document.getElementById(\'dr-confirm-toast\').remove();" '
+      + 'style="padding:6px 14px;border-radius:7px;border:1.5px solid rgba(255,255,255,0.2);'
+      + 'background:transparent;color:white;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">Cancel</button>';
+    document.body.appendChild(toast);
+    setTimeout(function(){ if(toast.parentNode) toast.remove(); }, 8000);
+  }
+
+  function drConfirmDelete(id) {
+
+    // Remove from localStorage immediately
     dailyReports = dailyReports.filter(function(r){ return String(r.id) !== String(id); });
     saveDailyReports();
-    // Remove from Supabase — try both numeric and string ids
-    sbFetch('daily_reports', 'DELETE', null, 'id=eq.'+id)
-      .then(function(){ showToast('Report deleted ✓'); })
-      .catch(function(){ showToast('Report deleted locally ✓'); });
-    // Remove from cache
-    if (window._reportCache) {
-      window._reportCache = window._reportCache.filter(function(r){ return String(r.id) !== String(id); });
-    }
-    drFilterReports();
+
+    // Remove from all caches immediately
+    if (window._reportCache)      window._reportCache      = window._reportCache.filter(function(r){ return String(r.id) !== String(id); });
+    if (window._allLoadedReports) window._allLoadedReports = window._allLoadedReports.filter(function(r){ return String(r.id) !== String(id); });
+
+    // Re-render from cache immediately — no waiting for Supabase
+    var sub  = document.getElementById('dr-view-subtitle');
+    var list = document.getElementById('dr-reports-list');
+    _drRenderReports(window._reportCache || [], sub, list);
+    showToast('Report deleted ✓');
+
+    // Delete from Supabase in background
+    sbFetch('daily_reports', 'DELETE', null, 'id=eq.'+id).catch(function(){});
   }
 
   function drEditReport(id) {
-    // Find the report — check cache (Supabase) first, then localStorage
     var rep = null;
-    var cache = window._reportCache || [];
-    for (var ci = 0; ci < cache.length; ci++) {
-      if (String(cache[ci].id) === String(id)) { rep = cache[ci]; break; }
-    }
-    if (!rep) {
-      for (var li = 0; li < dailyReports.length; li++) {
-        if (String(dailyReports[li].id) === String(id)) { rep = dailyReports[li]; break; }
+    var sources = [window._reportCache||[], window._allLoadedReports||[], dailyReports];
+    for (var si = 0; si < sources.length && !rep; si++) {
+      for (var ci = 0; ci < sources[si].length; ci++) {
+        if (String(sources[si][ci].id) === String(id)) { rep = sources[si][ci]; break; }
       }
     }
-    if (!rep) { showToast('Could not load report. Please try again.'); return; }
-
-    // Switch to fill tab
+    if (!rep) { showToast('Reload the reports list and try again.'); return; }
     switchDailyTab('fill');
-
-    // Populate form fields
     setTimeout(function() {
-      var clsSel  = document.getElementById('dr-class');
-      var subjSel = document.getElementById('dr-subject');
-      var dateEl  = document.getElementById('dr-date');
-      var perEl   = document.getElementById('dr-period');
-      var topEl   = document.getElementById('dr-topic');
-      var remEl   = document.getElementById('dr-remark');
-      var hwEl    = document.getElementById('dr-homework');
-
-      if (clsSel)  { clsSel.value  = rep.cls || rep['class'] || ''; drLoadStudents(); }
-      if (dateEl)  dateEl.value  = rep.date    || '';
-      if (perEl)   perEl.value   = rep.period  || '1';
-      if (topEl)   topEl.value   = rep.topic   || '';
-      if (remEl)   remEl.value   = rep.remark  || '';
-      if (hwEl)    hwEl.value    = rep.homework || '';
-
-      // Set subject after students load
-      setTimeout(function() {
-        if (subjSel) subjSel.value = rep.subject || '';
-
-        // Restore student marks
-        if (rep.students && rep.students.length) {
-          rep.students.forEach(function(s, idx) {
-            var sid = 'st_' + idx;
-            var absent = document.getElementById('absent_' + sid);
-            if (absent && s.absent) { absent.checked = true; }
-
-            function setMark(sec, val) {
-              var el = document.getElementById(sec + '_mark_' + sid);
-              if (el && val && val !== '—' && val !== 'A') el.value = parseInt(val) || 0;
-            }
-            function setRemark(sec, val) {
-              var el = document.getElementById(sec + '_remark_' + sid);
-              if (el && val) el.value = val;
-            }
-            setMark('cw',   s.cw_mark);   setRemark('cw',   s.cw_remark);
-            setMark('hw',   s.hw_mark);   setRemark('hw',   s.hw_remark);
-            setMark('disc', s.disc_mark); setRemark('disc', s.disc_remark);
-
-            // Update cell colours
-            if (typeof drUpdateCell === 'function') {
-              drUpdateCell('cw',   sid);
-              drUpdateCell('hw',   sid);
-              drUpdateCell('disc', sid);
-            }
-          });
-        }
-        // Store the id being edited so save replaces it
-        document.getElementById('dr-students-wrap')._editingId = id;
-        showToast('Report loaded for editing. Make changes and click Save Report.');
-      }, 600);
-    }, 300);
+      var cls = rep.cls || rep['class'] || '';
+      var clsSel=document.getElementById('dr-class'), dateEl=document.getElementById('dr-date'),
+          perEl=document.getElementById('dr-period'), topEl=document.getElementById('dr-topic'),
+          remEl=document.getElementById('dr-remark'), hwEl=document.getElementById('dr-homework'),
+          subjSel=document.getElementById('dr-subject');
+      if(dateEl)  dateEl.value  = rep.date     ||'';
+      if(perEl)   perEl.value   = rep.period   ||'1';
+      if(topEl)   topEl.value   = rep.topic    ||'';
+      if(remEl)   remEl.value   = rep.remark   ||'';
+      if(hwEl)    hwEl.value    = rep.homework ||'';
+      if(clsSel&&cls){ clsSel.value=cls; drLoadStudents(); }
+      if(subjSel) subjSel.value = rep.subject||'';
+      var wrap=document.getElementById('dr-students-wrap');
+      if(wrap) wrap._editingId=id;
+      var nameToIdx={};
+      (wrap?wrap._students||[]:[ ]).forEach(function(st,idx){ nameToIdx[(st.surname+' '+st.firstname).trim()]=idx; });
+      (rep.students||[]).forEach(function(s){
+        var idx=nameToIdx[(s.name||'').trim()];
+        if(idx===undefined) return;
+        var sid='st_'+idx;
+        var isAbs=!!(s.absent||s.cw_mark==='A'||s.cw_mark==='Absent');
+        var ae=document.getElementById('absent_'+sid);
+        if(ae){ ae.checked=isAbs; if(isAbs&&typeof drToggleAbsent==='function') drToggleAbsent(sid); }
+        if(isAbs) return;
+        function sm(sec,val){ var n=parseInt(val); if(!n||n<1||n>5) return;
+          var me=document.getElementById(sec+'_mark_'+sid), ce=document.getElementById(sec+'_cell_'+sid);
+          if(me) me.value=n;
+          if(ce){ var col=sec==='cw'?'#7c3aed':sec==='hw'?'#a16207':'#b91c1c', bg=sec==='cw'?'#ede9fe':sec==='hw'?'#fef9c3':'#fee2e2';
+            ce.dataset.mark=n; ce.textContent=n; ce.style.background=bg; ce.style.borderColor=col; ce.style.color=col; ce.style.fontWeight='900'; }}
+        function sr(sec,val){ var e=document.getElementById(sec+'_remark_'+sid); if(e&&val) e.value=val; }
+        sm('cw',s.cw_mark);    sr('cw',  s.cw_remark  ||'');
+        sm('hw',s.hw_mark);    sr('hw',  s.hw_remark  ||'');
+        sm('disc',s.disc_mark);sr('disc',s.disc_remark||'');
+      });
+      showToast('Report loaded — edit and click Save Report');
+    }, 150);
   }
-
-
+  function handbookToggle(header) {
+    var card=header.parentElement, body=card.querySelector('.hb-body'), chev=card.querySelector('.hb-chevron');
+    var open=body.style.display!=='none';
+    document.querySelectorAll('.hb-body').forEach(function(b){ b.style.display='none'; });
+    document.querySelectorAll('.hb-chevron').forEach(function(c){ c.style.transform=''; });
+    if(!open){ body.style.display='block'; if(chev) chev.style.transform='rotate(180deg)'; }
+  }
+  function handbookFilter(q) {
+    var term=q.toLowerCase().trim(), visible=0;
+    document.querySelectorAll('.hb-card').forEach(function(card){
+      var show=!term||(card.getAttribute('data-title')||'').includes(term)||(card.getAttribute('data-cat')||'').includes(term);
+      card.style.display=show?'':'none'; if(show) visible++;
+    });
+    var e=document.getElementById('handbook-empty'); if(e) e.style.display=visible===0?'block':'none';
+  }
 
 </script>
 
