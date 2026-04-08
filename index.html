@@ -5117,6 +5117,10 @@ function renderIncidentLog() {
     });
     showPanel(first, firstEl);
     showToast('Welcome, ' + u.name + ' 👋');
+    // Test Supabase connection and update status indicator
+    sbFetch('daily_reports','GET',null,'limit=1')
+      .then(function(){ updateCloudStatus('saved'); })
+      .catch(function(){ updateCloudStatus('error'); });
   }
 
   // Shared helper — reads from global resultsData (declared in main script)
@@ -6868,12 +6872,12 @@ function renderIncidentLog() {
       mkSection('Homework',   'hw',   '#a16207', existing.hw)   +
       mkSection('Discipline', 'disc', '#b91c1c', existing.disc) +
       '<label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#475569;cursor:pointer;margin-bottom:12px;">' +
-        '<input type="checkbox" id="grid-popup-absent" ' + (existing.absent?'checked':'') + ' style="width:16px;height:16px;accent-color:#dc2626;"> Mark as Absent' +
+        '<input type="checkbox" id="grid-popup-absent" onchange="drGridAutoSave()" ' + (existing.absent?'checked':'') + ' style="width:16px;height:16px;accent-color:#dc2626;cursor:pointer;"> Mark as Absent' +
       '</label>' +
       '<textarea id="grid-popup-comment" placeholder="Comment (optional)..." rows="2" ' +
         'style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12.5px;resize:none;outline:none;box-sizing:border-box;">' +
         (existing.comment||'') + '</textarea>' +
-      '<button onclick="drGridSaveCell()" style="width:100%;margin-top:10px;padding:10px;border-radius:9px;border:none;background:#0a0f2e;color:white;font-size:13px;font-weight:700;cursor:pointer;">Save & Close</button>';
+      '<button onclick="drGridSaveCell()" style="width:100%;margin-top:10px;padding:10px;border-radius:9px;border:none;background:#0a0f2e;color:white;font-size:13px;font-weight:700;cursor:pointer;">✓ Done</button>';
 
     document.body.appendChild(popup);
 
@@ -6899,62 +6903,65 @@ function renderIncidentLog() {
     if (!popup) return;
     if (!popup._marks) popup._marks = {};
     popup._marks[sec] = val;
-    // Update button styles
+
+    // Update button styles for this section
     var mc = val >= 4 ? '#16a34a' : val === 3 ? '#ca8a04' : '#dc2626';
     var btns = popup.querySelectorAll('[data-sec="'+sec+'"]');
     btns.forEach(function(b) {
-      var bg = parseInt(b.dataset.grade) === val ? mc : 'white';
-      var co = parseInt(b.dataset.grade) === val ? 'white' : (parseInt(b.dataset.grade)>=4?'#16a34a':parseInt(b.dataset.grade)===3?'#ca8a04':'#dc2626');
-      var bd = parseInt(b.dataset.grade) === val ? mc : '#e2e8f0';
-      b.style.background = bg; b.style.color = co; b.style.borderColor = bd;
+      var n = parseInt(b.dataset.grade);
+      var active = (n === val);
+      var bmc = n>=4?'#16a34a':n===3?'#ca8a04':'#dc2626';
+      b.style.background   = active ? bmc : 'white';
+      b.style.color        = active ? 'white' : bmc;
+      b.style.borderColor  = active ? bmc : '#e2e8f0';
     });
+
+    // Auto-save immediately and close popup
+    drGridAutoSave();
   }
 
-  function drGridSaveCell() {
-    var popup  = document.getElementById('dr-mark-popup');
+  function drGridAutoSave() {
+    var popup = document.getElementById('dr-mark-popup');
     if (!popup) return;
     var marks  = popup._marks || {};
     var absent = (document.getElementById('grid-popup-absent')||{}).checked;
     var comment= (document.getElementById('grid-popup-comment')||{}).value || '';
     var p      = _drPopup;
 
-    // Build/update student entry in dailyReports
     var studentEntry = {
       name:    p.gridName,
-      cw:      absent ? 0 : (marks.cw||0),
-      hw:      absent ? 0 : (marks.hw||0),
-      disc:    absent ? 0 : (marks.disc||0),
+      cw:      absent ? 0 : (marks.cw  || 0),
+      hw:      absent ? 0 : (marks.hw  || 0),
+      disc:    absent ? 0 : (marks.disc || 0),
       absent:  absent,
       comment: comment
     };
 
-    // Find existing report for this date/class/subject or create
+    // Only auto-close if all 3 marks are filled OR absent is checked
+    var allFilled = absent || (marks.cw && marks.hw && marks.disc);
+
+    // Find/create report entry
     var rep = null;
     if (typeof dailyReports !== 'undefined') {
       dailyReports.forEach(function(r) {
-        if (r.cls === p.gridCls && r.subject === p.gridSubj && r.date === p.gridDate) rep = r;
+        if (r.cls===p.gridCls && r.subject===p.gridSubj && r.date===p.gridDate) rep=r;
       });
     }
     var topicNow = (document.getElementById('dr-topic-input')||{}).value || '';
     var hwNow    = (document.getElementById('dr-hw-input')||{}).value    || '';
     if (!rep) {
       rep = {
-        id: 'dr' + Date.now(),
-        date: p.gridDate,
-        cls: p.gridCls,
-        subject: p.gridSubj,
+        id: 'dr' + Date.now(), date: p.gridDate,
+        cls: p.gridCls, subject: p.gridSubj,
         teacher: _currentUser ? _currentUser.name : '',
         period: drOpenGrid._period || '',
-        topic: topicNow,
-        homework: hwNow,
-        students: []
+        topic: topicNow, homework: hwNow, students: []
       };
       dailyReports.push(rep);
     } else {
       if (topicNow) rep.topic    = topicNow;
       if (hwNow)    rep.homework = hwNow;
     }
-    // Update or add student
     var found = false;
     rep.students.forEach(function(st, i) {
       if (st.name === p.gridName) { rep.students[i] = studentEntry; found = true; }
@@ -6962,10 +6969,63 @@ function renderIncidentLog() {
     if (!found) rep.students.push(studentEntry);
 
     saveDailyReports();
+
+    // Refresh the grid cell immediately without closing popup
+    drRefreshCell(p.gridCls, p.gridSubj, p.gridDate, p.gridName, studentEntry);
+
+    // Auto-close only when all 3 marks set
+    if (allFilled) {
+      drCloseMarkPopup();
+      showToast(p.gridName.split(' ')[0] + ' ✓');
+    }
+  }
+
+  function drRefreshCell(cls, subject, dateStr, studentName, entry) {
+    // Find and update just this cell without full grid rebuild
+    var marks = [entry.cw, entry.hw, entry.disc].map(Number).filter(Boolean);
+    if (!marks.length && !entry.absent) return;
+    var avg = marks.length ? marks.reduce(function(a,b){return a+b;},0)/marks.length : 0;
+    var mc  = avg>=4?'#16a34a':avg===3?'#ca8a04':'#dc2626';
+
+    // Find the cell by scanning td elements — rebuild full grid to be safe
+    drBuildGrid(cls, subject);
+  }
+
+  function drGridSaveCell() {
+    // Force save current state and close
+    var popup = document.getElementById('dr-mark-popup');
+    if (!popup) return;
+    var p = _drPopup;
+    // Save current marks/absent/comment
+    var marks  = popup._marks || {};
+    var absent = (document.getElementById('grid-popup-absent')||{}).checked;
+    var comment= (document.getElementById('grid-popup-comment')||{}).value || '';
+    var topicNow = (document.getElementById('dr-topic-input')||{}).value || '';
+    var hwNow    = (document.getElementById('dr-hw-input')||{}).value    || '';
+    var studentEntry = {
+      name: p.gridName,
+      cw: absent?0:(marks.cw||0), hw: absent?0:(marks.hw||0),
+      disc: absent?0:(marks.disc||0), absent: absent, comment: comment
+    };
+    var rep = null;
+    if (typeof dailyReports !== 'undefined') {
+      dailyReports.forEach(function(r) {
+        if (r.cls===p.gridCls && r.subject===p.gridSubj && r.date===p.gridDate) rep=r;
+      });
+    }
+    if (!rep) {
+      rep = { id:'dr'+Date.now(), date:p.gridDate, cls:p.gridCls, subject:p.gridSubj,
+        teacher:_currentUser?_currentUser.name:'', period:drOpenGrid._period||'',
+        topic:topicNow, homework:hwNow, students:[] };
+      dailyReports.push(rep);
+    } else { if(topicNow) rep.topic=topicNow; if(hwNow) rep.homework=hwNow; }
+    var found=false;
+    rep.students.forEach(function(st,i){ if(st.name===p.gridName){rep.students[i]=studentEntry;found=true;} });
+    if(!found) rep.students.push(studentEntry);
+    saveDailyReports();
     drCloseMarkPopup();
-    // Refresh grid cell visually
     drBuildGrid(p.gridCls, p.gridSubj);
-    showToast('Saved — ' + p.gridName.split(' ')[0]);
+    showToast(p.gridName.split(' ')[0] + ' ✓');
   }
 
   function drShowDayInfo(rep, dateStr) {
@@ -7151,11 +7211,24 @@ function renderIncidentLog() {
   }
 
   function updateCloudStatus(state) {
-    var el = document.getElementById('cloud-status');
-    if (!el) return;
-    if (state === 'saved')  { el.textContent = '☁️ Synced'; el.style.color = '#16a34a'; }
-    else if (state === 'saving') { el.textContent = '⏳ Saving…'; el.style.color = '#ca8a04'; }
-    else if (state === 'error')  { el.textContent = '⚠️ Offline'; el.style.color = '#dc2626'; }
+    // Update all possible status elements
+    var label = document.getElementById('sb-label');
+    var dot   = document.getElementById('sb-dot');
+    var el    = document.getElementById('cloud-status') || document.getElementById('cal-sync-status');
+
+    if (state === 'saved') {
+      if (label) { label.textContent = 'Connected'; label.style.color = '#16a34a'; }
+      if (dot)   { dot.style.background = '#16a34a'; }
+      if (el)    { el.textContent = '☁️ Synced'; el.style.color = '#16a34a'; }
+    } else if (state === 'saving') {
+      if (label) { label.textContent = 'Saving…'; label.style.color = '#ca8a04'; }
+      if (dot)   { dot.style.background = '#ca8a04'; }
+      if (el)    { el.textContent = '⏳ Saving…'; el.style.color = '#ca8a04'; }
+    } else if (state === 'error') {
+      if (label) { label.textContent = 'Disconnected'; label.style.color = '#dc2626'; }
+      if (dot)   { dot.style.background = '#dc2626'; }
+      if (el)    { el.textContent = '⚠️ Offline'; el.style.color = '#dc2626'; }
+    }
   }
 
 
