@@ -848,6 +848,9 @@
     <a class="nav-item" data-panel="calendar" onclick="showPanel('calendar', this)">
       <span class="nav-icon">🗓️</span> School Calendar
     </a>
+    <a class="nav-item" data-panel="assessments" onclick="showPanel('assessments', this)">
+      <span class="nav-icon">📋</span> Assessments
+    </a>
     <a class="nav-item" data-panel="ai" onclick="showPanel('ai', this)">
       <span class="nav-icon">✨</span> AI Assistant
     </a>
@@ -884,6 +887,12 @@
       <button class="notif-btn" onclick="openAlertsModal()" id="notif-btn-top">🔔<span class="notif-dot" id="notif-dot"></span></button>
       <button class="btn btn-outline" onclick="exportDashboardReport()">⬇ Export</button>
       <button class="btn btn-primary" onclick="openNewActionModal()">＋ New Action</button>
+      <!-- Language Switcher -->
+      <div style="display:flex;align-items:center;gap:2px;background:var(--bg);border:1px solid var(--rule);border-radius:9px;padding:3px;margin-right:4px;">
+        <button onclick="setLang('en')" id="lang-btn-en" style="padding:4px 9px;border-radius:7px;border:none;background:var(--navy);color:white;font-size:11px;font-weight:800;cursor:pointer;">EN</button>
+        <button onclick="setLang('ru')" id="lang-btn-ru" style="padding:4px 9px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;">РУ</button>
+        <button onclick="setLang('uz')" id="lang-btn-uz" style="padding:4px 9px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;">UZ</button>
+      </div>
       <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg);border-radius:10px;border:1px solid var(--rule);margin-left:4px;" id="user-topbar-badge">
         <div style="width:30px;height:30px;border-radius:8px;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;" id="topbar-avatar">AS</div>
         <div style="line-height:1.3;">
@@ -1672,6 +1681,60 @@
       </div>
 
       <!-- Key observations -->
+      
+      <!-- Incident Log Card -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🚨 Active Incident Log</div>
+            <div class="card-subtitle">Log and track student discipline incidents</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" style="font-size:12px;" onclick="viewResolvedIncidents()">📂 Resolved</button>
+            <button class="btn btn-primary" style="font-size:12px;" onclick="showAddIncident()">+ Log Incident</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0 0 8px 0;" id="incident-log-body">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Add Incident Form (hidden by default) -->
+      <div id="add-incident-form" style="display:none;margin-bottom:20px;">
+        <div class="card">
+          <div class="card-header" style="background:linear-gradient(135deg,#7f1d1d,#991b1b);">
+            <div class="card-title" style="color:white;">🚨 Log New Incident</div>
+            <button onclick="hideAddIncident()" style="background:none;border:1.5px solid rgba(255,255,255,0.3);border-radius:8px;padding:5px 12px;color:white;font-size:12px;font-weight:700;cursor:pointer;">✕ Cancel</button>
+          </div>
+          <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Student Name</div>
+              <input id="inc-student" type="text" placeholder="Full name..." style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--rule);font-size:13px;outline:none;box-sizing:border-box;">
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Incident Type</div>
+              <input id="inc-type" type="text" placeholder="e.g. Fighting, Disrespect..." style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--rule);font-size:13px;outline:none;box-sizing:border-box;">
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Stage</div>
+              <select id="inc-stage" style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--rule);font-size:13px;outline:none;">
+                <option value="1">Stage 1 — Verbal Warning</option>
+                <option value="2">Stage 2 — Written Warning</option>
+                <option value="3">Stage 3 — Parent Contact</option>
+                <option value="4">Stage 4 — Suspension</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Notes</div>
+              <input id="inc-notes" type="text" placeholder="Brief description..." style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--rule);font-size:13px;outline:none;box-sizing:border-box;">
+            </div>
+            <div style="grid-column:1/-1;">
+              <button onclick="logIncident()" class="btn btn-primary" style="width:100%;padding:11px;">🚨 Log Incident</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="card" style="margin-bottom:20px;">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
           <div>
@@ -2319,6 +2382,136 @@
     </div>
 
     <!-- ── AI ASSISTANT PANEL ── -->
+
+    <!-- ══ ASSESSMENTS PANEL ══ -->
+    <div class="panel" id="panel-assessments">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--navy);margin-bottom:3px;">📋 Assessments</h2>
+          <div style="font-size:12.5px;color:var(--muted);">Record formative and summative assessment scores</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="asmSwitchTab('submit')" id="asm-tab-submit" class="btn btn-primary" style="font-size:12.5px;">✍️ Submit Assessment</button>
+          <button onclick="asmSwitchTab('view')" id="asm-tab-view" class="btn btn-outline" style="font-size:12.5px;">📊 View Results</button>
+        </div>
+      </div>
+
+      <!-- TAB: SUBMIT -->
+      <div id="asm-submit-section">
+        <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px;align-items:start;flex-wrap:wrap;">
+
+          <!-- Left: Form -->
+          <div class="card">
+            <div class="card-header" style="background:linear-gradient(135deg,var(--navy),#1a2448);">
+              <div>
+                <div class="card-title" style="color:white;">Assessment Details</div>
+                <div class="card-subtitle" style="color:rgba(200,210,240,0.7);">Fill in details then enter scores</div>
+              </div>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+
+              <!-- Class -->
+              <div>
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Class</div>
+                <select id="asm-class" onchange="asmLoadStudents()" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+                  <option value="">— Select class —</option>
+                </select>
+              </div>
+
+              <!-- Subject -->
+              <div>
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Subject</div>
+                <select id="asm-subject" onchange="asmLoadStudents()" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+                  <option value="">— Select subject —</option>
+                  <option>English</option><option>Maths</option><option>Cambridge Maths</option>
+                  <option>Science</option><option>Russian Language</option><option>Physics</option>
+                  <option>Chemistry</option><option>Biology</option><option>GP (Hist-Geo)</option>
+                  <option>Economics</option><option>ICT</option><option>Uzbek Language</option>
+                  <option>Literature</option><option>Art</option><option>Physical Education</option>
+                </select>
+              </div>
+
+              <!-- Type -->
+              <div>
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Assessment Type</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                  <button id="asm-type-formative" onclick="asmSetType('formative')" style="padding:10px;border-radius:9px;border:2px solid #3b82f6;background:#eff6ff;color:#1d4ed8;font-size:12.5px;font-weight:700;cursor:pointer;">📝 Formative</button>
+                  <button id="asm-type-summative" onclick="asmSetType('summative')" style="padding:10px;border-radius:9px;border:2px solid var(--rule);background:white;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;">📊 Summative</button>
+                </div>
+              </div>
+
+              <!-- Assessment Name -->
+              <div id="asm-name-section">
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Assessment Name</div>
+                <select id="asm-name" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+                  <option value="">— Select —</option>
+                </select>
+              </div>
+
+              <!-- Total marks -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Total Marks</div>
+                  <input id="asm-total" type="number" value="100" min="1" max="1000" onchange="asmUpdateTotalLabel()" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-size:13px;outline:none;box-sizing:border-box;">
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Date</div>
+                  <input id="asm-date" type="date" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-size:13px;outline:none;">
+                </div>
+              </div>
+
+              <button onclick="asmSaveAssessment()" style="padding:11px;border-radius:9px;border:none;background:var(--navy);color:white;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;">✓ Save Assessment</button>
+            </div>
+          </div>
+
+          <!-- Right: Student scores -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Student Scores</div>
+                <div class="card-subtitle" id="asm-students-sub">Select a class to load students</div>
+              </div>
+              <div id="asm-pct-badge" style="font-size:12px;color:var(--muted);"></div>
+            </div>
+            <div class="card-body" style="padding:0;max-height:480px;overflow-y:auto;">
+              <div id="asm-students-wrap">
+                <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">Select class and subject to load students</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: VIEW -->
+      <div id="asm-view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Assessment Records</div>
+              <div class="card-subtitle" id="asm-view-sub">All assessments</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <select id="asm-filter-class" onchange="asmFilterView()" style="padding:7px 12px;border-radius:8px;border:1.5px solid var(--rule);font-size:12.5px;outline:none;">
+                <option value="">All Classes</option>
+              </select>
+              <select id="asm-filter-type" onchange="asmFilterView()" style="padding:7px 12px;border-radius:8px;border:1.5px solid var(--rule);font-size:12.5px;outline:none;">
+                <option value="">All Types</option>
+                <option value="formative">Formative</option>
+                <option value="summative">Summative</option>
+              </select>
+              <select id="asm-filter-subject" onchange="asmFilterView()" style="padding:7px 12px;border-radius:8px;border:1.5px solid var(--rule);font-size:12.5px;outline:none;">
+                <option value="">All Subjects</option>
+              </select>
+            </div>
+          </div>
+          <div id="asm-view-list" style="padding:0;"></div>
+        </div>
+      </div>
+
+    </div>
+
     <div class="panel" id="panel-ai">
       <div class="card ai-panel" style="max-width:100%;">
         <div class="card-header">
@@ -2377,12 +2570,13 @@
     dailyreport: 'Daily Report',
     rubric: 'Observation Rubric',
     calendar: 'School Calendar',
+    assessments: 'Assessments',
     ai: 'AI Assistant'
   };
 
   var panelIcons = {
     dashboard:'🏠', teachers:'👨‍🏫', discipline:'🛡️', academics:'🎯',
-    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', ai:'✨'
+    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', assessments:'📋', ai:'✨'
   };
 
   function showPanel(id, el) {
@@ -2401,6 +2595,7 @@
     if (id === 'timetable')   { if(typeof ttInitPanel==='function') ttInitPanel(); }
     if (id === 'teachers')    { if(typeof renderPerfTable==='function') renderPerfTable(); }
     if (id === 'results')     { if(typeof renderResults==='function') setTimeout(function(){ renderResults(); }, 50); }
+    if (id === 'assessments') { if(typeof asmInit==='function') asmInit(); }
   }
 
   // AI Chat
@@ -4177,7 +4372,7 @@ function renderIncidentLog() {
     var stageLabel = {1:'Stage 1',2:'Stage 2',3:'Stage 3'};
 
     var table = document.createElement('table');
-    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
+    table.style.cssText = 'width:100%;min-width:460px;border-collapse:collapse;font-size:13px;';
     var thead = document.createElement('thead');
     thead.innerHTML = '<tr style="background:#f8f7f4;">'
       + '<th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6b7280;border-bottom:1.5px solid #e5e7eb;">Student</th>'
@@ -4479,7 +4674,7 @@ function renderIncidentLog() {
       title: 'Principal',
       avatar: 'AS',
       access: 'all',
-      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport'],
+      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments'],
       teacherName: 'Sharma Akash',
     },
 
@@ -4491,7 +4686,7 @@ function renderIncidentLog() {
       title: 'Co-Founder',
       avatar: 'LR',
       access: 'all',
-      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport'],
+      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments'],
     },
     'lucia.scipova': {
       password: 'redbridge2024',
@@ -4500,7 +4695,7 @@ function renderIncidentLog() {
       title: 'Co-Founder',
       avatar: 'LS',
       access: 'all',
-      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport'],
+      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments'],
     },
 
     // ── ADMIN STAFF ──
@@ -4511,7 +4706,7 @@ function renderIncidentLog() {
       title: 'Administration',
       avatar: 'AD',
       access: 'limited',
-      panels: ['dashboard','calendar','classes','dailyreport'],
+      panels: ['dashboard','calendar','classes','dailyreport','assessments'],
       readonlyStats: true,
     },
 
@@ -4523,7 +4718,7 @@ function renderIncidentLog() {
       title: 'Discipline Officer',
       avatar: 'DO',
       access: 'limited',
-      panels: ['dashboard','discipline','calendar','dailyreport'],
+      panels: ['dashboard','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
 
@@ -4544,7 +4739,7 @@ function renderIncidentLog() {
       deptClasses: ['1A','1B','1C','2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
       deptSubjects: ['Maths'],
       deptTeachers: ['Normamatova Sitora Furkatovna','Abdullayeva Gulnara Asatovna'],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport'],
+      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Abdullayeva Gulnara Asatovna',
     },
@@ -4563,7 +4758,7 @@ function renderIncidentLog() {
       deptClasses: ['5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'],
       deptSubjects: ['Maths'],
       deptTeachers: ['Ibragimova Nasiba Ismailovna','Yusupov Abdussator Davlatovich'],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport'],
+      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Ibragimova Nasiba Ismailovna',
     },
@@ -4584,7 +4779,7 @@ function renderIncidentLog() {
       deptClasses: ['1A','1B','1C','2A','2B','2C','2C','3A','3B','3C','4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A'],
       deptSubjects: ['Science'],
       deptTeachers: ['Banu Umera','Egamberdiyev Zafar','Raximova Xilola','Bahretdinova Elsbeth','Sharma Akash'],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport'],
+      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Bahretdinova Elsbeth',
     },
@@ -4599,7 +4794,7 @@ function renderIncidentLog() {
       avatar: 'AF',
       access: 'class',
       classes: ['6A','7A'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Abduazizova Feruza Erkinovna',
     },
@@ -4611,7 +4806,7 @@ function renderIncidentLog() {
       avatar: 'GA',
       access: 'class',
       classes: ['3A','4A'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Abdullayeva Gulnara Asatovna',
     },
@@ -4623,7 +4818,7 @@ function renderIncidentLog() {
       avatar: 'BO',
       access: 'class',
       classes: ['5A','5B'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Bobobekova Barno Olimovna',
     },
@@ -4635,7 +4830,7 @@ function renderIncidentLog() {
       avatar: 'OD',
       access: 'class',
       classes: ['1A','2A'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Djurayeva Oygul Isayevna',
     },
@@ -4647,7 +4842,7 @@ function renderIncidentLog() {
       avatar: 'EZ',
       access: 'class',
       classes: ['1C','2C'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Egamberdiyev Zafar',
     },
@@ -4659,7 +4854,7 @@ function renderIncidentLog() {
       avatar: 'NI',
       access: 'class',
       classes: ['8A','8B','9A','10A'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Ibragimova Nasiba Ismailovna',
     },
@@ -4671,7 +4866,7 @@ function renderIncidentLog() {
       avatar: 'XI',
       access: 'class',
       classes: ['3B','3C'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Isomatov Xushbaxt Sadriddinovich',
     },
@@ -4683,7 +4878,7 @@ function renderIncidentLog() {
       avatar: 'AJ',
       access: 'class',
       classes: ['7B'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Jamalova Asalya Alisherovna',
     },
@@ -4695,7 +4890,7 @@ function renderIncidentLog() {
       avatar: 'ZN',
       access: 'class',
       classes: ['4B','4C'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Naimova Zarrina Musinovna',
     },
@@ -4707,7 +4902,7 @@ function renderIncidentLog() {
       avatar: 'SN',
       access: 'class',
       classes: ['1B','2B'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Normamatova Sitora Furkatovna',
     },
@@ -4719,7 +4914,7 @@ function renderIncidentLog() {
       avatar: 'XR',
       access: 'class',
       classes: ['6C','7C'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Raximova Xilola',
     },
@@ -4731,7 +4926,7 @@ function renderIncidentLog() {
       avatar: 'AY',
       access: 'class',
       classes: ['6B'],
-      panels: ['dashboard','results','discipline','calendar','dailyreport'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Yusupov Abdussator Davlatovich',
     },
@@ -4747,7 +4942,7 @@ function renderIncidentLog() {
       teacherSubjects: ["ART", "ENGLISH", "MATHS in ENG", "SCIENCE"],
       teacherClasses:  ["1A", "1B", "1C"],
       teacherName: 'Banu Umera',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'bulgak.emin': {
@@ -4760,7 +4955,7 @@ function renderIncidentLog() {
       teacherSubjects: ["GP-Geography", "GP-History"],
       teacherClasses:  ["3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7B", "8A", "8B"],
       teacherName: 'Bulgak Emine',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'halkou.hous': {
@@ -4773,7 +4968,7 @@ function renderIncidentLog() {
       teacherSubjects: ["ENGLISH"],
       teacherClasses:  ["4A", "4B", "4C", "5A", "5B", "6A"],
       teacherName: 'Halkouj Houssam',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'hella.manz': {
@@ -4786,7 +4981,7 @@ function renderIncidentLog() {
       teacherSubjects: ["BUSINESS", "MATHS in ENG"],
       teacherClasses:  ["5B", "6A", "6B", "6C", "7B", "7C", "8A", "8B"],
       teacherName: 'Hella Manzoor Ahmad',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'jamalo.asal': {
@@ -4799,7 +4994,7 @@ function renderIncidentLog() {
       teacherSubjects: ["PHYSICS"],
       teacherClasses:  ["7A", "7B", "7C"],
       teacherName: 'Jamalova Asalya Alisherovna',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'mishra.soni': {
@@ -4812,7 +5007,7 @@ function renderIncidentLog() {
       teacherSubjects: ["ENGLISH", "MATHS in ENG"],
       teacherClasses:  ["2A", "2B", "2C", "3A", "3B", "3C"],
       teacherName: 'Mishra Soniya',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'neitng.nans': {
@@ -4825,7 +5020,7 @@ function renderIncidentLog() {
       teacherSubjects: ["MATHS in ENG"],
       teacherClasses:  ["3A", "3B", "3C", "4A", "4B", "4C", "5A"],
       teacherName: 'Neitngale Nansi Thote',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'rakhim.sabi': {
@@ -4838,7 +5033,7 @@ function renderIncidentLog() {
       teacherSubjects: ["LITERATURE", "Literature", "RUSSIAN", "Uzbek language"],
       teacherClasses:  ["10A", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7C", "8A", "8B", "9A"],
       teacherName: 'Rakhimova Sabina Robertovna',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'raxman.aziz': {
@@ -4851,7 +5046,7 @@ function renderIncidentLog() {
       teacherSubjects: ["BIOLOGY"],
       teacherClasses:  ["10A", "7A", "7B", "7C", "8A", "8B", "9A"],
       teacherName: 'Raxmanova Aziza',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'rizaba.rukh': {
@@ -4864,7 +5059,7 @@ function renderIncidentLog() {
       teacherSubjects: ["BIOLOGY", "CHEMISTRY"],
       teacherClasses:  ["10A", "7A", "7B", "7C", "8A", "8B", "9A"],
       teacherName: 'Rizabaeva Rukhsora Ravshanovna',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'yaqoob.adee': {
@@ -4877,7 +5072,7 @@ function renderIncidentLog() {
       teacherSubjects: ["BUSINESS", "MATHS in ENG"],
       teacherClasses:  ["10A", "7A", "7B", "8A", "8B", "9A"],
       teacherName: 'Yaqoob Adeel',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'mrfirdavs': {
@@ -4890,7 +5085,7 @@ function renderIncidentLog() {
       teacherSubjects: ["CHESS"],
       teacherClasses:  ["3A", "3B", "3C", "4A", "4B", "4C"],
       teacherName: 'mr.Firdavs',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'mskarina': {
@@ -4903,7 +5098,7 @@ function renderIncidentLog() {
       teacherSubjects: ["PHYSICAL EDU."],
       teacherClasses:  ["6A", "6B", "6C", "7A", "7B", "7C"],
       teacherName: 'ms.Karina',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'msmadina': {
@@ -4916,7 +5111,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Uzbek language"],
       teacherClasses:  ["7B", "7C", "8A", "8B"],
       teacherName: 'ms.Madina',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'msnasiba': {
@@ -4929,7 +5124,7 @@ function renderIncidentLog() {
       teacherSubjects: ["MATHS"],
       teacherClasses:  ["5B"],
       teacherName: 'ms.Nasiba',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
     'msshahrizoda': {
@@ -4942,7 +5137,7 @@ function renderIncidentLog() {
       teacherSubjects: ["GP-Geography"],
       teacherClasses:  ["7B"],
       teacherName: 'ms.Shahrizoda',
-      panels: ['dashboard','results','calendar','dailyreport'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments'],
       readonlyStats: true,
     },
   };
@@ -6727,9 +6922,30 @@ function renderIncidentLog() {
       tr.style.cssText = 'background:' + bg + ';border-bottom:1px solid #f1f5f9;';
 
       // Name cell
+      // Calculate overall average from all recorded marks for this student
+      var allMarks = [];
+      if (typeof dailyReports !== 'undefined') {
+        dailyReports.forEach(function(rep) {
+          if (rep.cls !== cls || rep.subject !== subject) return;
+          (rep.students||[]).forEach(function(st) {
+            if (st.name === fullName && !st.absent) {
+              [st.cw, st.hw, st.disc].forEach(function(v) {
+                if (v && parseInt(v) > 0) allMarks.push(parseInt(v));
+              });
+            }
+          });
+        });
+      }
+      var overallAvg = allMarks.length ? allMarks.reduce(function(a,b){return a+b;},0)/allMarks.length : null;
+      var avgColor   = overallAvg === null ? '#94a3b8' : overallAvg>=4 ? '#16a34a' : overallAvg===3 ? '#ca8a04' : '#dc2626';
+      var avgBadge = '';
+      if (overallAvg !== null) {
+        var avgText = overallAvg%1===0 ? overallAvg.toFixed(0) : overallAvg.toFixed(2);
+        avgBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;border-radius:20px;background:' + avgColor + ';color:white;font-size:11.5px;font-weight:800;padding:0 8px;margin-left:8px;">' + avgText + '</span>';
+      } else { avgBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;border-radius:20px;background:#f1f5f9;color:#94a3b8;font-size:10px;font-weight:700;padding:0 8px;margin-left:8px;">—</span>'; }
       var tdName = document.createElement('td');
       tdName.style.cssText = 'padding:8px 14px;font-weight:600;font-size:12.5px;white-space:nowrap;color:var(--ink);position:sticky;left:0;background:' + bg + ';z-index:5;';
-      tdName.innerHTML = '<span style="font-size:10.5px;color:var(--muted);margin-right:5px;">' + (idx+1<10?'0'+(idx+1):idx+1) + '</span>' + fullName;
+      tdName.innerHTML = '<span style="font-size:10.5px;color:var(--muted);margin-right:5px;">' + (idx+1<10?'0'+(idx+1):idx+1) + '</span>' + fullName + avgBadge;
       tr.appendChild(tdName);
 
       // Date cells
@@ -7524,6 +7740,732 @@ function renderIncidentLog() {
     obsCloseModal();
     obsRender();
     showToast('Observation deleted ✓');
+  }
+
+  // ══ LANGUAGE SYSTEM ═══════════════════════════════════════════════════
+  var _lang = 'en';
+
+  var TRANSLATIONS = {
+    en: {
+      // Nav
+      nav_dashboard: 'Dashboard', nav_teachers: 'Teacher Performance',
+      nav_classes: 'Classes & Sections', nav_subjects: 'Subjects',
+      nav_results: 'Student Results', nav_discipline: 'Discipline Tracker',
+      nav_academics: 'Academic Monitoring', nav_rubric: 'Observation Rubric',
+      nav_timetable: 'Timetable', nav_dailyreport: 'Daily Report',
+      nav_assessments: 'Assessments', nav_calendar: 'School Calendar',
+      nav_ai: 'AI Assistant',
+      // Panel titles
+      title_dashboard: 'Dashboard', title_teachers: 'Teacher Performance',
+      title_discipline: 'Discipline Tracker', title_academics: 'Academic Monitoring',
+      title_classes: 'Classes & Sections', title_subjects: 'Subjects',
+      title_results: 'Student Results', title_rubric: 'Observation Rubric',
+      title_timetable: 'Timetable', title_dailyreport: 'Daily Report',
+      title_assessments: 'Assessments', title_calendar: 'School Calendar',
+      title_ai: 'AI Assistant',
+      // Daily Report
+      dr_title: 'Daily Lesson Report',
+      dr_subtitle: 'Record marks and remarks for each lesson',
+      dr_submit_tab: '✍️ Submit Report',
+      dr_view_tab: '📋 View Reports',
+      dr_todays_lessons: "Today's Lessons",
+      dr_click_lesson: 'Click a lesson to open the grade book',
+      dr_open_manual: 'Open Grade Book Manually',
+      dr_class: 'Class', dr_subject: 'Subject',
+      dr_topic: "📚 Today's Topic / Classwork",
+      dr_homework: '📝 Homework for Next Lesson',
+      dr_back: '← Back', dr_submit_today: '✓ Submit Today',
+      dr_grade_book: 'Grade Book',
+      dr_cw: 'Classwork', dr_hw: 'Homework', dr_disc: 'Discipline',
+      dr_absent: 'Mark as Absent', dr_save_close: '✓ Done',
+      // Assessments
+      asm_title: 'Assessments',
+      asm_subtitle: 'Record formative and summative assessment scores',
+      asm_submit_tab: '✍️ Submit Assessment',
+      asm_view_tab: '📊 View Results',
+      asm_details: 'Assessment Details',
+      asm_details_sub: 'Fill in details then enter scores',
+      asm_type: 'Assessment Type',
+      asm_formative: '📝 Formative', asm_summative: '📊 Summative',
+      asm_name: 'Assessment Name', asm_total: 'Total Marks', asm_date: 'Date',
+      asm_save: '✓ Save Assessment',
+      asm_students: 'Student Scores',
+      asm_student_col: 'Student', asm_absent_col: 'Absent',
+      asm_select_class: 'Select class and subject to load students',
+      asm_no_records: 'No assessments recorded yet.',
+      // Calendar
+      cal_add: '+ Add Event', cal_today: 'Today',
+      // Common
+      select_class: '— Select class —', select_subject: '— Select subject —',
+      connected: 'Connected', disconnected: 'Disconnected', connecting: 'Connecting...',
+      save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit',
+      close: 'Close', back: 'Back', all_classes: 'All Classes',
+      submit: 'Submit', view: 'View', export: 'Export',
+      student: 'Student', class: 'Class', subject: 'Subject',
+      date: 'Date', teacher: 'Teacher', score: 'Score',
+      new_action: '＋ New Action', export_btn: '⬇ Export',
+    },
+
+    ru: {
+      // Nav
+      nav_dashboard: 'Главная', nav_teachers: 'Успеваемость учителей',
+      nav_classes: 'Классы и секции', nav_subjects: 'Предметы',
+      nav_results: 'Результаты учеников', nav_discipline: 'Дисциплина',
+      nav_academics: 'Академический мониторинг', nav_rubric: 'Рубрика наблюдений',
+      nav_timetable: 'Расписание', nav_dailyreport: 'Ежедневный отчёт',
+      nav_assessments: 'Оценивание', nav_calendar: 'Школьный календарь',
+      nav_ai: 'ИИ Помощник',
+      // Panel titles
+      title_dashboard: 'Главная', title_teachers: 'Успеваемость учителей',
+      title_discipline: 'Дисциплина', title_academics: 'Академический мониторинг',
+      title_classes: 'Классы и секции', title_subjects: 'Предметы',
+      title_results: 'Результаты учеников', title_rubric: 'Рубрика наблюдений',
+      title_timetable: 'Расписание', title_dailyreport: 'Ежедневный отчёт',
+      title_assessments: 'Оценивание', title_calendar: 'Школьный календарь',
+      title_ai: 'ИИ Помощник',
+      // Daily Report
+      dr_title: 'Ежедневный журнал',
+      dr_subtitle: 'Записывайте оценки и замечания по каждому уроку',
+      dr_submit_tab: '✍️ Подать отчёт',
+      dr_view_tab: '📋 Просмотр отчётов',
+      dr_todays_lessons: 'Уроки сегодня',
+      dr_click_lesson: 'Нажмите на урок, чтобы открыть журнал',
+      dr_open_manual: 'Открыть журнал вручную',
+      dr_class: 'Класс', dr_subject: 'Предмет',
+      dr_topic: '📚 Тема урока / Классная работа',
+      dr_homework: '📝 Домашнее задание',
+      dr_back: '← Назад', dr_submit_today: '✓ Сдать отчёт',
+      dr_grade_book: 'Журнал',
+      dr_cw: 'Классная работа', dr_hw: 'Д/З', dr_disc: 'Дисциплина',
+      dr_absent: 'Отметить отсутствие', dr_save_close: '✓ Готово',
+      // Assessments
+      asm_title: 'Оценивание',
+      asm_subtitle: 'Запись результатов текущего и итогового оценивания',
+      asm_submit_tab: '✍️ Добавить оценивание',
+      asm_view_tab: '📊 Просмотр результатов',
+      asm_details: 'Детали оценивания',
+      asm_details_sub: 'Заполните данные, затем введите баллы',
+      asm_type: 'Тип оценивания',
+      asm_formative: '📝 Текущее', asm_summative: '📊 Итоговое',
+      asm_name: 'Название', asm_total: 'Максимум баллов', asm_date: 'Дата',
+      asm_save: '✓ Сохранить',
+      asm_students: 'Баллы учеников',
+      asm_student_col: 'Ученик', asm_absent_col: 'Отсутствует',
+      asm_select_class: 'Выберите класс и предмет для загрузки учеников',
+      asm_no_records: 'Результатов пока нет.',
+      // Calendar
+      cal_add: '+ Добавить событие', cal_today: 'Сегодня',
+      // Common
+      select_class: '— Выберите класс —', select_subject: '— Выберите предмет —',
+      connected: 'Подключено', disconnected: 'Отключено', connecting: 'Подключение...',
+      save: 'Сохранить', cancel: 'Отмена', delete: 'Удалить', edit: 'Изменить',
+      close: 'Закрыть', back: 'Назад', all_classes: 'Все классы',
+      submit: 'Отправить', view: 'Просмотр', export: 'Экспорт',
+      student: 'Ученик', class: 'Класс', subject: 'Предмет',
+      date: 'Дата', teacher: 'Учитель', score: 'Балл',
+      new_action: '＋ Новое действие', export_btn: '⬇ Экспорт',
+    },
+
+    uz: {
+      // Nav
+      nav_dashboard: 'Bosh sahifa', nav_teachers: "Oʻqituvchi natijalari",
+      nav_classes: 'Sinflar', nav_subjects: 'Fanlar',
+      nav_results: "Oʻquvchi natijalari", nav_discipline: 'Intizom',
+      nav_academics: 'Akademik monitoring', nav_rubric: 'Kuzatuv rubrikasi',
+      nav_timetable: 'Dars jadvali', nav_dailyreport: 'Kunlik hisobot',
+      nav_assessments: 'Baholash', nav_calendar: 'Maktab kalendari',
+      nav_ai: 'AI Yordamchi',
+      // Panel titles
+      title_dashboard: 'Bosh sahifa', title_teachers: "Oʻqituvchi natijalari",
+      title_discipline: 'Intizom', title_academics: 'Akademik monitoring',
+      title_classes: 'Sinflar', title_subjects: 'Fanlar',
+      title_results: "Oʻquvchi natijalari", title_rubric: 'Kuzatuv rubrikasi',
+      title_timetable: 'Dars jadvali', title_dailyreport: 'Kunlik hisobot',
+      title_assessments: 'Baholash', title_calendar: 'Maktab kalendari',
+      title_ai: 'AI Yordamchi',
+      // Daily Report
+      dr_title: 'Kunlik dars hisoboti',
+      dr_subtitle: 'Har bir dars uchun baholar va izohlarni kiriting',
+      dr_submit_tab: '✍️ Hisobot yuborish',
+      dr_view_tab: '📋 Hisobotlarni koʻrish',
+      dr_todays_lessons: 'Bugungi darslar',
+      dr_click_lesson: 'Jurnal ochish uchun darsni bosing',
+      dr_open_manual: 'Jurnalni qoʻlda ochish',
+      dr_class: 'Sinf', dr_subject: 'Fan',
+      dr_topic: '📚 Dars mavzusi / Sinf ishi',
+      dr_homework: '📝 Uyga vazifa',
+      dr_back: '← Orqaga', dr_submit_today: '✓ Hisobotni yuborish',
+      dr_grade_book: 'Jurnal',
+      dr_cw: 'Sinf ishi', dr_hw: 'Uyga vazifa', dr_disc: 'Intizom',
+      dr_absent: 'Kelmagan deb belgilash', dr_save_close: '✓ Tayyor',
+      // Assessments
+      asm_title: 'Baholash',
+      asm_subtitle: 'Joriy va yakuniy baholash natijalarini kiriting',
+      asm_submit_tab: '✍️ Baholash qoʻshish',
+      asm_view_tab: '📊 Natijalarni koʻrish',
+      asm_details: 'Baholash tafsilotlari',
+      asm_details_sub: 'Maʻlumotlarni toʻldiring, soʻng baholarni kiriting',
+      asm_type: 'Baholash turi',
+      asm_formative: '📝 Joriy', asm_summative: '📊 Yakuniy',
+      asm_name: 'Nomi', asm_total: 'Maksimal ball', asm_date: 'Sana',
+      asm_save: '✓ Saqlash',
+      asm_students: "Oʻquvchi ballari",
+      asm_student_col: "Oʻquvchi", asm_absent_col: 'Qatnashmagan',
+      asm_select_class: 'Oʻquvchilarni yuklash uchun sinf va fanni tanlang',
+      asm_no_records: 'Hali baholash natijalari yoʻq.',
+      // Calendar
+      cal_add: '+ Tadbir qoʻshish', cal_today: 'Bugun',
+      // Common
+      select_class: '— Sinf tanlang —', select_subject: '— Fan tanlang —',
+      connected: 'Ulangan', disconnected: 'Uzilgan', connecting: 'Ulanmoqda...',
+      save: 'Saqlash', cancel: 'Bekor qilish', delete: "Oʻchirish", edit: 'Tahrirlash',
+      close: 'Yopish', back: 'Orqaga', all_classes: 'Barcha sinflar',
+      submit: 'Yuborish', view: 'Koʻrish', export: 'Eksport',
+      student: "Oʻquvchi", class: 'Sinf', subject: 'Fan',
+      date: 'Sana', teacher: "Oʻqituvchi", score: 'Ball',
+      new_action: '＋ Yangi harakat', export_btn: '⬇ Eksport',
+    }
+  };
+
+  function t(key) {
+    var lang = TRANSLATIONS[_lang] || TRANSLATIONS['en'];
+    return lang[key] || TRANSLATIONS['en'][key] || key;
+  }
+
+  function setLang(lang) {
+    _lang = lang;
+    // Update button styles
+    ['en','ru','uz'].forEach(function(l) {
+      var btn = document.getElementById('lang-btn-' + l);
+      if (!btn) return;
+      if (l === lang) {
+        btn.style.background = 'var(--navy)';
+        btn.style.color = 'white';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--muted)';
+      }
+    });
+    applyTranslations();
+  }
+
+  function applyTranslations() {
+    // Nav items
+    var navMap = {
+      dashboard:'nav_dashboard', teachers:'nav_teachers', classes:'nav_classes',
+      subjects:'nav_subjects', results:'nav_results', discipline:'nav_discipline',
+      academics:'nav_academics', rubric:'nav_rubric', timetable:'nav_timetable',
+      dailyreport:'nav_dailyreport', assessments:'nav_assessments',
+      calendar:'nav_calendar', ai:'nav_ai'
+    };
+    document.querySelectorAll('.nav-item[data-panel]').forEach(function(item) {
+      var panel = item.getAttribute('data-panel');
+      if (navMap[panel]) {
+        // Keep the icon span, update only the text node
+        var icon = item.querySelector('.nav-icon');
+        var iconText = icon ? icon.outerHTML : '';
+        item.innerHTML = iconText + ' ' + t(navMap[panel]);
+      }
+    });
+
+    // Panel titles map
+    var titleMap = {
+      dashboard:'title_dashboard', teachers:'title_teachers', discipline:'title_discipline',
+      academics:'title_academics', classes:'title_classes', subjects:'title_subjects',
+      results:'title_results', rubric:'title_rubric', timetable:'title_timetable',
+      dailyreport:'title_dailyreport', assessments:'title_assessments',
+      calendar:'title_calendar', ai:'title_ai'
+    };
+    // Update panelTitles object so showPanel works in new language
+    Object.keys(titleMap).forEach(function(p) { panelTitles[p] = t(titleMap[p]); });
+    // Update current panel title
+    var titleEl = document.getElementById('panel-title');
+    if (titleEl) {
+      var active = document.querySelector('.panel.active');
+      if (active) {
+        var pid = active.id.replace('panel-','');
+        if (titleMap[pid]) titleEl.textContent = t(titleMap[pid]);
+      }
+    }
+
+    // Translate static elements by data-i18n attribute
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+
+    // Translate placeholder attributes
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+      el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+    });
+
+    // Cloud status
+    var sbLabel = document.getElementById('sb-label');
+    if (sbLabel) {
+      var cur = sbLabel.textContent;
+      if (cur === 'Connected' || cur === 'Подключено' || cur === 'Ulangan') sbLabel.textContent = t('connected');
+      else if (cur === 'Disconnected' || cur === 'Отключено' || cur === 'Uzilgan') sbLabel.textContent = t('disconnected');
+    }
+
+    // Topbar buttons
+    var na = document.querySelector('[onclick="openNewActionModal()"]');
+    if (na) na.textContent = t('new_action');
+    var ex = document.querySelector('[onclick="exportDashboardReport()"]');
+    if (ex) ex.textContent = t('export_btn');
+
+    // Daily report panel labels
+    var drTitle = document.querySelector('#panel-dailyreport h2');
+    if (drTitle) drTitle.textContent = t('dr_title');
+    var drSub = document.querySelector('#panel-dailyreport h2 + div');
+    if (drSub) drSub.textContent = t('dr_subtitle');
+    var drTabSubmit = document.getElementById('dr-tab-submit');
+    if (drTabSubmit) drTabSubmit.textContent = t('dr_submit_tab');
+    var drTabView = document.getElementById('dr-tab-view');
+    if (drTabView) drTabView.textContent = t('dr_view_tab');
+    var drLabel = document.getElementById('dr-today-label');
+    if (drLabel && drLabel.textContent) drLabel.textContent = t('dr_todays_lessons');
+    var drTopicLabel = document.querySelector('label[for="dr-topic-input"], #dr-lesson-details div:first-child .label');
+    // Update topic/hw labels via data-i18n if set, else find by position
+    var detailLabels = document.querySelectorAll('#dr-lesson-details div > div:first-child');
+    if (detailLabels[0]) detailLabels[0].textContent = t('dr_topic');
+    if (detailLabels[1]) detailLabels[1].textContent = t('dr_homework');
+
+    // Assessment panel labels
+    var asmTitle = document.querySelector('#panel-assessments h2');
+    if (asmTitle) asmTitle.textContent = t('asm_title');
+    var asmSub = document.querySelector('#panel-assessments h2 + div');
+    if (asmSub) asmSub.textContent = t('asm_subtitle');
+    var asmTabSub = document.getElementById('asm-tab-submit');
+    if (asmTabSub) asmTabSub.textContent = t('asm_submit_tab');
+    var asmTabView = document.getElementById('asm-tab-view');
+    if (asmTabView) asmTabView.textContent = t('asm_view_tab');
+    var asmFormBtn = document.getElementById('asm-type-formative');
+    if (asmFormBtn) asmFormBtn.textContent = t('asm_formative');
+    var asmSummBtn = document.getElementById('asm-type-summative');
+    if (asmSummBtn) asmSummBtn.textContent = t('asm_summative');
+    var asmSaveBtn = document.querySelector('[onclick="asmSaveAssessment()"]');
+    if (asmSaveBtn) asmSaveBtn.textContent = t('asm_save');
+
+    // Calendar
+    var calAddBtn = document.querySelector('[onclick="calOpenAddEvent()"]');
+    if (calAddBtn) calAddBtn.textContent = t('cal_add');
+    var calTodayBtn = document.querySelector('[onclick="calGoToday()"]');
+    if (calTodayBtn) calTodayBtn.textContent = t('cal_today');
+
+    // Grid back/submit buttons (if visible)
+    var gridBack = document.querySelector('[onclick="drGridBack()"]');
+    if (gridBack) gridBack.textContent = t('dr_back');
+    var gridSubmit = document.querySelector('[onclick="drSubmitDay()"]');
+    if (gridSubmit) gridSubmit.textContent = t('dr_submit_today');
+  }
+
+  // ══ ASSESSMENTS ═══════════════════════════════════════════════════════
+  var _asmType = 'formative';
+  var _asmAssessments = []; // local cache loaded from Supabase
+
+  var ASM_FORMATIVE = ['Class Test','Quiz','Oral Test','Science Project','Assignment','Practical'];
+  var ASM_SUMMATIVE = ['Weekly Test','Unit Test','Monthly Test','Mid-Term Exam','Final Exam','Term Paper'];
+
+  function asmInit() {
+    // Set today's date
+    var dateEl = document.getElementById('asm-date');
+    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+
+    // Populate class dropdown based on user access
+    var clsSel = document.getElementById('asm-class');
+    if (clsSel) {
+      clsSel.innerHTML = '<option value="">— Select class —</option>';
+      var allowed = asmGetAllowedClasses();
+      allowed.forEach(function(c) {
+        var o = document.createElement('option'); o.value = c; o.textContent = 'Class ' + c;
+        clsSel.appendChild(o);
+      });
+    }
+
+    // Set default type
+    asmSetType('formative');
+
+    // Populate filter dropdowns
+    var fc = document.getElementById('asm-filter-class');
+    if (fc && fc.options.length <= 1) {
+      asmGetAllowedClasses().forEach(function(c) {
+        var o = document.createElement('option'); o.value=c; o.textContent='Class '+c; fc.appendChild(o);
+      });
+    }
+    var fs = document.getElementById('asm-filter-subject');
+    if (fs && fs.options.length <= 1) {
+      ['English','Maths','Cambridge Maths','Science','Russian Language','Physics',
+       'Chemistry','Biology','GP (Hist-Geo)','Economics','ICT','Uzbek Language'].forEach(function(s) {
+        var o = document.createElement('option'); o.value=s; o.textContent=s; fs.appendChild(o);
+      });
+    }
+
+    // Load from Supabase
+    asmLoadFromCloud();
+  }
+
+  function asmGetAllowedClasses() {
+    var u = _currentUser;
+    if (!u) return ALL_CLASSES;
+    if (u.access === 'all' || u.role === 'admin') return ALL_CLASSES;
+    if (u.teacherClasses && u.teacherClasses.length) return u.teacherClasses;
+    if (u.classes) return [u.classes];
+    return ALL_CLASSES;
+  }
+
+  function asmGetAllowedSubjects() {
+    var u = _currentUser;
+    if (!u || u.access === 'all') return null; // null = all subjects
+    return u.teacherSubjects || null;
+  }
+
+  function asmSwitchTab(tab) {
+    var submit = document.getElementById('asm-submit-section');
+    var view   = document.getElementById('asm-view-section');
+    var btnSub = document.getElementById('asm-tab-submit');
+    var btnView= document.getElementById('asm-tab-view');
+    if (tab === 'submit') {
+      if(submit) submit.style.display=''; if(view) view.style.display='none';
+      if(btnSub) btnSub.className='btn btn-primary';
+      if(btnView) btnView.className='btn btn-outline';
+    } else {
+      if(submit) submit.style.display='none'; if(view) view.style.display='';
+      if(btnSub) btnSub.className='btn btn-outline';
+      if(btnView) btnView.className='btn btn-primary';
+      asmFilterView();
+    }
+  }
+
+  function asmSetType(type) {
+    _asmType = type;
+    var fb = document.getElementById('asm-type-formative');
+    var sb = document.getElementById('asm-type-summative');
+    if (fb) {
+      fb.style.borderColor  = type==='formative' ? '#3b82f6' : 'var(--rule)';
+      fb.style.background   = type==='formative' ? '#eff6ff' : 'white';
+      fb.style.color        = type==='formative' ? '#1d4ed8' : 'var(--muted)';
+    }
+    if (sb) {
+      sb.style.borderColor  = type==='summative' ? '#7c3aed' : 'var(--rule)';
+      sb.style.background   = type==='summative' ? '#ede9fe' : 'white';
+      sb.style.color        = type==='summative' ? '#5b21b6' : 'var(--muted)';
+    }
+    // Update name dropdown
+    var names = type === 'formative' ? ASM_FORMATIVE : ASM_SUMMATIVE;
+    var sel = document.getElementById('asm-name');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Select —</option>';
+      names.forEach(function(n) {
+        var o = document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o);
+      });
+    }
+  }
+
+  function asmLoadStudents() {
+    var cls  = (document.getElementById('asm-class')||{}).value;
+    var subj = (document.getElementById('asm-subject')||{}).value;
+    var wrap = document.getElementById('asm-students-wrap');
+    var sub  = document.getElementById('asm-students-sub');
+    if (!cls || !subj || !wrap) return;
+
+    // Get students from resultsData
+    var months  = (resultsData && resultsData[cls]) || {};
+    var students = months['February'] || months['January'] || [];
+    if (!students.length) {
+      wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No student data for Class '+cls+'</div>';
+      return;
+    }
+    if (sub) sub.textContent = 'Class ' + cls + ' · ' + subj + ' · ' + students.length + ' students';
+
+    // Build table
+    var table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
+    var totalNow = parseInt((document.getElementById('asm-total')||{}).value) || 100;
+    var thead = document.createElement('thead');
+    thead.innerHTML = '<tr style="background:var(--navy);">' +
+      '<th style="padding:9px 14px;text-align:left;color:white;font-size:10.5px;font-weight:700;text-transform:uppercase;min-width:180px;">Student</th>' +
+      '<th style="padding:9px 12px;text-align:center;color:#fde68a;font-size:10.5px;font-weight:700;width:90px;">Score / '+totalNow+'</th>' +
+      '<th style="padding:9px 12px;text-align:center;color:#86efac;font-size:10.5px;font-weight:700;width:70px;">%</th>' +
+      '<th style="padding:9px 8px;text-align:center;color:#fca5a5;font-size:10.5px;font-weight:700;width:80px;">Absent</th>' +
+      '</tr>';
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    students.forEach(function(st, idx) {
+      var name = st.surname + ' ' + st.firstname;
+      var bg   = idx%2===0 ? 'white' : '#f8fafc';
+      var tr   = document.createElement('tr');
+      tr.style.cssText = 'background:'+bg+';border-bottom:1px solid #f1f5f9;';
+      tr.dataset.name  = name;
+
+      var tdN = document.createElement('td');
+      tdN.style.cssText = 'padding:7px 14px;font-weight:600;font-size:12.5px;color:var(--ink);';
+      tdN.innerHTML = '<span style="font-size:10.5px;color:var(--muted);margin-right:5px;">'+(idx+1<10?'0'+(idx+1):idx+1)+'</span>'+name;
+
+      var tdS = document.createElement('td');
+      tdS.style.cssText = 'padding:5px 8px;text-align:center;';
+      var inp = document.createElement('input');
+      inp.type = 'number'; inp.min = '0';
+      inp.className = 'asm-score-input';
+      inp.dataset.student = name;
+      inp.style.cssText = 'width:65px;padding:6px 8px;border-radius:7px;border:1.5px solid #e2e8f0;text-align:center;font-size:13px;font-weight:700;outline:none;font-family:"DM Sans",sans-serif;';
+      inp.placeholder = '—';
+
+      // Live % display cell
+      var tdP = document.createElement('td');
+      tdP.style.cssText = 'padding:5px 8px;text-align:center;min-width:60px;';
+      var pctSpan = document.createElement('span');
+      pctSpan.style.cssText = 'font-size:12.5px;font-weight:800;color:#94a3b8;';
+      pctSpan.textContent = '—';
+      tdP.appendChild(pctSpan);
+
+      // Update % live as score is typed
+      (function(capturedSpan, capturedInp) {
+        function calcPct() {
+          var total = parseInt((document.getElementById('asm-total')||{}).value) || 100;
+          var v = parseFloat(capturedInp.value);
+          if (!isNaN(v) && v >= 0 && total > 0) {
+            var pct = Math.round(v / total * 100);
+            var col = pct>=70?'#16a34a':pct>=50?'#ca8a04':'#dc2626';
+            capturedSpan.textContent = pct + '%';
+            capturedSpan.style.color = col;
+          } else {
+            capturedSpan.textContent = '—';
+            capturedSpan.style.color = '#94a3b8';
+          }
+          asmUpdateAvg();
+        }
+        capturedInp.addEventListener('input',  calcPct);
+        capturedInp.addEventListener('keyup',  calcPct);
+        capturedInp.addEventListener('change', calcPct);
+      })(pctSpan, inp);
+      tdS.appendChild(inp);
+
+      var tdA = document.createElement('td');
+      tdA.style.cssText = 'padding:5px 8px;text-align:center;';
+      var chk = document.createElement('input');
+      chk.type = 'checkbox'; chk.className = 'asm-absent-check'; chk.dataset.student = name;
+      chk.style.cssText = 'width:17px;height:17px;cursor:pointer;accent-color:#dc2626;';
+      chk.addEventListener('change', function() {
+        inp.disabled = this.checked;
+        inp.style.opacity = this.checked ? '0.3' : '1';
+        if (this.checked) { inp.value=''; pctSpan.textContent='Abs'; pctSpan.style.color='#94a3b8'; }
+        else { pctSpan.textContent='—'; pctSpan.style.color='#94a3b8'; }
+        asmUpdateAvg();
+      });
+      tdA.appendChild(chk);
+
+      tr.appendChild(tdN); tr.appendChild(tdS); tr.appendChild(tdP); tr.appendChild(tdA);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    var scrollWrap = document.createElement('div');
+    scrollWrap.style.cssText = 'overflow-x:auto;';
+    scrollWrap.appendChild(table);
+    wrap.innerHTML = '';
+    wrap.appendChild(scrollWrap);
+  }
+
+  function asmUpdateTotalLabel() {
+    var total = parseInt((document.getElementById('asm-total')||{}).value) || 100;
+    var lbl = document.getElementById('asm-total-label');
+    if (lbl) lbl.textContent = '/ ' + total;
+    // Recalculate all visible % spans
+    document.querySelectorAll('.asm-score-input').forEach(function(inp) {
+      var v = parseFloat(inp.value);
+      var row = inp.closest('tr');
+      if (!row) return;
+      var span = row.querySelectorAll('td')[2] && row.querySelectorAll('td')[2].querySelector('span');
+      if (!span) return;
+      if (!isNaN(v) && v >= 0) {
+        var pct = Math.round(v / total * 100);
+        var col = pct>=70?'#16a34a':pct>=50?'#ca8a04':'#dc2626';
+        span.textContent = pct + '%';
+        span.style.color = col;
+      }
+    });
+    asmUpdateAvg();
+  }
+
+  function asmUpdateAvg() {
+    var inputs  = document.querySelectorAll('.asm-score-input');
+    var entered = [];
+    inputs.forEach(function(inp) {
+      var v = parseFloat(inp.value);
+      if (!isNaN(v) && v >= 0 && !inp.disabled) entered.push(v);
+    });
+    var badge = document.getElementById('asm-pct-badge');
+    if (badge && entered.length) {
+      var avg = entered.reduce(function(a,b){return a+b;},0)/entered.length;
+      var col = avg>=70?'#16a34a':avg>=50?'#ca8a04':'#dc2626';
+      badge.innerHTML = '<span style="background:'+col+';color:white;padding:4px 12px;border-radius:20px;font-weight:800;font-size:13px;">Class avg: '+avg.toFixed(1)+'%</span>';
+    } else if (badge) {
+      badge.innerHTML = '';
+    }
+  }
+
+  function asmSaveAssessment() {
+    var cls   = (document.getElementById('asm-class')||{}).value;
+    var subj  = (document.getElementById('asm-subject')||{}).value;
+    var name  = (document.getElementById('asm-name')||{}).value;
+    var total = parseInt((document.getElementById('asm-total')||{}).value) || 100;
+    var date  = (document.getElementById('asm-date')||{}).value || new Date().toISOString().slice(0,10);
+
+    if (!cls || !subj || !name) { showToast('Please fill in Class, Subject and Assessment Name.'); return; }
+
+    // Collect scores
+    var students = [];
+    document.querySelectorAll('.asm-score-input').forEach(function(inp) {
+      var absent = false;
+      var absEl = null; var row2 = inp.closest('tr'); if(row2){absEl=row2.querySelector('.asm-absent-check');}
+      if (!absEl) {
+        // find by proximity
+        var row = inp.closest('tr');
+        if (row) { var cb = row.querySelector('.asm-absent-check'); if(cb) absEl = cb; }
+      }
+      absent = absEl ? absEl.checked : false;
+      var score = absent ? null : (inp.value !== '' ? parseFloat(inp.value) : null);
+      var pct   = score !== null ? Math.round(score / total * 100) : null;
+      students.push({ name: inp.dataset.student, score: score, pct: pct, absent: absent });
+    });
+
+    if (!students.length) { showToast('No students found. Load students first.'); return; }
+
+    var rec = {
+      id:       'asm' + Date.now(),
+      class:    cls, subject: subj,
+      teacher:  _currentUser ? _currentUser.name : '',
+      type:     _asmType, name: name,
+      date:     date, total_marks: total,
+      students: students
+    };
+
+    // Save to Supabase
+    updateCloudStatus('saving');
+    sbFetch('assessments','POST', {
+      id: rec.id, class: rec.class, subject: rec.subject,
+      teacher: rec.teacher, type: rec.type, name: rec.name,
+      date: rec.date, total_marks: rec.total_marks, students: rec.students
+    }).then(function() {
+      _asmAssessments.unshift(rec);
+      updateCloudStatus('saved');
+      showToast('✓ Assessment saved — ' + name + ' · Class ' + cls);
+      // Clear scores
+      document.querySelectorAll('.asm-score-input').forEach(function(i){ i.value=''; });
+      document.querySelectorAll('.asm-absent-check').forEach(function(c){ c.checked=false; });
+      var badge = document.getElementById('asm-pct-badge');
+      if (badge) badge.innerHTML = '';
+    }).catch(function(e) {
+      updateCloudStatus('error');
+      showToast('Error saving. Check connection.');
+      console.error(e);
+    });
+  }
+
+  function asmLoadFromCloud() {
+    var u = _currentUser;
+    var params = 'order=created_at.desc&limit=500';
+    // Teachers only see their own assessments
+    if (u && u.access !== 'all' && u.name) {
+      params += '&teacher=eq.' + encodeURIComponent(u.name);
+    }
+    sbFetch('assessments','GET',null,params).then(function(rows) {
+      if (!rows) return;
+      _asmAssessments = rows.map(function(r) {
+        return { id:r.id, class:r.class, subject:r.subject, teacher:r.teacher,
+          type:r.type, name:r.name, date:r.date, total_marks:r.total_marks,
+          students: r.students || [] };
+      });
+      asmFilterView();
+      updateCloudStatus('saved');
+    }).catch(function(){ updateCloudStatus('error'); });
+  }
+
+  function asmFilterView() {
+    var clsF  = (document.getElementById('asm-filter-class')||{}).value  || '';
+    var typeF = (document.getElementById('asm-filter-type')||{}).value   || '';
+    var subjF = (document.getElementById('asm-filter-subject')||{}).value|| '';
+    var list  = document.getElementById('asm-view-list');
+    var sub   = document.getElementById('asm-view-sub');
+    if (!list) return;
+
+    var filtered = _asmAssessments.filter(function(a) {
+      if (clsF  && a.class   !== clsF)   return false;
+      if (typeF && a.type    !== typeF)   return false;
+      if (subjF && a.subject !== subjF)   return false;
+      return true;
+    });
+    filtered.sort(function(a,b){ return (b.date||'') > (a.date||'') ? 1 : -1; });
+
+    if (sub) sub.textContent = filtered.length + ' assessment' + (filtered.length!==1?'s':'') + ' found';
+
+    if (!filtered.length) {
+      list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">No assessments recorded yet.</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    filtered.forEach(function(asm, idx) {
+      var scores   = (asm.students||[]).filter(function(s){ return s.pct !== null && !s.absent; });
+      var classAvg = scores.length ? scores.reduce(function(a,b){return a+b.pct;},0)/scores.length : null;
+      var avgCol   = classAvg===null?'#94a3b8':classAvg>=70?'#16a34a':classAvg>=50?'#ca8a04':'#dc2626';
+      var typeCol  = asm.type==='summative' ? '#7c3aed' : '#1d4ed8';
+      var typeBg   = asm.type==='summative' ? '#ede9fe' : '#eff6ff';
+
+      var section = document.createElement('div');
+      section.style.cssText = 'border-bottom:1.5px solid var(--rule);';
+
+      var hdr = document.createElement('div');
+      hdr.style.cssText = 'display:flex;align-items:center;gap:12px;padding:13px 18px;cursor:pointer;';
+      hdr.addEventListener('mouseenter', function(){ this.style.background='#f8fafc'; });
+      hdr.addEventListener('mouseleave', function(){ this.style.background=''; });
+
+      hdr.innerHTML =
+        '<span style="font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+typeBg+';color:'+typeCol+';">' +
+          (asm.type==='summative'?'SUMMATIVE':'FORMATIVE') + '</span>' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:13px;font-weight:700;color:var(--navy);">'+asm.name+' — Class '+asm.class+' · '+asm.subject+'</div>' +
+          '<div style="font-size:11.5px;color:var(--muted);">'+asm.date+' · '+asm.teacher+'</div>' +
+        '</div>' +
+        (classAvg!==null ? '<span style="background:'+avgCol+';color:white;padding:4px 12px;border-radius:20px;font-weight:800;font-size:13px;">'+classAvg.toFixed(1)+'%</span>' : '') +
+        '<span style="font-size:18px;color:var(--muted);" class="asm-arr">›</span>';
+
+      var body = document.createElement('div');
+      body.style.display = 'none';
+      body.style.padding = '0 0 12px 0';
+
+      // Build scores table
+      var tbl = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">';
+      tbl += '<thead><tr style="background:#f8fafc;">' +
+        '<th style="padding:7px 18px;text-align:left;font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;">Student</th>' +
+        '<th style="padding:7px 12px;text-align:center;font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;">Score</th>' +
+        '<th style="padding:7px 12px;text-align:center;font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;">%</th>' +
+        '<th style="padding:7px 12px;text-align:center;font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;">Grade</th>' +
+        '</tr></thead><tbody>';
+      (asm.students||[]).forEach(function(st, si) {
+        var bg = si%2===0?'white':'#f8fafc';
+        var col = st.absent?'#94a3b8':st.pct>=70?'#16a34a':st.pct>=50?'#ca8a04':'#dc2626';
+        var grade = st.absent?'—':st.pct>=90?'A+':st.pct>=80?'A':st.pct>=70?'B':st.pct>=60?'C':st.pct>=50?'D':'F';
+        tbl += '<tr style="background:'+bg+';border-bottom:1px solid #f1f5f9;">' +
+          '<td style="padding:6px 18px;font-weight:600;">'+st.name+'</td>' +
+          '<td style="padding:6px 12px;text-align:center;color:'+col+';font-weight:700;">'+(st.absent?'Absent':(st.score!==null?st.score+'/'+asm.total_marks:'—'))+'</td>' +
+          '<td style="padding:6px 12px;text-align:center;font-weight:800;color:'+col+';font-size:14px;">'+(st.absent?'—':(st.pct!==null?st.pct+'%':'—'))+'</td>' +
+          '<td style="padding:6px 12px;text-align:center;"><span style="font-weight:800;color:'+col+';">'+grade+'</span></td>' +
+          '</tr>';
+      });
+      tbl += '</tbody></table>';
+      body.innerHTML = tbl;
+
+      hdr.addEventListener('click', function() {
+        var open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : '';
+        var arr = hdr.querySelector('.asm-arr');
+        if (arr) arr.textContent = open ? '›' : '⌄';
+      });
+
+      section.appendChild(hdr);
+      section.appendChild(body);
+      list.appendChild(section);
+    });
   }
 
   // ══ CALENDAR ═════════════════════════════════════════════════════════════
