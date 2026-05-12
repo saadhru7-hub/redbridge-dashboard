@@ -7385,8 +7385,10 @@ function renderIncidentLog() {
     var opts = { method: m, headers: headers };
     if (body) opts.body = JSON.stringify(body);
     return fetch(url, opts).then(function(r) {
-      if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
-      return (r.status === 204 || m === 'DELETE' || m === 'PATCH') ? {} : r.json();
+      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP '+r.status+' '+r.url.split('/').pop()+': '+t); });
+      if (r.status === 204 || r.status === 201 || m === 'DELETE' || m === 'PATCH') return {};
+      var ct = r.headers.get('content-type') || '';
+      return ct.indexOf('json') !== -1 ? r.json() : {};
     });
   }
 
@@ -8544,7 +8546,7 @@ function renderIncidentLog() {
     sbFetch('calendar_events', 'GET', null, 'order=start_date.asc&limit=500')
       .then(function(rows) {
         var sbEvents = (rows || []).map(function(r) {
-          return {id:String(r.id), title:r.title, start:r.date, end:r.end_date||r.date,
+          return {id:String(r.id), title:r.title, start:r.date||'', end:r.end_date||r.date||'',
             type:r.type||'general', color:r.color||'#3b82f6', description:r.description||''};
         });
         // Merge: academic events + Supabase events (Supabase events take priority on same id)
@@ -8564,7 +8566,11 @@ function renderIncidentLog() {
   }
 
   function calEventsOnDate(ds) {
-    return _calEvents.filter(function(e) { return e.start <= ds && ds <= e.end; });
+    return _calEvents.filter(function(e) {
+      var start = e.start || '';
+      var end   = e.end   || e.start || '';
+      return start <= ds && ds <= end;
+    });
   }
 
   function calRender() {
@@ -8676,45 +8682,78 @@ function renderIncidentLog() {
 
   function calSaveEvent() {
     var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
-    var title=g('cal-evt-title'),startDate=g('cal-evt-date'),endDate=g('cal-evt-enddate');
-    var evType=g('cal-evt-type')||'event',evColor=g('cal-evt-color')||'#3b82f6';
-    var evDesc=g('cal-evt-desc'),editId=g('cal-edit-id');
-    if(!title){showToast('Please enter a title.');return;}
-    if(!startDate){showToast('Please select a date.');return;}
-    var tc={holiday:'#dc2626',exam:'#7c3aed',break:'#f59e0b',
+    var title     = g('cal-evt-title');
+    var startDate = g('cal-evt-date');
+    var endDate   = g('cal-evt-enddate');
+    var evType    = g('cal-evt-type')  || 'event';
+    var evColor   = g('cal-evt-color') || '#3b82f6';
+    var evDesc    = g('cal-evt-desc');
+    var editId    = g('cal-edit-id');
+
+    if (!title)     { showToast('Please enter a title.'); return; }
+    if (!startDate) { showToast('Please select a date.');  return; }
+
+    var tc = {holiday:'#dc2626',exam:'#7c3aed',break:'#f59e0b',
       quarter_start:'#1d4ed8',quarter_end:'#991b1b',
       meeting:'#0369a1',sports:'#16a34a',event:'#3b82f6'};
-    if(!evColor||evColor==='#3b82f6')evColor=tc[evType]||'#3b82f6';
-    var body={title:title,date:startDate,type:evType,color:evColor,description:evDesc||''};
-    if(endDate)body.end_date=endDate;
+    if (!evColor || evColor==='#3b82f6') evColor = tc[evType] || '#3b82f6';
+
+    var body = {title:title, date:startDate, type:evType, color:evColor, description:evDesc||''};
+    if (endDate) body.end_date = endDate;
+
+    // Show event locally immediately
+    var localId = 'local' + Date.now();
+    _calEvents.push({id:localId, title:title, start:startDate,
+      end:endDate||startDate, type:evType, color:evColor, description:evDesc||''});
+    calRender();
+    calCloseModal();
+
     updateCloudStatus('saving');
-    function xhrPost(b,cb){
-      var x=new XMLHttpRequest();
-      x.open('POST',_SB_URL+'/rest/v1/calendar_events',true);
-      x.setRequestHeader('apikey',_SB_KEY);
-      x.setRequestHeader('Authorization','Bearer '+_SB_KEY);
-      x.setRequestHeader('Content-Type','application/json');
-      x.setRequestHeader('Prefer','return=minimal');
-      x.onload=function(){x.status>=200&&x.status<300?cb(null):cb(new Error('HTTP '+x.status+': '+x.responseText));};
-      x.onerror=function(){cb(new Error('Network error'));};
-      x.send(JSON.stringify(b));
+
+    var doInsert = function() {
+      return sbFetch('calendar_events', 'POST', body);
+    };
+
+    // Use raw fetch with minimal headers to avoid CORS preflight issues
+    function calRawPost(bodyObj) {
+      return fetch(_SB_URL + '/rest/v1/calendar_events', {
+        method: 'POST',
+        headers: {
+          'apikey': _SB_KEY,
+          'Authorization': 'Bearer ' + _SB_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=ignore-duplicates'
+        },
+        body: JSON.stringify(bodyObj)
+      }).then(function(r) {
+        if (!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+': '+t); });
+        return {};
+      });
     }
-    function xhrDel(id,cb){
-      var x=new XMLHttpRequest();
-      x.open('DELETE',_SB_URL+'/rest/v1/calendar_events?id=eq.'+id,true);
-      x.setRequestHeader('apikey',_SB_KEY);
-      x.setRequestHeader('Authorization','Bearer '+_SB_KEY);
-      x.setRequestHeader('Prefer','return=minimal');
-      x.onload=function(){x.status>=200&&x.status<300?cb(null):cb(new Error('HTTP '+x.status));};
-      x.onerror=function(){cb(new Error('Network error'));};
-      x.send();
+
+    function calRawDelete(id) {
+      return fetch(_SB_URL + '/rest/v1/calendar_events?id=eq.' + id, {
+        method: 'DELETE',
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY }
+      }).then(function(r) { return {}; });
     }
-    function done(err){
-      if(err){console.error('Cal save:',err);showToast('Error: '+err.message);updateCloudStatus('error');return;}
-      calCloseModal();calLoadEvents();showToast(editId?'Event updated ✓':'Event saved ✓');updateCloudStatus('saved');
-    }
-    if(editId){xhrDel(editId,function(e){if(e){done(e);return;}xhrPost(body,done);});}
-    else{xhrPost(body,done);}
+
+    var savePromise = editId
+      ? calRawDelete(editId).then(function(){ return calRawPost(body); })
+      : calRawPost(body);
+
+    savePromise
+      .then(function() {
+        showToast(editId ? 'Event updated ✓' : 'Event saved ✓');
+        updateCloudStatus('saved');
+        _calEvents = _calEvents.filter(function(e){ return e.id !== localId; });
+        setTimeout(calLoadEvents, 300);
+      })
+      .catch(function(e) {
+        console.error('Cal save error:', e.message);
+        showToast('Save failed: ' + (e.message||'Unknown'));
+        updateCloudStatus('error');
+      });
   }
 
   function calDeleteEvent(id) {
