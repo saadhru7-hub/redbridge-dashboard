@@ -667,7 +667,7 @@
 </style>
 
 <script>
-  // Create PWA manifest dynamically
+// Create PWA manifest dynamically
   var manifestData = {
     "name": "Redbridge International — Principal Dashboard",
     "short_name": "Redbridge",
@@ -763,24 +763,7 @@
   </div>
 </div>
 <script>
-  // Instant session restore — only show app if session is valid version
-  (function() {
-    try {
-      var s = localStorage.getItem('redbridge_session');
-      if (!s) return;
-      var stored = JSON.parse(s);
-      // Must have version 3+ and a valid username
-      if (!stored || !stored.v || stored.v < 3 || !stored.username) {
-        localStorage.removeItem('redbridge_session');
-        return; // stay on login screen
-      }
-      // Valid session — hide login and show app immediately
-      var ls = document.getElementById('login-screen');
-      if (ls) ls.style.display = 'none';
-      document.querySelector('.sidebar').style.removeProperty('display');
-      document.querySelector('.main').style.removeProperty('display');
-    } catch(e) {}
-  })();
+
 </script>
 
 <style>
@@ -2306,7 +2289,19 @@
         <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#3b82f6;margin-right:4px;vertical-align:middle;"></span>Event</span>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">
+      
+      <!-- Calendar Legend -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:10px 16px;background:#f8fafc;border-radius:10px;border:1px solid #e5e7eb;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin-right:4px;">Legend:</div>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:12px;height:12px;border-radius:3px;background:#1d4ed8;flex-shrink:0;"></span>Quarter Begins</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:12px;height:12px;border-radius:3px;background:#991b1b;flex-shrink:0;"></span>Quarter Ends</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:12px;height:12px;border-radius:3px;background:#f59e0b;flex-shrink:0;"></span>Break</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:12px;height:12px;border-radius:3px;background:#dc2626;flex-shrink:0;"></span>Holiday</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:12px;height:12px;border-radius:3px;background:#7c3aed;flex-shrink:0;"></span>Monthly Test</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:12px;height:12px;border-radius:3px;background:#16a34a;flex-shrink:0;"></span>School Event</span>
+      </div>
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">
         <!-- Calendar grid -->
         <div class="card" style="overflow:hidden;">
           <div id="cal-grid-container" style="padding:16px;"></div>
@@ -2425,11 +2420,6 @@
                 <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Subject</div>
                 <select id="asm-subject" onchange="asmLoadStudents()" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
                   <option value="">— Select subject —</option>
-                  <option>English</option><option>Maths</option><option>Cambridge Maths</option>
-                  <option>Science</option><option>Russian Language</option><option>Physics</option>
-                  <option>Chemistry</option><option>Biology</option><option>GP (Hist-Geo)</option>
-                  <option>Economics</option><option>ICT</option><option>Uzbek Language</option>
-                  <option>Literature</option><option>Art</option><option>Physical Education</option>
                 </select>
               </div>
 
@@ -2549,13 +2539,7 @@
 </div><!-- /main -->
 
 <script>
-
-
-
-
-
-
-  // Set date
+// Set date
     (function(){var _e=document.getElementById('current-date');if(_e)_e.textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});})();
 
   // Panel switching
@@ -3467,7 +3451,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       return;
     }
     var today = new Date();
-    var dateStr = 'Mar ' + today.getDate();
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var dateStr = today.getDate() + ' ' + months[today.getMonth()] + ' ' + today.getFullYear();
     incidentLog.unshift({
       id: 'i' + Date.now(),
       student: student.trim(),
@@ -4328,23 +4313,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   var TEACHER_SCHEDULE={"Banu Umera":{"Monday":[{"period":1,"time":"08:10-09:00","class":"1A","subject":"ENGLISH","room":"135"},{"period":2,"time":"09:45-10:35","class":"1C","subject":"ENGLISH","room":"135"},{"period":3,"time":"10:40-11:30","class":"1A","subject":"SCIENCE","room":"135"},{"period":4,"time":"11:35-12:25","class":"1B","subject":"ENGLISH","room":"135"},{"period":5,"time":"13:45-14:35","class":"1B","subject":"MATHS in ENG","room":"135"},{"period":6,"time":"14:40-15:30","class":"1B","subject":"SCIENCE","room":"135"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"1B","subject":"ENGLISH","room":"135"},{"period":2,"time":"09:45-10:35","class":"1B","subject":"MATHS in ENG","room":"135"},{"period":3,"time":"10:40-11:30","class":"1A","subject":"ART","room":"135"},{"period":4,"time":"11:35-12:25","class":"1A","subject":"ENGLISH","room":"135"},{"period":5,"time":"13:45-14:35","class":"1C","subject":"ENGLISH","room":"135"},{"period":6,"time":"14:40-15:30","class":"1B","subject":"ART","room":"135"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"1A","subject":"ENGLISH","room":"135"},{"period":2,"time":"09:45-10:35","class":"1C","subject":"ENGLISH","room":"135"},{"period":3,"time":"10:40-11:30","class":"1A","subject":"SCIENCE","room":"135"},{"period":4,"time":"11:35-12:25","class":"1B","subject":"ENGLISH","room":"135"},{"period":5,"time":"13:45-14:35","class":"1B","subject":"MATHS in ENG","room":"135"},{"period":6,"time":"14:40-15:30","class":"1B","subject":"SCIENCE","room":"135"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"1B","subject":"ENGLISH","room":"135"},{"period":2,"time":"09:45-10:35","class":"1B","subject":"MATHS in ENG","room":"135"},{"period":3,"time":"10:40-11:30","class":"1B","subject":"ART","room":"135"},{"period":4,"time":"11:35-12:25","class":"1A","subject":"ENGLISH","room":"135"},{"period":5,"time":"13:45-14:35","class":"1C","subject":"ENGLISH","room":"135"},{"period":6,"time":"14:40-15:30","class":"1A","subject":"ART","room":"135"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"1A","subject":"ENGLISH","room":"135"},{"period":2,"time":"09:45-10:35","class":"1C","subject":"ENGLISH","room":"135"},{"period":3,"time":"10:40-11:30","class":"1A","subject":"SCIENCE","room":"135"},{"period":4,"time":"11:35-12:25","class":"1B","subject":"ENGLISH","room":"135"},{"period":5,"time":"13:45-14:35","class":"1B","subject":"MATHS in ENG","room":"135"},{"period":6,"time":"14:40-15:30","class":"1B","subject":"SCIENCE","room":"135"}]},"Egamberdiyev Zafar":{"Monday":[{"period":1,"time":"08:10-09:00","class":"1C","subject":"MATHS in ENG","room":"144"},{"period":2,"time":"09:45-10:35","class":"1A","subject":"MATHS in ENG","room":"144"},{"period":3,"time":"10:40-11:30","class":"1C","subject":"SCIENCE","room":"144"},{"period":4,"time":"11:35-12:25","class":"2A","subject":"MATHS in ENG","room":"144"},{"period":5,"time":"13:45-14:35","class":"2B","subject":"MATHS in ENG","room":"144"},{"period":6,"time":"14:40-15:30","class":"2C","subject":"ENGLISH","room":"144"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"2C","subject":"ENGLISH","room":"144"},{"period":2,"time":"09:45-10:35","class":"2B","subject":"MATHS in ENG","room":"144"},{"period":3,"time":"10:40-11:30","class":"2A","subject":"MATHS in ENG","room":"144"},{"period":4,"time":"11:35-12:25","class":"1C","subject":"MATHS in ENG","room":"144"},{"period":5,"time":"13:45-14:35","class":"1A","subject":"MATHS in ENG","room":"144"},{"period":6,"time":"14:40-15:30","class":"1C","subject":"ART","room":"144"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"1C","subject":"MATHS in ENG","room":"144"},{"period":2,"time":"09:45-10:35","class":"1A","subject":"MATHS in ENG","room":"144"},{"period":3,"time":"10:40-11:30","class":"1C","subject":"SCIENCE","room":"144"},{"period":4,"time":"11:35-12:25","class":"2B","subject":"MATHS in ENG","room":"144"},{"period":5,"time":"13:45-14:35","class":"2A","subject":"MATHS in ENG","room":"144"},{"period":6,"time":"14:40-15:30","class":"2C","subject":"ENGLISH","room":"144"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"2C","subject":"ENGLISH","room":"144"},{"period":4,"time":"11:35-12:25","class":"1C","subject":"MATHS in ENG","room":"144"},{"period":5,"time":"13:45-14:35","class":"1A","subject":"MATHS in ENG","room":"144"},{"period":6,"time":"14:40-15:30","class":"1C","subject":"ART","room":"144"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"1C","subject":"MATHS in ENG","room":"144"},{"period":2,"time":"09:45-10:35","class":"1A","subject":"MATHS in ENG","room":"144"},{"period":3,"time":"10:40-11:30","class":"1C","subject":"SCIENCE","room":"144"},{"period":4,"time":"11:35-12:25","class":"2A","subject":"MATHS in ENG","room":"144"},{"period":5,"time":"13:45-14:35","class":"2C","subject":"ENGLISH","room":"144"},{"period":6,"time":"14:40-15:30","class":"2B","subject":"MATHS in ENG","room":"144"}]},"Normamatova Sitora Furkatovna":{"Monday":[{"period":1,"time":"08:10-09:00","class":"2C","subject":"MATHS","room":"131"},{"period":2,"time":"09:45-10:35","class":"1B","subject":"MATHS","room":"131"},{"period":3,"time":"10:40-11:30","class":"2A","subject":"MATHS","room":"131"},{"period":4,"time":"11:35-12:25","class":"1A","subject":"MATHS","room":"131"},{"period":5,"time":"13:45-14:35","class":"1C","subject":"MATHS","room":"131"},{"period":6,"time":"14:40-15:30","class":"2B","subject":"MATHS","room":"131"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"1A","subject":"MATHS","room":"131"},{"period":2,"time":"09:45-10:35","class":"1C","subject":"MATHS","room":"131"},{"period":3,"time":"10:40-11:30","class":"1B","subject":"MATHS","room":"131"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"2C","subject":"MATHS","room":"131"},{"period":2,"time":"09:45-10:35","class":"1B","subject":"MATHS","room":"131"},{"period":3,"time":"10:40-11:30","class":"2A","subject":"MATHS","room":"131"},{"period":4,"time":"11:35-12:25","class":"1C","subject":"MATHS","room":"131"},{"period":5,"time":"13:45-14:35","class":"2B","subject":"MATHS","room":"131"},{"period":6,"time":"14:40-15:30","class":"1A","subject":"MATHS","room":"131"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"2B","subject":"MATHS","room":"131"},{"period":2,"time":"09:45-10:35","class":"1C","subject":"MATHS","room":"131"},{"period":3,"time":"10:40-11:30","class":"1A","subject":"MATHS","room":"131"},{"period":4,"time":"11:35-12:25","class":"2A","subject":"MATHS","room":"131"},{"period":5,"time":"13:45-14:35","class":"1B","subject":"MATHS","room":"131"},{"period":6,"time":"14:40-15:30","class":"2C","subject":"MATHS","room":"131"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"2C","subject":"MATHS","room":"131"},{"period":2,"time":"09:45-10:35","class":"2B","subject":"MATHS","room":"131"},{"period":3,"time":"10:40-11:30","class":"1B","subject":"MATHS","room":"131"},{"period":4,"time":"11:35-12:25","class":"1A","subject":"MATHS","room":"131"},{"period":5,"time":"13:45-14:35","class":"2A","subject":"MATHS","room":"131"},{"period":6,"time":"14:40-15:30","class":"1C","subject":"MATHS","room":"131"}]},"ms.Nazokat":{"Monday":[{"period":3,"time":"10:40-11:30","class":"1B","subject":"Active English","room":"136"},{"period":5,"time":"13:45-14:35","class":"1A","subject":"Active English","room":"136"},{"period":6,"time":"14:40-15:30","class":"1C","subject":"Active English","room":"136"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"2B","subject":"Active English","room":"136"},{"period":2,"time":"09:45-10:35","class":"2A","subject":"Active English","room":"136"},{"period":3,"time":"10:40-11:30","class":"1C","subject":"Active English","room":"136"},{"period":4,"time":"11:35-12:25","class":"1B","subject":"Active English","room":"136"},{"period":5,"time":"13:45-14:35","class":"2C","subject":"Active English","room":"136"},{"period":6,"time":"14:40-15:30","class":"1A","subject":"Active English","room":"136"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"1A","subject":"Active English","room":"136"},{"period":2,"time":"09:45-10:35","class":"2A","subject":"Active English","room":"136"},{"period":3,"time":"10:40-11:30","class":"1C","subject":"Active English","room":"136"},{"period":4,"time":"11:35-12:25","class":"1B","subject":"Active English","room":"136"},{"period":5,"time":"13:45-14:35","class":"2B","subject":"Active English","room":"136"},{"period":6,"time":"14:40-15:30","class":"2B","subject":"Active English","room":"136"}],"Wednesday":[{"period":6,"time":"14:40-15:30","class":"2A","subject":"Active English","room":"136"},{"period":7,"time":"16:00-16:50","class":"8B","subject":"GP-Geography","room":"136"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"7A","subject":"GP-Geography","room":"244"},{"period":3,"time":"10:40-11:30","class":"2C","subject":"Active English","room":"136"},{"period":4,"time":"11:35-12:25","class":"2C","subject":"Active English","room":"136"}]},"Djurayeva Oygul Isayevna":{"Monday":[{"period":1,"time":"08:10-09:00","class":"1B","subject":"RUSSIAN","room":"132"},{"period":2,"time":"09:45-10:35","class":"2C","subject":"RUSSIAN","room":"132"},{"period":3,"time":"10:40-11:30","class":"2B","subject":"RUSSIAN","room":"132"},{"period":4,"time":"11:35-12:25","class":"1C","subject":"RUSSIAN","room":"132"},{"period":5,"time":"13:45-14:35","class":"2A","subject":"RUSSIAN","room":"132"},{"period":6,"time":"14:40-15:30","class":"1A","subject":"RUSSIAN","room":"132"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"1C","subject":"ЧТЕНИЕ","room":"132"},{"period":2,"time":"09:45-10:35","class":"1A","subject":"ЧТЕНИЕ","room":"132"},{"period":3,"time":"10:40-11:30","class":"2C","subject":"ЧТЕНИЕ","room":"132"},{"period":4,"time":"11:35-12:25","class":"2A","subject":"ЧТЕНИЕ","room":"132"},{"period":5,"time":"13:45-14:35","class":"1B","subject":"ЧТЕНИЕ","room":"132"},{"period":6,"time":"14:40-15:30","class":"2B","subject":"ЧТЕНИЕ","room":"132"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"1B","subject":"RUSSIAN","room":"132"},{"period":2,"time":"09:45-10:35","class":"2B","subject":"RUSSIAN","room":"132"},{"period":3,"time":"10:40-11:30","class":"2C","subject":"RUSSIAN","room":"132"},{"period":4,"time":"11:35-12:25","class":"2A","subject":"RUSSIAN","room":"132"},{"period":5,"time":"13:45-14:35","class":"1A","subject":"RUSSIAN","room":"132"},{"period":6,"time":"14:40-15:30","class":"1C","subject":"RUSSIAN","room":"132"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"1C","subject":"ЧТЕНИЕ","room":"132"},{"period":2,"time":"09:45-10:35","class":"1A","subject":"ЧТЕНИЕ","room":"132"},{"period":3,"time":"10:40-11:30","class":"2C","subject":"ЧТЕНИЕ","room":"132"},{"period":4,"time":"11:35-12:25","class":"2B","subject":"ЧТЕНИЕ","room":"132"},{"period":5,"time":"13:45-14:35","class":"2A","subject":"ЧТЕНИЕ","room":"132"},{"period":6,"time":"14:40-15:30","class":"1B","subject":"ЧТЕНИЕ","room":"132"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"2B","subject":"RUSSIAN","room":"132"},{"period":2,"time":"09:45-10:35","class":"1B","subject":"RUSSIAN","room":"132"},{"period":3,"time":"10:40-11:30","class":"2A","subject":"RUSSIAN","room":"132"},{"period":4,"time":"11:35-12:25","class":"1C","subject":"RUSSIAN","room":"132"},{"period":5,"time":"13:45-14:35","class":"1A","subject":"RUSSIAN","room":"132"},{"period":6,"time":"14:40-15:30","class":"2C","subject":"RUSSIAN","room":"132"}]},"Isomatov Xushbaxt Sadriddinovich":{"Wednesday":[{"period":1,"time":"08:10-09:00","class":"5A","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":2,"time":"09:45-10:35","class":"5B","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":3,"time":"10:40-11:30","class":"1B","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":4,"time":"11:35-12:25","class":"1A","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":5,"time":"13:45-14:35","class":"1C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":6,"time":"14:40-15:30","class":"4B","subject":"PHYSICAL EDU.","room":"Sports Hall"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"1B","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":2,"time":"09:45-10:35","class":"2C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":3,"time":"10:40-11:30","class":"2B","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":4,"time":"11:35-12:25","class":"4A","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":5,"time":"13:45-14:35","class":"1C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":6,"time":"14:40-15:30","class":"1A","subject":"PHYSICAL EDU.","room":"Sports Hall"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"2A","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":2,"time":"09:45-10:35","class":"2C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":3,"time":"10:40-11:30","class":"4A","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":4,"time":"11:35-12:25","class":"3A","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":5,"time":"13:45-14:35","class":"2B","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":6,"time":"14:40-15:30","class":"3B","subject":"PHYSICAL EDU.","room":"Sports Hall"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"4C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":3,"time":"10:40-11:30","class":"3C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":4,"time":"11:35-12:25","class":"3B","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":5,"time":"13:45-14:35","class":"3A","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":6,"time":"14:40-15:30","class":"2A","subject":"PHYSICAL EDU.","room":"Sports Hall"}],"Monday":[{"period":1,"time":"08:10-09:00","class":"3C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":2,"time":"09:45-10:35","class":"5A","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":4,"time":"11:35-12:25","class":"4B","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":5,"time":"13:45-14:35","class":"4C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":6,"time":"14:40-15:30","class":"5B","subject":"PHYSICAL EDU.","room":"Sports Hall"}]},"Mishra Soniya":{"Monday":[{"period":1,"time":"08:10-09:00","class":"2A","subject":"ENGLISH","room":"143"},{"period":2,"time":"09:45-10:35","class":"2B","subject":"ENGLISH","room":"143"},{"period":3,"time":"10:40-11:30","class":"3A","subject":"ENGLISH","room":"143"},{"period":4,"time":"11:35-12:25","class":"2C","subject":"MATHS in ENG","room":"143"},{"period":5,"time":"13:45-14:35","class":"3B","subject":"ENGLISH","room":"143"},{"period":6,"time":"14:40-15:30","class":"3C","subject":"ENGLISH","room":"143"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"3C","subject":"ENGLISH","room":"143"},{"period":2,"time":"09:45-10:35","class":"3B","subject":"ENGLISH","room":"143"},{"period":3,"time":"10:40-11:30","class":"3A","subject":"ENGLISH","room":"143"},{"period":4,"time":"11:35-12:25","class":"2B","subject":"ENGLISH","room":"143"},{"period":5,"time":"13:45-14:35","class":"2A","subject":"ENGLISH","room":"143"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"2A","subject":"ENGLISH","room":"143"},{"period":3,"time":"10:40-11:30","class":"2B","subject":"ENGLISH","room":"143"},{"period":4,"time":"11:35-12:25","class":"3B","subject":"ENGLISH","room":"143"},{"period":5,"time":"13:45-14:35","class":"3C","subject":"ENGLISH","room":"143"},{"period":6,"time":"14:40-15:30","class":"3A","subject":"ENGLISH","room":"143"}],"Thursday":[{"period":2,"time":"09:45-10:35","class":"2B","subject":"ENGLISH","room":"143"},{"period":3,"time":"10:40-11:30","class":"2A","subject":"ENGLISH","room":"143"},{"period":4,"time":"11:35-12:25","class":"3A","subject":"ENGLISH","room":"143"},{"period":6,"time":"14:40-15:30","class":"3B","subject":"ENGLISH","room":"121"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"3C","subject":"ENGLISH","room":"143"},{"period":2,"time":"09:45-10:35","class":"3A","subject":"ENGLISH","room":"143"},{"period":3,"time":"10:40-11:30","class":"3C","subject":"ENGLISH","room":"143"},{"period":4,"time":"11:35-12:25","class":"2B","subject":"ENGLISH","room":"143"},{"period":5,"time":"13:45-14:35","class":"3B","subject":"ENGLISH","room":"143"},{"period":6,"time":"14:40-15:30","class":"2A","subject":"ENGLISH","room":"143"}]},"Raximova Xilola":{"Monday":[{"period":1,"time":"08:10-09:00","class":"2B","subject":"SCIENCE","room":"224"},{"period":2,"time":"09:45-10:35","class":"2A","subject":"SCIENCE","room":"224"},{"period":3,"time":"10:40-11:30","class":"2C","subject":"SCIENCE","room":"224"},{"period":4,"time":"11:35-12:25","class":"7C","subject":"ENGLISH","room":"224"},{"period":5,"time":"13:45-14:35","class":"6B","subject":"ENGLISH","room":"224"},{"period":6,"time":"14:40-15:30","class":"6C","subject":"ENGLISH","room":"224"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"2B","subject":"SCIENCE","room":"224"},{"period":2,"time":"09:45-10:35","class":"2A","subject":"SCIENCE","room":"224"},{"period":3,"time":"10:40-11:30","class":"7C","subject":"ENGLISH","room":"224"},{"period":4,"time":"11:35-12:25","class":"2C","subject":"SCIENCE","room":"224"},{"period":5,"time":"13:45-14:35","class":"6B","subject":"ENGLISH","room":"224"},{"period":6,"time":"14:40-15:30","class":"6C","subject":"ENGLISH","room":"224"}],"Friday":[{"period":2,"time":"09:45-10:35","class":"2A","subject":"SCIENCE","room":"224"},{"period":3,"time":"10:40-11:30","class":"7C","subject":"SCIENCE","room":"224"},{"period":4,"time":"11:35-12:25","class":"6C","subject":"ENGLISH","room":"224"},{"period":5,"time":"13:45-14:35","class":"2B","subject":"SCIENCE","room":"224"},{"period":6,"time":"14:40-15:30","class":"6B","subject":"ENGLISH","room":"224"}],"Thursday":[{"period":2,"time":"09:45-10:35","class":"7C","subject":"BUSINESS","room":"224"},{"period":3,"time":"10:40-11:30","class":"6C","subject":"ENGLISH","room":"224"},{"period":4,"time":"11:35-12:25","class":"2C","subject":"SCIENCE","room":"224"},{"period":5,"time":"13:45-14:35","class":"7C","subject":"ENGLISH","room":"224"},{"period":6,"time":"14:40-15:30","class":"6B","subject":"ENGLISH","room":"224"}],"Tuesday":[{"period":4,"time":"11:35-12:25","class":"7C","subject":"ENGLISH","room":"224"},{"period":5,"time":"13:45-14:35","class":"6C","subject":"ENGLISH","room":"224"},{"period":6,"time":"14:40-15:30","class":"6B","subject":"ENGLISH","room":"224"}]},"Bobobekova Barno Olimovna":{"Monday":[{"period":1,"time":"08:10-09:00","class":"4B","subject":"ART","room":"Art Studio"},{"period":2,"time":"09:45-10:35","class":"4C","subject":"ART","room":"Art Studio"},{"period":3,"time":"10:40-11:30","class":"4A","subject":"ART","room":"Art Studio"},{"period":4,"time":"11:35-12:25","class":"2B","subject":"ART","room":"Art Studio"},{"period":5,"time":"13:45-14:35","class":"2C","subject":"ART","room":"Art Studio"},{"period":6,"time":"14:40-15:30","class":"2A","subject":"ART","room":"Art Studio"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"2A","subject":"CRAFT","room":"Art Studio"},{"period":2,"time":"09:45-10:35","class":"7C","subject":"Technical drawing","room":"Art Studio"},{"period":3,"time":"10:40-11:30","class":"4C","subject":"CRAFT","room":"Art Studio"},{"period":4,"time":"11:35-12:25","class":"7B","subject":"Technical drawing","room":"Art Studio"},{"period":5,"time":"13:45-14:35","class":"3A","subject":"CRAFT","room":"Art Studio"},{"period":6,"time":"14:40-15:30","class":"8A","subject":"-  Technical Drawing","room":""}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"4A","subject":"CRAFT","room":"Art Studio"},{"period":2,"time":"09:45-10:35","class":"3B","subject":"CRAFT","room":"Art Studio"},{"period":3,"time":"10:40-11:30","class":"4B","subject":"CRAFT","room":"Art Studio"},{"period":5,"time":"13:45-14:35","class":"2C","subject":"CRAFT","room":"Art Studio"},{"period":6,"time":"14:40-15:30","class":"2B","subject":"CRAFT","room":"Art Studio"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"5A","subject":"ART","room":"Art Studio"},{"period":2,"time":"09:45-10:35","class":"3A","subject":"ART","room":"Art Studio"},{"period":3,"time":"10:40-11:30","class":"5B","subject":"ART","room":"Art Studio"},{"period":4,"time":"11:35-12:25","class":"6A","subject":"ART","room":"Art Studio"},{"period":5,"time":"13:45-14:35","class":"3B","subject":"ART","room":"Art Studio"},{"period":6,"time":"14:40-15:30","class":"3C","subject":"ART","room":"Art Studio"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"7A","subject":"Technical drawing","room":"Art Studio"},{"period":2,"time":"09:45-10:35","class":"3C","subject":"CRAFT","room":"Art Studio"},{"period":3,"time":"10:40-11:30","class":"6B","subject":"ART","room":"Art Studio"},{"period":5,"time":"13:45-14:35","class":"6C","subject":"ART","room":"Art Studio"},{"period":6,"time":"14:40-15:30","class":"8B","subject":"-  Technical Drawing","room":""}]},"Rakhimova Sabina Robertovna":{"Tuesday":[{"period":1,"time":"08:10-09:00","class":"4B","subject":"Uzbek language","room":"223"},{"period":3,"time":"10:40-11:30","class":"2B","subject":"Uzbek language","room":"223"},{"period":4,"time":"11:35-12:25","class":"2C","subject":"Uzbek language","room":"223"},{"period":4,"time":"11:35-12:25","class":"8A","subject":"RUSSIAN","room":"244"},{"period":5,"time":"13:45-14:35","class":"3A","subject":"Uzbek language","room":"223"},{"period":5,"time":"13:45-14:35","class":"9A","subject":"RUSSIAN","room":"244"},{"period":5,"time":"13:45-14:35","class":"10A","subject":"RUSSIAN","room":"244"},{"period":6,"time":"14:40-15:30","class":"2A","subject":"Uzbek language","room":"223"},{"period":6,"time":"14:40-15:30","class":"9A","subject":"LITERATURE","room":"244"},{"period":6,"time":"14:40-15:30","class":"10A","subject":"LITERATURE","room":"244"},{"period":7,"time":"16:00-16:50","class":"8B","subject":"Uzbek language","room":"223"},{"period":7,"time":"16:00-16:50","class":"9A","subject":"Uzbek language","room":"223"},{"period":7,"time":"16:00-16:50","class":"10A","subject":"Uzbek language","room":"223"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"2A","subject":"Uzbek language","room":"223"},{"period":1,"time":"08:10-09:00","class":"8B","subject":"RUSSIAN","room":"244"},{"period":2,"time":"09:45-10:35","class":"2C","subject":"Uzbek language","room":"223"},{"period":2,"time":"09:45-10:35","class":"8A","subject":"RUSSIAN","room":"244"},{"period":3,"time":"10:40-11:30","class":"2B","subject":"Uzbek language","room":"223"},{"period":3,"time":"10:40-11:30","class":"8B","subject":"LITERATURE","room":"244"},{"period":4,"time":"11:35-12:25","class":"6B","subject":"Uzbek language","room":"223"},{"period":5,"time":"13:45-14:35","class":"3B","subject":"Uzbek language","room":"223"},{"period":6,"time":"14:40-15:30","class":"6A","subject":"Uzbek language","room":"223"},{"period":7,"time":"16:00-16:50","class":"7C","subject":"Uzbek language","room":"223"},{"period":7,"time":"16:00-16:50","class":"9A","subject":"Uzbek language","room":"223"},{"period":7,"time":"16:00-16:50","class":"10A","subject":"Uzbek language","room":"223"}],"Monday":[{"period":1,"time":"08:10-09:00","class":"5B","subject":"Uzbek language","room":"223"},{"period":2,"time":"09:45-10:35","class":"3B","subject":"Uzbek language","room":"223"},{"period":3,"time":"10:40-11:30","class":"6C","subject":"Uzbek language","room":"223"},{"period":3,"time":"10:40-11:30","class":"8A","subject":"LITERATURE","room":"244"},{"period":4,"time":"11:35-12:25","class":"5A","subject":"Uzbek language","room":"223"},{"period":4,"time":"11:35-12:25","class":"8B","subject":"LITERATURE","room":"244"},{"period":5,"time":"13:45-14:35","class":"3A","subject":"Uzbek language","room":"223"},{"period":7,"time":"16:00-16:50","class":"7A","subject":"Uzbek language","room":"223"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"6C","subject":"Uzbek language","room":"223"},{"period":2,"time":"09:45-10:35","class":"3C","subject":"Uzbek language","room":"223"},{"period":3,"time":"10:40-11:30","class":"4A","subject":"Uzbek language","room":"223"},{"period":4,"time":"11:35-12:25","class":"6B","subject":"Uzbek language","room":"223"},{"period":5,"time":"13:45-14:35","class":"6A","subject":"Uzbek language","room":"223"},{"period":6,"time":"14:40-15:30","class":"4C","subject":"Uzbek language","room":"223"},{"period":7,"time":"16:00-16:50","class":"7A","subject":"Uzbek language","room":"223"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"4A","subject":"Uzbek language","room":"223"},{"period":2,"time":"09:45-10:35","class":"3C","subject":"Uzbek language","room":"223"},{"period":2,"time":"09:45-10:35","class":"8A","subject":"Literature","room":"244"},{"period":3,"time":"10:40-11:30","class":"4B","subject":"Uzbek language","room":"223"},{"period":4,"time":"11:35-12:25","class":"4C","subject":"Uzbek language","room":"223"},{"period":4,"time":"11:35-12:25","class":"8B","subject":"RUSSIAN","room":"244"},{"period":5,"time":"13:45-14:35","class":"5A","subject":"Uzbek language","room":"141"},{"period":5,"time":"13:45-14:35","class":"9A","subject":"RUSSIAN","room":"244"},{"period":5,"time":"13:45-14:35","class":"10A","subject":"RUSSIAN","room":"244"},{"period":6,"time":"14:40-15:30","class":"5B","subject":"Uzbek language","room":"141"},{"period":6,"time":"14:40-15:30","class":"9A","subject":"LITERATURE","room":"244"},{"period":6,"time":"14:40-15:30","class":"10A","subject":"LITERATURE","room":"244"}]},"ms.Sonya":{"Tuesday":[{"period":6,"time":"14:40-15:30","class":"2C","subject":"MATHS in ENG","room":"143"}],"Wednesday":[{"period":2,"time":"09:45-10:35","class":"2C","subject":"MATHS in ENG","room":"143"}],"Thursday":[{"period":5,"time":"13:45-14:35","class":"2C","subject":"MATHS in ENG","room":"143"}]},"Abdullayeva Gulnara Asatovna":{"Monday":[{"period":1,"time":"08:10-09:00","class":"3A","subject":"MATHS","room":"231"},{"period":2,"time":"09:45-10:35","class":"3C","subject":"MATHS","room":"231"},{"period":3,"time":"10:40-11:30","class":"3B","subject":"MATHS","room":"231"},{"period":4,"time":"11:35-12:25","class":"4A","subject":"MATHS","room":"231"},{"period":5,"time":"13:45-14:35","class":"5A","subject":"MATHS","room":"231"},{"period":6,"time":"14:40-15:30","class":"4C","subject":"MATHS","room":"231"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"3C","subject":"MATHS","room":"231"},{"period":2,"time":"09:45-10:35","class":"3A","subject":"MATHS","room":"231"},{"period":4,"time":"11:35-12:25","class":"4B","subject":"MATHS","room":"231"},{"period":5,"time":"13:45-14:35","class":"4C","subject":"MATHS","room":"231"},{"period":6,"time":"14:40-15:30","class":"5A","subject":"MATHS","room":"231"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"5A","subject":"MATHS","room":"231"},{"period":2,"time":"09:45-10:35","class":"3A","subject":"MATHS","room":"231"},{"period":3,"time":"10:40-11:30","class":"3B","subject":"MATHS","room":"231"},{"period":4,"time":"11:35-12:25","class":"4C","subject":"MATHS","room":"231"},{"period":5,"time":"13:45-14:35","class":"4B","subject":"MATHS","room":"231"},{"period":6,"time":"14:40-15:30","class":"4A","subject":"MATHS","room":"231"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"3A","subject":"MATHS","room":"231"},{"period":2,"time":"09:45-10:35","class":"3B","subject":"MATHS","room":"231"},{"period":3,"time":"10:40-11:30","class":"5A","subject":"MATHS","room":"231"},{"period":4,"time":"11:35-12:25","class":"4B","subject":"MATHS","room":"231"},{"period":5,"time":"13:45-14:35","class":"3C","subject":"MATHS","room":"231"},{"period":6,"time":"14:40-15:30","class":"4A","subject":"MATHS","room":"231"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"4C","subject":"MATHS","room":"231"},{"period":2,"time":"09:45-10:35","class":"4B","subject":"MATHS","room":"231"},{"period":3,"time":"10:40-11:30","class":"3B","subject":"MATHS","room":"231"},{"period":4,"time":"11:35-12:25","class":"3C","subject":"MATHS","room":"231"},{"period":5,"time":"13:45-14:35","class":"4A","subject":"MATHS","room":"231"},{"period":6,"time":"14:40-15:30","class":"5A","subject":"MATHS","room":"231"}]},"Naimova Zarrina Musinovna":{"Monday":[{"period":1,"time":"08:10-09:00","class":"3B","subject":"RUSSIAN","room":"142"},{"period":2,"time":"09:45-10:35","class":"3A","subject":"RUSSIAN","room":"142"},{"period":3,"time":"10:40-11:30","class":"5B","subject":"RUSSIAN","room":"142"},{"period":4,"time":"11:35-12:25","class":"3C","subject":"RUSSIAN","room":"142"},{"period":5,"time":"13:45-14:35","class":"4A","subject":"RUSSIAN","room":"142"},{"period":6,"time":"14:40-15:30","class":"4B","subject":"RUSSIAN","room":"142"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"4A","subject":"ЧТЕНИЕ","room":"142"},{"period":2,"time":"09:45-10:35","class":"3C","subject":"ЧТЕНИЕ","room":"142"},{"period":3,"time":"10:40-11:30","class":"4C","subject":"RUSSIAN","room":"142"},{"period":4,"time":"11:35-12:25","class":"3B","subject":"ЧТЕНИЕ","room":"142"},{"period":6,"time":"14:40-15:30","class":"3A","subject":"ЧТЕНИЕ","room":"142"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"4C","subject":"ЧТЕНИЕ","room":"142"},{"period":2,"time":"09:45-10:35","class":"4B","subject":"ЧТЕНИЕ","room":"142"},{"period":3,"time":"10:40-11:30","class":"3B","subject":"RUSSIAN","room":"142"},{"period":4,"time":"11:35-12:25","class":"3A","subject":"RUSSIAN","room":"142"},{"period":5,"time":"13:45-14:35","class":"5B","subject":"LITERATURE","room":"142"},{"period":6,"time":"14:40-15:30","class":"3C","subject":"RUSSIAN","room":"142"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"4A","subject":"RUSSIAN","room":"142"},{"period":2,"time":"09:45-10:35","class":"4C","subject":"RUSSIAN","room":"142"},{"period":3,"time":"10:40-11:30","class":"4B","subject":"RUSSIAN","room":"142"},{"period":4,"time":"11:35-12:25","class":"5B","subject":"RUSSIAN","room":"142"},{"period":6,"time":"14:40-15:30","class":"3A","subject":"ЧТЕНИЕ","room":"142"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"4C","subject":"ЧТЕНИЕ","room":"142"},{"period":2,"time":"09:45-10:35","class":"4A","subject":"ЧТЕНИЕ","room":"142"},{"period":3,"time":"10:40-11:30","class":"5B","subject":"LITERATURE","room":"142"},{"period":4,"time":"11:35-12:25","class":"3C","subject":"ЧТЕНИЕ","room":"142"},{"period":5,"time":"13:45-14:35","class":"4B","subject":"ЧТЕНИЕ","room":"142"},{"period":6,"time":"14:40-15:30","class":"3B","subject":"ЧТЕНИЕ","room":"142"}]},"Bulgak Emine":{"Monday":[{"period":1,"time":"08:10-09:00","class":"7A","subject":"GP-History","room":"241"},{"period":2,"time":"09:45-10:35","class":"8A","subject":"GP-History","room":"136"},{"period":3,"time":"10:40-11:30","class":"4C","subject":"GP-History","room":"241"},{"period":4,"time":"11:35-12:25","class":"3A","subject":"GP-History","room":"241"},{"period":5,"time":"13:45-14:35","class":"4B","subject":"GP-History","room":"241"},{"period":6,"time":"14:40-15:30","class":"4A","subject":"GP-History","room":"241"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"3B","subject":"GP-History","room":"241"},{"period":2,"time":"09:45-10:35","class":"8A","subject":"GP-Geography","room":"241"},{"period":3,"time":"10:40-11:30","class":"3A","subject":"GP-Geography","room":"241"},{"period":4,"time":"11:35-12:25","class":"3C","subject":"GP-Geography","room":"241"},{"period":5,"time":"13:45-14:35","class":"4A","subject":"GP-Geography","room":"241"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"3B","subject":"GP-Geography","room":"241"},{"period":2,"time":"09:45-10:35","class":"8B","subject":"GP-History","room":"136"},{"period":3,"time":"10:40-11:30","class":"6A","subject":"GP-Geography","room":"241"},{"period":5,"time":"13:45-14:35","class":"6B","subject":"GP-Geography","room":"223"},{"period":6,"time":"14:40-15:30","class":"6C","subject":"GP-Geography","room":"223"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"6C","subject":"GP-History","room":"241"},{"period":2,"time":"09:45-10:35","class":"5B","subject":"GP-Geography","room":"241"},{"period":3,"time":"10:40-11:30","class":"5A","subject":"GP-History","room":"241"},{"period":4,"time":"11:35-12:25","class":"6B","subject":"GP-History","room":"241"},{"period":5,"time":"13:45-14:35","class":"3C","subject":"GP-History","room":"241"},{"period":6,"time":"14:40-15:30","class":"6A","subject":"GP-History","room":"241"}],"Thursday":[{"period":2,"time":"09:45-10:35","class":"4B","subject":"GP-Geography","room":"241"},{"period":3,"time":"10:40-11:30","class":"4C","subject":"GP-Geography","room":"241"},{"period":4,"time":"11:35-12:25","class":"7B","subject":"GP-History","room":"241"},{"period":5,"time":"13:45-14:35","class":"5B","subject":"GP-History","room":"241"},{"period":6,"time":"14:40-15:30","class":"5A","subject":"GP-Geography","room":"241"}]},"Neitngale Nansi Thote":{"Monday":[{"period":1,"time":"08:10-09:00","class":"4C","subject":"MATHS in ENG","room":"133"},{"period":2,"time":"09:45-10:35","class":"4A","subject":"MATHS in ENG","room":"133"},{"period":3,"time":"10:40-11:30","class":"5A","subject":"MATHS in ENG","room":"133"},{"period":4,"time":"11:35-12:25","class":"3B","subject":"MATHS in ENG","room":"133"},{"period":5,"time":"13:45-14:35","class":"3C","subject":"MATHS in ENG","room":"133"},{"period":6,"time":"14:40-15:30","class":"3A","subject":"MATHS in ENG","room":"133"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"3A","subject":"MATHS in ENG","room":"133"},{"period":2,"time":"09:45-10:35","class":"5A","subject":"MATHS in ENG","room":"133"},{"period":3,"time":"10:40-11:30","class":"3C","subject":"MATHS in ENG","room":"133"},{"period":4,"time":"11:35-12:25","class":"4C","subject":"MATHS in ENG","room":"133"},{"period":5,"time":"13:45-14:35","class":"4B","subject":"MATHS in ENG","room":"133"},{"period":6,"time":"14:40-15:30","class":"4A","subject":"MATHS in ENG","room":"133"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"3A","subject":"MATHS in ENG","room":"133"},{"period":2,"time":"09:45-10:35","class":"3B","subject":"MATHS in ENG","room":"133"},{"period":3,"time":"10:40-11:30","class":"4A","subject":"MATHS in ENG","room":"133"},{"period":4,"time":"11:35-12:25","class":"4B","subject":"MATHS in ENG","room":"133"},{"period":5,"time":"13:45-14:35","class":"5A","subject":"MATHS in ENG","room":"133"},{"period":6,"time":"14:40-15:30","class":"4C","subject":"MATHS in ENG","room":"133"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"5A","subject":"MATHS in ENG","room":"133"},{"period":2,"time":"09:45-10:35","class":"4B","subject":"MATHS in ENG","room":"133"},{"period":3,"time":"10:40-11:30","class":"3B","subject":"MATHS in ENG","room":"133"},{"period":4,"time":"11:35-12:25","class":"3A","subject":"MATHS in ENG","room":"133"},{"period":6,"time":"14:40-15:30","class":"3C","subject":"MATHS in ENG","room":"133"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"3B","subject":"MATHS in ENG","room":"133"},{"period":2,"time":"09:45-10:35","class":"4C","subject":"MATHS in ENG","room":"133"},{"period":3,"time":"10:40-11:30","class":"3C","subject":"MATHS in ENG","room":"133"},{"period":4,"time":"11:35-12:25","class":"5A","subject":"MATHS in ENG","room":"133"},{"period":5,"time":"13:45-14:35","class":"4B","subject":"MATHS in ENG","room":"133"},{"period":6,"time":"14:40-15:30","class":"4A","subject":"MATHS in ENG","room":"133"}]},"mr.Firdavs":{"Tuesday":[{"period":1,"time":"08:10-09:00","class":"3A","subject":"CHESS","room":"dining hall"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"3B","subject":"CHESS","room":"dining hall"},{"period":2,"time":"09:45-10:35","class":"4A","subject":"CHESS","room":"dining hall"},{"period":5,"time":"13:45-14:35","class":"3C","subject":"CHESS","room":"136"}],"Friday":[{"period":5,"time":"13:45-14:35","class":"4C","subject":"CHESS","room":"136"},{"period":6,"time":"14:40-15:30","class":"4B","subject":"CHESS","room":"136"}]},"Bahretdinova Elsbeth":{"Wednesday":[{"period":1,"time":"08:10-09:00","class":"7C","subject":"GP-Geography","room":"212"},{"period":2,"time":"09:45-10:35","class":"4C","subject":"SCIENCE","room":"212"},{"period":3,"time":"10:40-11:30","class":"9A","subject":"Business","room":"212"},{"period":3,"time":"10:40-11:30","class":"10A","subject":"Business","room":"212"},{"period":4,"time":"11:35-12:25","class":"9A","subject":"Business","room":"212"},{"period":4,"time":"11:35-12:25","class":"10A","subject":"Business","room":"212"},{"period":5,"time":"13:45-14:35","class":"3A","subject":"SCIENCE","room":"212"},{"period":6,"time":"14:40-15:30","class":"3B","subject":"SCIENCE","room":"212"}],"Friday":[{"period":2,"time":"09:45-10:35","class":"6A","subject":"SCIENCE","room":"212"},{"period":3,"time":"10:40-11:30","class":"6C","subject":"SCIENCE","room":"212"},{"period":5,"time":"13:45-14:35","class":"4A","subject":"SCIENCE","room":"212"},{"period":6,"time":"14:40-15:30","class":"3A","subject":"SCIENCE","room":"212"}],"Monday":[{"period":1,"time":"08:10-09:00","class":"6A","subject":"SCIENCE","room":"212"},{"period":2,"time":"09:45-10:35","class":"6B","subject":"SCIENCE","room":"212"},{"period":3,"time":"10:40-11:30","class":"3C","subject":"SCIENCE","room":"212"},{"period":6,"time":"14:40-15:30","class":"3B","subject":"SCIENCE","room":"212"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"4B","subject":"SCIENCE","room":"212"},{"period":2,"time":"09:45-10:35","class":"5A","subject":"SCIENCE","room":"212"},{"period":3,"time":"10:40-11:30","class":"5B","subject":"SCIENCE","room":"212"},{"period":4,"time":"11:35-12:25","class":"3C","subject":"SCIENCE","room":"212"},{"period":5,"time":"13:45-14:35","class":"6B","subject":"SCIENCE","room":"212"},{"period":6,"time":"14:40-15:30","class":"6C","subject":"SCIENCE","room":"212"}],"Tuesday":[{"period":2,"time":"09:45-10:35","class":"4A","subject":"SCIENCE","room":"212"},{"period":3,"time":"10:40-11:30","class":"4B","subject":"SCIENCE","room":"212"},{"period":4,"time":"11:35-12:25","class":"4C","subject":"SCIENCE","room":"212"},{"period":5,"time":"13:45-14:35","class":"5A","subject":"SCIENCE","room":"212"},{"period":6,"time":"14:40-15:30","class":"5B","subject":"SCIENCE","room":"212"}]},"Faraz Tariq":{"Thursday":[{"period":1,"time":"08:10-09:00","class":"3C","subject":"ICT","room":"211"},{"period":2,"time":"09:45-10:35","class":"7A","subject":"ICT","room":"211"},{"period":3,"time":"10:40-11:30","class":"3A","subject":"ICT","room":"211"},{"period":5,"time":"13:45-14:35","class":"4A","subject":"ICT","room":"211"},{"period":6,"time":"14:40-15:30","class":"3C","subject":"ICT","room":"211"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"5B","subject":"ICT","room":"211"},{"period":2,"time":"09:45-10:35","class":"5A","subject":"ICT","room":"211"},{"period":3,"time":"10:40-11:30","class":"3A","subject":"ICT","room":"211"},{"period":4,"time":"11:35-12:25","class":"3B","subject":"ICT","room":"211"},{"period":5,"time":"13:45-14:35","class":"6C","subject":"ICT","room":"211"},{"period":6,"time":"14:40-15:30","class":"4C","subject":"ICT","room":"211"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"5B","subject":"ICT","room":"211"},{"period":3,"time":"10:40-11:30","class":"5A","subject":"ICT","room":"211"},{"period":4,"time":"11:35-12:25","class":"4A","subject":"ICT","room":"211"},{"period":5,"time":"13:45-14:35","class":"3B","subject":"ICT","room":"211"},{"period":6,"time":"14:40-15:30","class":"6A","subject":"ICT","room":"211"}],"Monday":[{"period":1,"time":"08:10-09:00","class":"7B","subject":"ICT","room":"211"},{"period":2,"time":"09:45-10:35","class":"7C","subject":"ICT","room":"211"},{"period":3,"time":"10:40-11:30","class":"4B","subject":"ICT","room":"211"},{"period":4,"time":"11:35-12:25","class":"6B","subject":"ICT","room":"211"},{"period":5,"time":"13:45-14:35","class":"6C","subject":"ICT","room":"211"},{"period":6,"time":"14:40-15:30","class":"6A","subject":"ICT","room":"211"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"7A","subject":"ICT","room":"211"},{"period":3,"time":"10:40-11:30","class":"7C","subject":"ICT","room":"211"},{"period":4,"time":"11:35-12:25","class":"4B","subject":"ICT","room":"211"},{"period":5,"time":"13:45-14:35","class":"6B","subject":"ICT","room":"211"},{"period":6,"time":"14:40-15:30","class":"4C","subject":"ICT","room":"211"}]},"Halkouj Houssam":{"Monday":[{"period":1,"time":"08:10-09:00","class":"4A","subject":"ENGLISH","room":"121"},{"period":2,"time":"09:45-10:35","class":"4B","subject":"ENGLISH","room":"121"},{"period":3,"time":"10:40-11:30","class":"6A","subject":"ENGLISH","room":"121"},{"period":4,"time":"11:35-12:25","class":"4C","subject":"ENGLISH","room":"121"},{"period":5,"time":"13:45-14:35","class":"5B","subject":"ENGLISH","room":"121"},{"period":6,"time":"14:40-15:30","class":"5A","subject":"ENGLISH","room":"121"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"5B","subject":"ENGLISH","room":"121"},{"period":2,"time":"09:45-10:35","class":"5A","subject":"ENGLISH","room":"121"},{"period":3,"time":"10:40-11:30","class":"6A","subject":"ENGLISH","room":"121"},{"period":4,"time":"11:35-12:25","class":"4A","subject":"ENGLISH","room":"121"},{"period":5,"time":"13:45-14:35","class":"4C","subject":"ENGLISH","room":"121"},{"period":6,"time":"14:40-15:30","class":"4B","subject":"ENGLISH","room":"121"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"4B","subject":"ENGLISH","room":"121"},{"period":2,"time":"09:45-10:35","class":"4A","subject":"ENGLISH","room":"121"},{"period":3,"time":"10:40-11:30","class":"4C","subject":"ENGLISH","room":"121"},{"period":4,"time":"11:35-12:25","class":"6A","subject":"ENGLISH","room":"121"},{"period":5,"time":"13:45-14:35","class":"5A","subject":"ENGLISH","room":"121"},{"period":6,"time":"14:40-15:30","class":"5B","subject":"ENGLISH","room":"121"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"6A","subject":"ENGLISH","room":"121"},{"period":2,"time":"09:45-10:35","class":"5B","subject":"ENGLISH","room":"121"},{"period":3,"time":"10:40-11:30","class":"5A","subject":"ENGLISH","room":"121"},{"period":4,"time":"11:35-12:25","class":"4A","subject":"ENGLISH","room":"121"},{"period":5,"time":"13:45-14:35","class":"4C","subject":"ENGLISH","room":"121"},{"period":6,"time":"14:40-15:30","class":"4B","subject":"ENGLISH","room":"121"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"4B","subject":"ENGLISH","room":"121"},{"period":2,"time":"09:45-10:35","class":"4C","subject":"ENGLISH","room":"121"},{"period":3,"time":"10:40-11:30","class":"4A","subject":"ENGLISH","room":"121"},{"period":4,"time":"11:35-12:25","class":"5A","subject":"ENGLISH","room":"121"},{"period":5,"time":"13:45-14:35","class":"5B","subject":"ENGLISH","room":"121"},{"period":6,"time":"14:40-15:30","class":"6A","subject":"ENGLISH","room":"121"}]},"Abduazizova Feruza Erkinovna":{"Monday":[{"period":1,"time":"08:10-09:00","class":"5A","subject":"RUSSIAN","room":"221"},{"period":2,"time":"09:45-10:35","class":"7A","subject":"RUSSIAN","room":"221"},{"period":3,"time":"10:40-11:30","class":"7C","subject":"RUSSIAN","room":"221"},{"period":4,"time":"11:35-12:25","class":"6C","subject":"RUSSIAN","room":"221"},{"period":5,"time":"13:45-14:35","class":"6A","subject":"RUSSIAN","room":"221"},{"period":6,"time":"14:40-15:30","class":"6B","subject":"RUSSIAN","room":"221"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"7B","subject":"LITERATURE","room":"221"},{"period":2,"time":"09:45-10:35","class":"7C","subject":"RUSSIAN","room":"221"},{"period":3,"time":"10:40-11:30","class":"6C","subject":"RUSSIAN","room":"221"},{"period":4,"time":"11:35-12:25","class":"5A","subject":"LITERATURE","room":"221"},{"period":5,"time":"13:45-14:35","class":"7A","subject":"RUSSIAN","room":"221"},{"period":6,"time":"14:40-15:30","class":"6B","subject":"RUSSIAN","room":"221"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"7B","subject":"RUSSIAN","room":"221"},{"period":2,"time":"09:45-10:35","class":"6C","subject":"LITERATURE","room":"221"},{"period":3,"time":"10:40-11:30","class":"7C","subject":"LITERATURE","room":"221"},{"period":4,"time":"11:35-12:25","class":"5A","subject":"RUSSIAN","room":"221"},{"period":5,"time":"13:45-14:35","class":"6A","subject":"RUSSIAN","room":"221"},{"period":6,"time":"14:40-15:30","class":"7A","subject":"LITERATURE","room":"221"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"7B","subject":"LITERATURE","room":"221"},{"period":4,"time":"11:35-12:25","class":"6B","subject":"LITERATURE","room":"221"},{"period":5,"time":"13:45-14:35","class":"6A","subject":"LITERATURE","room":"221"},{"period":6,"time":"14:40-15:30","class":"5A","subject":"LITERATURE","room":"221"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"7C","subject":"LITERATURE","room":"221"},{"period":2,"time":"09:45-10:35","class":"7A","subject":"LITERATURE","room":"221"},{"period":3,"time":"10:40-11:30","class":"6B","subject":"LITERATURE","room":"221"},{"period":4,"time":"11:35-12:25","class":"7B","subject":"RUSSIAN","room":"221"},{"period":5,"time":"13:45-14:35","class":"6A","subject":"LITERATURE","room":"221"},{"period":6,"time":"14:40-15:30","class":"6C","subject":"LITERATURE","room":"221"}]},"Ibragimova Nasiba Ismailovna":{"Monday":[{"period":1,"time":"08:10-09:00","class":"8B","subject":"MATHS","room":"232"},{"period":2,"time":"09:45-10:35","class":"5B","subject":"MATHS","room":"232"},{"period":3,"time":"10:40-11:30","class":"8B","subject":"MATHS","room":"232"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"8A","subject":"MATHS","room":"232"},{"period":2,"time":"09:45-10:35","class":"8B","subject":"MATHS","room":"232"},{"period":3,"time":"10:40-11:30","class":"5B","subject":"MATHS","room":"232"},{"period":4,"time":"11:35-12:25","class":"5B","subject":"MATHS","room":"232"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"5B","subject":"MATHS","room":"232"},{"period":2,"time":"09:45-10:35","class":"8B","subject":"MATHS","room":"232"},{"period":3,"time":"10:40-11:30","class":"8A","subject":"MATHS","room":"232"},{"period":4,"time":"11:35-12:25","class":"8A","subject":"MATHS","room":"232"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"8A","subject":"MATHS","room":"232"},{"period":2,"time":"09:45-10:35","class":"8B","subject":"MATHS","room":"232"},{"period":3,"time":"10:40-11:30","class":"9A","subject":"MATHS","room":"232"},{"period":3,"time":"10:40-11:30","class":"10A","subject":"MATHS","room":"232"},{"period":4,"time":"11:35-12:25","class":"9A","subject":"MATHS","room":"232"},{"period":4,"time":"11:35-12:25","class":"10A","subject":"MATHS","room":"232"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"8A","subject":"MATHS","room":"232"},{"period":3,"time":"10:40-11:30","class":"9A","subject":"MATHS","room":"232"},{"period":3,"time":"10:40-11:30","class":"10A","subject":"MATHS","room":"232"},{"period":4,"time":"11:35-12:25","class":"9A","subject":"MATHS","room":"232"},{"period":4,"time":"11:35-12:25","class":"10A","subject":"MATHS","room":"232"}]},"Hella Manzoor Ahmad":{"Monday":[{"period":1,"time":"08:10-09:00","class":"6C","subject":"MATHS in ENG","room":"134"},{"period":2,"time":"09:45-10:35","class":"6A","subject":"MATHS in ENG","room":"134"},{"period":3,"time":"10:40-11:30","class":"6B","subject":"MATHS in ENG","room":"134"},{"period":4,"time":"11:35-12:25","class":"5B","subject":"MATHS in ENG","room":"134"},{"period":6,"time":"14:40-15:30","class":"7C","subject":"MATHS in ENG","room":"134"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"6A","subject":"MATHS in ENG","room":"134"},{"period":2,"time":"09:45-10:35","class":"6B","subject":"MATHS in ENG","room":"134"},{"period":3,"time":"10:40-11:30","class":"6C","subject":"MATHS in ENG","room":"134"},{"period":4,"time":"11:35-12:25","class":"5B","subject":"MATHS in ENG","room":"134"},{"period":5,"time":"13:45-14:35","class":"8A","subject":"BUSINESS","room":"134"},{"period":7,"time":"16:00-16:50","class":"7C","subject":"MATHS in ENG","room":"134"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"6C","subject":"MATHS in ENG","room":"134"},{"period":2,"time":"09:45-10:35","class":"6B","subject":"MATHS in ENG","room":"134"},{"period":3,"time":"10:40-11:30","class":"6A","subject":"MATHS in ENG","room":"134"},{"period":4,"time":"11:35-12:25","class":"7C","subject":"MATHS in ENG","room":"134"},{"period":6,"time":"14:40-15:30","class":"5B","subject":"MATHS in ENG","room":"134"},{"period":7,"time":"16:00-16:50","class":"7B","subject":"BUSINESS","room":"134"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"6C","subject":"MATHS in ENG","room":"134"},{"period":2,"time":"09:45-10:35","class":"5B","subject":"MATHS in ENG","room":"134"},{"period":3,"time":"10:40-11:30","class":"6B","subject":"MATHS in ENG","room":"134"},{"period":4,"time":"11:35-12:25","class":"5B","subject":"MATHS in ENG","room":"134"},{"period":5,"time":"13:45-14:35","class":"8B","subject":"BUSINESS","room":"134"},{"period":6,"time":"14:40-15:30","class":"7C","subject":"MATHS in ENG","room":"134"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"6A","subject":"MATHS in ENG","room":"134"},{"period":2,"time":"09:45-10:35","class":"6A","subject":"MATHS in ENG","room":"134"},{"period":3,"time":"10:40-11:30","class":"6B","subject":"MATHS in ENG","room":"134"},{"period":4,"time":"11:35-12:25","class":"6C","subject":"MATHS in ENG","room":"134"},{"period":7,"time":"16:00-16:50","class":"7C","subject":"MATHS in ENG","room":"134"}]},"ms.Nasiba":{"Tuesday":[{"period":5,"time":"13:45-14:35","class":"5B","subject":"MATHS","room":"232"}]},"Yusupov Abdussator Davlatovich":{"Monday":[{"period":1,"time":"08:10-09:00","class":"6B","subject":"MATHS","room":"242"},{"period":2,"time":"09:45-10:35","class":"6C","subject":"MATHS","room":"242"},{"period":3,"time":"10:40-11:30","class":"7B","subject":"MATHS","room":"242"},{"period":4,"time":"11:35-12:25","class":"6A","subject":"MATHS","room":"242"},{"period":5,"time":"13:45-14:35","class":"7C","subject":"MATHS","room":"242"},{"period":6,"time":"14:40-15:30","class":"7A","subject":"MATHS","room":"242"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"6B","subject":"MATHS","room":"242"},{"period":2,"time":"09:45-10:35","class":"6A","subject":"MATHS","room":"242"},{"period":3,"time":"10:40-11:30","class":"7A","subject":"MATHS","room":"242"},{"period":4,"time":"11:35-12:25","class":"6C","subject":"MATHS","room":"242"},{"period":5,"time":"13:45-14:35","class":"7B","subject":"MATHS","room":"242"},{"period":6,"time":"14:40-15:30","class":"7C","subject":"MATHS","room":"242"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"6B","subject":"MATHS","room":"242"},{"period":2,"time":"09:45-10:35","class":"6C","subject":"MATHS","room":"242"},{"period":3,"time":"10:40-11:30","class":"6A","subject":"MATHS","room":"242"},{"period":4,"time":"11:35-12:25","class":"7A","subject":"MATHS","room":"242"},{"period":5,"time":"13:45-14:35","class":"7C","subject":"MATHS","room":"242"},{"period":6,"time":"14:40-15:30","class":"7B","subject":"MATHS","room":"242"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"6B","subject":"MATHS","room":"242"},{"period":2,"time":"09:45-10:35","class":"6A","subject":"MATHS","room":"242"},{"period":3,"time":"10:40-11:30","class":"7A","subject":"MATHS","room":"242"},{"period":4,"time":"11:35-12:25","class":"6C","subject":"MATHS","room":"242"},{"period":5,"time":"13:45-14:35","class":"7B","subject":"MATHS","room":"242"},{"period":6,"time":"14:40-15:30","class":"7C","subject":"MATHS","room":"242"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"6B","subject":"MATHS","room":"242"},{"period":2,"time":"09:45-10:35","class":"6C","subject":"MATHS","room":"242"},{"period":3,"time":"10:40-11:30","class":"7B","subject":"MATHS","room":"242"},{"period":4,"time":"11:35-12:25","class":"6A","subject":"MATHS","room":"242"},{"period":5,"time":"13:45-14:35","class":"7C","subject":"MATHS","room":"242"},{"period":6,"time":"14:40-15:30","class":"7A","subject":"MATHS","room":"242"}]},"ms.Karina":{"Thursday":[{"period":1,"time":"08:10-09:00","class":"7C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":4,"time":"11:35-12:25","class":"6A","subject":"PHYSICAL EDU.","room":"Sports Hall"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"6A","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":2,"time":"09:45-10:35","class":"6B","subject":"PHYSICAL EDU.","room":"Sports Hall"}],"Wednesday":[{"period":2,"time":"09:45-10:35","class":"6B","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":5,"time":"13:45-14:35","class":"6C","subject":"PHYSICAL EDU.","room":"Sports Hall"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"7B","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":2,"time":"09:45-10:35","class":"6C","subject":"PHYSICAL EDU.","room":"Sports Hall"},{"period":6,"time":"14:40-15:30","class":"7A","subject":"PHYSICAL EDU.","room":"Sports Hall"}]},"Sharma Akash":{"Monday":[{"period":1,"time":"08:10-09:00","class":"8A","subject":"ENGLISH","room":"library"},{"period":2,"time":"09:45-10:35","class":"8B","subject":"ENGLISH","room":"library"},{"period":3,"time":"10:40-11:30","class":"7A","subject":"ENGLISH","room":"library"},{"period":4,"time":"11:35-12:25","class":"7B","subject":"ENGLISH","room":"library"},{"period":5,"time":"13:45-14:35","class":"9A","subject":"ENGLISH","room":"library"},{"period":5,"time":"13:45-14:35","class":"10A","subject":"ENGLISH","room":"library"},{"period":6,"time":"14:40-15:30","class":"9A","subject":"ENGLISH","room":"library"},{"period":6,"time":"14:40-15:30","class":"10A","subject":"ENGLISH","room":"library"}],"Tuesday":[{"period":2,"time":"09:45-10:35","class":"8A","subject":"ENGLISH","room":"library"},{"period":3,"time":"10:40-11:30","class":"7B","subject":"ENGLISH","room":"library"},{"period":7,"time":"16:00-16:50","class":"7A","subject":"ENGLISH","room":"library"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"8B","subject":"ENGLISH","room":"library"},{"period":2,"time":"09:45-10:35","class":"7A","subject":"ENGLISH","room":"library"},{"period":3,"time":"10:40-11:30","class":"7B","subject":"ENGLISH","room":"library"},{"period":4,"time":"11:35-12:25","class":"8A","subject":"ENGLISH","room":"library"},{"period":5,"time":"13:45-14:35","class":"9A","subject":"ENGLISH","room":"library"},{"period":5,"time":"13:45-14:35","class":"10A","subject":"ENGLISH","room":"library"},{"period":6,"time":"14:40-15:30","class":"9A","subject":"SCIENCE","room":"library"},{"period":6,"time":"14:40-15:30","class":"10A","subject":"SCIENCE","room":"library"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"8A","subject":"ENGLISH","room":"library"},{"period":2,"time":"09:45-10:35","class":"7B","subject":"ENGLISH","room":"library"},{"period":4,"time":"11:35-12:25","class":"7A","subject":"ENGLISH","room":"library"},{"period":5,"time":"13:45-14:35","class":"9A","subject":"ENGLISH","room":"library"},{"period":5,"time":"13:45-14:35","class":"10A","subject":"ENGLISH","room":"library"},{"period":6,"time":"14:40-15:30","class":"9A","subject":"ENGLISH","room":"library"},{"period":6,"time":"14:40-15:30","class":"10A","subject":"ENGLISH","room":"library"},{"period":7,"time":"16:00-16:50","class":"8B","subject":"ENGLISH","room":"library"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"8B","subject":"SCIENCE","room":"library"},{"period":2,"time":"09:45-10:35","class":"7B","subject":"SCIENCE","room":"library"},{"period":3,"time":"10:40-11:30","class":"7A","subject":"SCIENCE","room":"library"},{"period":4,"time":"11:35-12:25","class":"8A","subject":"SCIENCE","room":"library"},{"period":6,"time":"14:40-15:30","class":"8B","subject":"ENGLISH","room":"library"}]},"Jamalova Asalya Alisherovna":{"Monday":[{"period":1,"time":"08:10-09:00","class":"7C","subject":"PHYSICS","room":"213"},{"period":2,"time":"09:45-10:35","class":"7B","subject":"PHYSICS","room":"213"},{"period":4,"time":"11:35-12:25","class":"7A","subject":"PHYSICS","room":"213"},{"period":7,"time":"16:00-16:50","class":"7B","subject":"PHYSICS","room":"213"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"7C","subject":"PHYSICS","room":"213"},{"period":2,"time":"09:45-10:35","class":"7A","subject":"PHYSICS","room":"213"}]},"Yaqoob Adeel":{"Monday":[{"period":4,"time":"11:35-12:25","class":"8A","subject":"MATHS in ENG","room":"243"},{"period":5,"time":"13:45-14:35","class":"7A","subject":"MATHS in ENG","room":"243"},{"period":6,"time":"14:40-15:30","class":"7B","subject":"MATHS in ENG","room":"243"},{"period":7,"time":"16:00-16:50","class":"8B","subject":"MATHS in ENG","room":"243"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"9A","subject":"MATHS in ENG","room":"243"},{"period":1,"time":"08:10-09:00","class":"10A","subject":"MATHS in ENG","room":"243"},{"period":2,"time":"09:45-10:35","class":"9A","subject":"MATHS in ENG","room":"243"},{"period":2,"time":"09:45-10:35","class":"10A","subject":"MATHS in ENG","room":"243"},{"period":3,"time":"10:40-11:30","class":"8A","subject":"MATHS in ENG","room":"243"},{"period":4,"time":"11:35-12:25","class":"8B","subject":"MATHS in ENG","room":"243"},{"period":5,"time":"13:45-14:35","class":"7A","subject":"MATHS in ENG","room":"243"},{"period":6,"time":"14:40-15:30","class":"7B","subject":"MATHS in ENG","room":"243"},{"period":7,"time":"16:00-16:50","class":"8A","subject":"MATHS in ENG","room":"243"}],"Wednesday":[{"period":3,"time":"10:40-11:30","class":"8B","subject":"MATHS in ENG","room":"243"},{"period":4,"time":"11:35-12:25","class":"8B","subject":"MATHS in ENG","room":"243"},{"period":5,"time":"13:45-14:35","class":"7B","subject":"MATHS in ENG","room":"243"},{"period":6,"time":"14:40-15:30","class":"7A","subject":"MATHS in ENG","room":"243"},{"period":7,"time":"16:00-16:50","class":"8A","subject":"MATHS in ENG","room":"243"}],"Thursday":[{"period":5,"time":"13:45-14:35","class":"7A","subject":"MATHS in ENG","room":"243"},{"period":6,"time":"14:40-15:30","class":"7B","subject":"MATHS in ENG","room":"243"},{"period":7,"time":"16:00-16:50","class":"8A","subject":"MATHS in ENG","room":"243"}],"Friday":[{"period":1,"time":"08:10-09:00","class":"9A","subject":"MATHS in ENG","room":"243"},{"period":1,"time":"08:10-09:00","class":"10A","subject":"MATHS in ENG","room":"243"},{"period":2,"time":"09:45-10:35","class":"9A","subject":"MATHS in ENG","room":"243"},{"period":2,"time":"09:45-10:35","class":"10A","subject":"MATHS in ENG","room":"243"},{"period":3,"time":"10:40-11:30","class":"8B","subject":"MATHS in ENG","room":"243"},{"period":4,"time":"11:35-12:25","class":"7A","subject":"MATHS in ENG","room":"243"},{"period":5,"time":"13:45-14:35","class":"7A","subject":"BUSINESS","room":"243"},{"period":6,"time":"14:40-15:30","class":"7B","subject":"MATHS in ENG","room":"243"}]},"Raxmanova Aziza":{"Tuesday":[{"period":3,"time":"10:40-11:30","class":"8B","subject":"BIOLOGY","room":"222"},{"period":4,"time":"11:35-12:25","class":"7A","subject":"BIOLOGY","room":"222"}],"Wednesday":[{"period":3,"time":"10:40-11:30","class":"7A","subject":"BIOLOGY","room":"222"},{"period":4,"time":"11:35-12:25","class":"7B","subject":"BIOLOGY","room":"222"},{"period":5,"time":"13:45-14:35","class":"8B","subject":"BIOLOGY","room":"222"}],"Friday":[{"period":3,"time":"10:40-11:30","class":"8A","subject":"BIOLOGY","room":"222"},{"period":4,"time":"11:35-12:25","class":"7C","subject":"BIOLOGY","room":"222"},{"period":5,"time":"13:45-14:35","class":"7B","subject":"BIOLOGY","room":"222"}],"Monday":[{"period":3,"time":"10:40-11:30","class":"10A","subject":"BIOLOGY","room":"222"},{"period":4,"time":"11:35-12:25","class":"9A","subject":"BIOLOGY","room":"222"},{"period":5,"time":"13:45-14:35","class":"8A","subject":"BIOLOGY","room":"222"}],"Thursday":[{"period":3,"time":"10:40-11:30","class":"9A","subject":"BIOLOGY","room":"222"},{"period":4,"time":"11:35-12:25","class":"9A","subject":"BIOLOGY","room":"222"}]},"Rizabaeva Rukhsora Ravshanovna":{"Wednesday":[{"period":1,"time":"08:10-09:00","class":"7A","subject":"CHEMISTRY","room":"222"},{"period":2,"time":"09:45-10:35","class":"7B","subject":"CHEMISTRY","room":"222"},{"period":3,"time":"10:40-11:30","class":"8A","subject":"CHEMISTRY","room":"213"},{"period":4,"time":"11:35-12:25","class":"7C","subject":"BIOLOGY","room":"222"},{"period":6,"time":"14:40-15:30","class":"8A","subject":"BIOLOGY","room":"222"}],"Thursday":[{"period":1,"time":"08:10-09:00","class":"9A","subject":"CHEMISTRY","room":"222"},{"period":1,"time":"08:10-09:00","class":"10A","subject":"CHEMISTRY","room":"222"},{"period":2,"time":"09:45-10:35","class":"9A","subject":"CHEMISTRY","room":"222"},{"period":2,"time":"09:45-10:35","class":"10A","subject":"CHEMISTRY","room":"222"},{"period":5,"time":"13:45-14:35","class":"8B","subject":"CHEMISTRY","room":"213"},{"period":6,"time":"14:40-15:30","class":"8A","subject":"CHEMISTRY","room":"222"},{"period":7,"time":"16:00-16:50","class":"7A","subject":"CHEMISTRY","room":"222"}],"Tuesday":[{"period":1,"time":"08:10-09:00","class":"8B","subject":"CHEMISTRY","room":"222"},{"period":2,"time":"09:45-10:35","class":"7B","subject":"CHEMISTRY","room":"222"},{"period":5,"time":"13:45-14:35","class":"7C","subject":"CHEMISTRY","room":"213"},{"period":5,"time":"13:45-14:35","class":"8B","subject":"CHEMISTRY","room":"222"},{"period":6,"time":"14:40-15:30","class":"8A","subject":"CHEMISTRY","room":"222"}],"Monday":[{"period":1,"time":"08:10-09:00","class":"9A","subject":"CHEMISTRY","room":"222"},{"period":1,"time":"08:10-09:00","class":"10A","subject":"CHEMISTRY","room":"222"},{"period":2,"time":"09:45-10:35","class":"9A","subject":"CHEMISTRY","room":"222"},{"period":2,"time":"09:45-10:35","class":"10A","subject":"CHEMISTRY","room":"222"},{"period":6,"time":"14:40-15:30","class":"8B","subject":"BIOLOGY","room":"222"},{"period":7,"time":"16:00-16:50","class":"7C","subject":"CHEMISTRY","room":"222"}]},"ms.Madina":{"Monday":[{"period":5,"time":"13:45-14:35","class":"7B","subject":"Uzbek language","room":"244"},{"period":7,"time":"16:00-16:50","class":"8A","subject":"Uzbek language","room":"244"}],"Thursday":[{"period":3,"time":"10:40-11:30","class":"7B","subject":"Uzbek language","room":"243"},{"period":4,"time":"11:35-12:25","class":"8B","subject":"Uzbek language","room":"244"}],"Wednesday":[{"period":6,"time":"14:40-15:30","class":"7C","subject":"Uzbek language","room":"213"}]},"ms.Shahrizoda":{"Wednesday":[{"period":7,"time":"16:00-16:50","class":"7B","subject":"GP-Geography","room":"244"}]},"Hilola Rakhimova":{"Tuesday":[{"period":2,"time":"09:45-10:35","class":"7C","subject":"GP-History","room":"224"}]},"Любовь Сергеевна":{"Monday":[{"period":3,"time":"10:40-11:30","class":"9A","subject":"PHYSICS","room":"213"},{"period":4,"time":"11:35-12:25","class":"10A","subject":"PHYSICS","room":"213"},{"period":5,"time":"13:45-14:35","class":"8B","subject":"PHYSICS","room":"213"},{"period":6,"time":"14:40-15:30","class":"8A","subject":"PHYSICS","room":"213"}],"Wednesday":[{"period":1,"time":"08:10-09:00","class":"9A","subject":"PHYSICS","room":"213"},{"period":1,"time":"08:10-09:00","class":"10A","subject":"PHYSICS","room":"213"},{"period":2,"time":"09:45-10:35","class":"9A","subject":"PHYSICS","room":"213"},{"period":2,"time":"09:45-10:35","class":"10A","subject":"PHYSICS","room":"213"},{"period":5,"time":"13:45-14:35","class":"8A","subject":"PHYSICS","room":"213"},{"period":6,"time":"14:40-15:30","class":"8B","subject":"PHYSICS","room":"213"}],"Thursday":[{"period":3,"time":"10:40-11:30","class":"10A","subject":"PHYSICS","room":"213"},{"period":4,"time":"11:35-12:25","class":"10A","subject":"PHYSICS","room":"213"}]}};
 
   // Panel switching
-  
-
-
-
-
-
 </script>
-
 <script>
-
-
-
-
-
-
-
-
 function renderIncidentLog() {
     var body = document.getElementById('incident-log-body');
     if (!body) return;
@@ -4676,6 +4646,8 @@ function renderIncidentLog() {
       access: 'all',
       panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments'],
       teacherName: 'Sharma Akash',
+      teacherClasses: ["10A", "7A", "7B", "8A", "8B", "9A"],
+      teacherSubjects: ["English", "Science"]
     },
 
     // ── CO-FOUNDERS ──
@@ -4733,8 +4705,8 @@ function renderIncidentLog() {
       access: 'dept',
       dept: 'Maths',
       // As subject teacher: Maths Gr3-5A
-      teacherSubjects: ['Maths'],
-      teacherClasses: ['3A','3B','3C','4A','4B','4C','5A'],
+      teacherSubjects: ["Maths"],
+      teacherClasses: ["3A", "3B", "3C", "4A", "4B", "4C", "5A"],
       // As dept head: Maths dept Gr1-5A (includes Normamatova's classes)
       deptClasses: ['1A','1B','1C','2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
       deptSubjects: ['Maths'],
@@ -4752,8 +4724,8 @@ function renderIncidentLog() {
       access: 'dept',
       dept: 'Maths',
       // As subject teacher: Maths 5B,8A,8B,9A
-      teacherSubjects: ['Maths'],
-      teacherClasses: ['5B','8A','8B','9A'],
+      teacherSubjects: ["Maths"],
+      teacherClasses: ["10A", "5B", "8A", "8B", "9A"],
       // As dept head: Maths dept 5B-10 (includes Yusupov's classes)
       deptClasses: ['5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'],
       deptSubjects: ['Maths'],
@@ -4773,8 +4745,8 @@ function renderIncidentLog() {
       access: 'dept',
       dept: 'Science',
       // As subject teacher: Science Gr3-6
-      teacherSubjects: ['Science','Economics'],
-      teacherClasses: ['3A','3B','3C','4A','4B','4C','5A','5B','6A','6B','6C','9A'],
+      teacherSubjects: ["Economics", "GP (Hist-Geo)", "Science"],
+      teacherClasses: ["10A", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7C", "9A"],
       // As dept head: all Science classes
       deptClasses: ['1A','1B','1C','2A','2B','2C','2C','3A','3B','3C','4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A'],
       deptSubjects: ['Science'],
@@ -4793,10 +4765,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 6A & 7A',
       avatar: 'AF',
       access: 'class',
-      classes: ['6A','7A'],
+      classes: ["5A", "6A", "6B", "6C", "7A", "7B", "7C"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Abduazizova Feruza Erkinovna',
+      teacherClasses: ["5A", "6A", "6B", "6C", "7A", "7B", "7C"],
+      teacherSubjects: ["Russian Language"]
     },
     'abdull.asatov': {
       password: 'class3a4a',
@@ -4805,10 +4779,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 3A & 4A',
       avatar: 'GA',
       access: 'class',
-      classes: ['3A','4A'],
+      classes: ["3A", "3B", "3C", "4A", "4B", "4C", "5A"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Abdullayeva Gulnara Asatovna',
+      teacherClasses: ["3A","3B","3C","4A","4B","4C","5A"],
+      teacherSubjects: ["Maths"]
     },
     'bobobe.olimov': {
       password: 'class5a5b',
@@ -4817,10 +4793,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 5A & 5B',
       avatar: 'BO',
       access: 'class',
-      classes: ['5A','5B'],
+      classes: ["2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7B", "7C", "8A", "8B"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Bobobekova Barno Olimovna',
+      teacherClasses: ["2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7B", "7C", "8A", "8B"],
+      teacherSubjects: ["Art"]
     },
     'djuray.isayev': {
       password: 'class1a2a',
@@ -4829,10 +4807,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 1A & 2A',
       avatar: 'OD',
       access: 'class',
-      classes: ['1A','2A'],
+      classes: ["1A", "1B", "1C", "2A", "2B", "2C"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Djurayeva Oygul Isayevna',
+      teacherClasses: ["1A", "1B", "1C", "2A", "2B", "2C"],
+      teacherSubjects: ["Russian Language"]
     },
     'egambe.zafar': {
       password: 'class1c2c',
@@ -4841,10 +4821,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 1C & 2C',
       avatar: 'EZ',
       access: 'class',
-      classes: ['1C','2C'],
+      classes: ["1A", "1C", "2A", "2B", "2C"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Egamberdiyev Zafar',
+      teacherClasses: ["1A", "1C", "2A", "2B", "2C"],
+      teacherSubjects: ["Art", "English", "Maths", "Science"]
     },
     'ibragi.ismail': {
       password: 'class8a9a',
@@ -4853,10 +4835,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 8A, 8B, 9A, 10A',
       avatar: 'NI',
       access: 'class',
-      classes: ['8A','8B','9A','10A'],
+      classes: ["10A", "5B", "8A", "8B", "9A"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Ibragimova Nasiba Ismailovna',
+      teacherClasses: ["10A", "5B", "8A", "8B", "9A"],
+      teacherSubjects: ["Maths"]
     },
     'isomat.sadrid': {
       password: 'class3b3c',
@@ -4865,10 +4849,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 3B & 3C',
       avatar: 'XI',
       access: 'class',
-      classes: ['3B','3C'],
+      classes: ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Isomatov Xushbaxt Sadriddinovich',
+      teacherClasses: ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B"],
+      teacherSubjects: ["Physical Education"]
     },
     'jamalo.alishe': {
       password: 'class7b',
@@ -4877,10 +4863,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 7B',
       avatar: 'AJ',
       access: 'class',
-      classes: ['7B'],
+      classes: ["7A", "7B", "7C"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Jamalova Asalya Alisherovna',
+      teacherClasses: ["7A", "7B", "7C"],
+      teacherSubjects: ["Physics"]
     },
     'naimov.musino': {
       password: 'class4b4c',
@@ -4889,10 +4877,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 4B & 4C',
       avatar: 'ZN',
       access: 'class',
-      classes: ['4B','4C'],
+      classes: ["3A", "3B", "3C", "4A", "4B", "4C", "5B"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Naimova Zarrina Musinovna',
+      teacherClasses: ["3A", "3B", "3C", "4A", "4B", "4C", "5B"],
+      teacherSubjects: ["Russian Language"]
     },
     'normam.furkat': {
       password: 'class1b2b',
@@ -4901,10 +4891,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 1B & 2B',
       avatar: 'SN',
       access: 'class',
-      classes: ['1B','2B'],
+      classes: ["1A", "1B", "1C", "2A", "2B", "2C"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Normamatova Sitora Furkatovna',
+      teacherClasses: ["1A", "1B", "1C", "2A", "2B", "2C"],
+      teacherSubjects: ["Maths"]
     },
     'raximo.xilola': {
       password: 'class6c7c',
@@ -4913,10 +4905,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 6C & 7C',
       avatar: 'XR',
       access: 'class',
-      classes: ['6C','7C'],
+      classes: ["2A", "2B", "2C", "6B", "6C", "7C"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Raximova Xilola',
+      teacherClasses: ["2A", "2B", "2C", "6B", "6C", "7C"],
+      teacherSubjects: ["Economics", "English", "Science"]
     },
     'yusupo.davlat': {
       password: 'class6b',
@@ -4925,10 +4919,12 @@ function renderIncidentLog() {
       title: 'Class Teacher — 6B',
       avatar: 'AY',
       access: 'class',
-      classes: ['6B'],
+      classes: ["6A", "6B", "6C", "7A", "7B", "7C"],
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
       readonlyStats: true,
       teacherName: 'Yusupov Abdussator Davlatovich',
+      teacherClasses: ["6A", "6B", "6C", "7A", "7B", "7C"],
+      teacherSubjects: ["Maths"]
     },
 
     // ── SUBJECT TEACHERS ──
@@ -4939,7 +4935,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'BU',
       access: 'subject',
-      teacherSubjects: ["ART", "ENGLISH", "MATHS in ENG", "SCIENCE"],
+      teacherSubjects: ["Art", "English", "Maths", "Science"],
       teacherClasses:  ["1A", "1B", "1C"],
       teacherName: 'Banu Umera',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -4952,7 +4948,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'BE',
       access: 'subject',
-      teacherSubjects: ["GP-Geography", "GP-History"],
+      teacherSubjects: ["GP (Hist-Geo)"],
       teacherClasses:  ["3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7B", "8A", "8B"],
       teacherName: 'Bulgak Emine',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -4965,7 +4961,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'HH',
       access: 'subject',
-      teacherSubjects: ["ENGLISH"],
+      teacherSubjects: ["English"],
       teacherClasses:  ["4A", "4B", "4C", "5A", "5B", "6A"],
       teacherName: 'Halkouj Houssam',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -4978,7 +4974,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'HM',
       access: 'subject',
-      teacherSubjects: ["BUSINESS", "MATHS in ENG"],
+      teacherSubjects: ["Economics", "Maths"],
       teacherClasses:  ["5B", "6A", "6B", "6C", "7B", "7C", "8A", "8B"],
       teacherName: 'Hella Manzoor Ahmad',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -4991,7 +4987,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'JA',
       access: 'subject',
-      teacherSubjects: ["PHYSICS"],
+      teacherSubjects: ["Physics"],
       teacherClasses:  ["7A", "7B", "7C"],
       teacherName: 'Jamalova Asalya Alisherovna',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5004,7 +5000,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'MS',
       access: 'subject',
-      teacherSubjects: ["ENGLISH", "MATHS in ENG"],
+      teacherSubjects: ["English", "Maths"],
       teacherClasses:  ["2A", "2B", "2C", "3A", "3B", "3C"],
       teacherName: 'Mishra Soniya',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5017,7 +5013,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'NN',
       access: 'subject',
-      teacherSubjects: ["MATHS in ENG"],
+      teacherSubjects: ["Maths"],
       teacherClasses:  ["3A", "3B", "3C", "4A", "4B", "4C", "5A"],
       teacherName: 'Neitngale Nansi Thote',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5030,7 +5026,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'RS',
       access: 'subject',
-      teacherSubjects: ["LITERATURE", "Literature", "RUSSIAN", "Uzbek language"],
+      teacherSubjects: ["Russian Language", "Uzbek Language"],
       teacherClasses:  ["10A", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7C", "8A", "8B", "9A"],
       teacherName: 'Rakhimova Sabina Robertovna',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5043,7 +5039,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'RA',
       access: 'subject',
-      teacherSubjects: ["BIOLOGY"],
+      teacherSubjects: ["Biology"],
       teacherClasses:  ["10A", "7A", "7B", "7C", "8A", "8B", "9A"],
       teacherName: 'Raxmanova Aziza',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5056,7 +5052,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'RR',
       access: 'subject',
-      teacherSubjects: ["BIOLOGY", "CHEMISTRY"],
+      teacherSubjects: ["Biology", "Chemistry"],
       teacherClasses:  ["10A", "7A", "7B", "7C", "8A", "8B", "9A"],
       teacherName: 'Rizabaeva Rukhsora Ravshanovna',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5069,7 +5065,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'YA',
       access: 'subject',
-      teacherSubjects: ["BUSINESS", "MATHS in ENG"],
+      teacherSubjects: ["Economics", "Maths"],
       teacherClasses:  ["10A", "7A", "7B", "8A", "8B", "9A"],
       teacherName: 'Yaqoob Adeel',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5082,7 +5078,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'M',
       access: 'subject',
-      teacherSubjects: ["CHESS"],
+      teacherSubjects: ["Chess"],
       teacherClasses:  ["3A", "3B", "3C", "4A", "4B", "4C"],
       teacherName: 'mr.Firdavs',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5095,7 +5091,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'M',
       access: 'subject',
-      teacherSubjects: ["PHYSICAL EDU."],
+      teacherSubjects: ["Physical Education"],
       teacherClasses:  ["6A", "6B", "6C", "7A", "7B", "7C"],
       teacherName: 'ms.Karina',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5108,7 +5104,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'M',
       access: 'subject',
-      teacherSubjects: ["Uzbek language"],
+      teacherSubjects: ["Uzbek Language"],
       teacherClasses:  ["7B", "7C", "8A", "8B"],
       teacherName: 'ms.Madina',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5121,7 +5117,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'M',
       access: 'subject',
-      teacherSubjects: ["MATHS"],
+      teacherSubjects: ["Maths"],
       teacherClasses:  ["5B"],
       teacherName: 'ms.Nasiba',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -5134,7 +5130,7 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'M',
       access: 'subject',
-      teacherSubjects: ["GP-Geography"],
+      teacherSubjects: ["GP (Hist-Geo)"],
       teacherClasses:  ["7B"],
       teacherName: 'ms.Shahrizoda',
       panels: ['dashboard','results','calendar','dailyreport','assessments'],
@@ -6431,9 +6427,10 @@ function renderIncidentLog() {
       if (clsList.length) return clsList;
     }
     // Fallback: use assigned classes from user profile
-    if (u.access === 'class' && u.classes) return u.classes;
-    if (u.role === 'dept_head' && u.teacherClasses && u.teacherClasses.length) return u.teacherClasses;
-    return u.classes || ALL_CLASSES;
+    if (u.teacherClasses && u.teacherClasses.length) return u.teacherClasses;
+    if (u.classes && Array.isArray(u.classes)) return u.classes;
+    if (u.classes) return [u.classes];
+    return ALL_CLASSES;
   }
 
   // Get today's lessons for the current teacher
@@ -7375,20 +7372,21 @@ function renderIncidentLog() {
   var _SB_URL='https://rqbdfwdegblwzbdqjsdo.supabase.co', _SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYmRmd2RlZ2Jsd3piZHFqc2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMjEzMzgsImV4cCI6MjA4OTc5NzMzOH0.GdfidDRBpdD1tZEam7_gjWaj5basR60FOjUOxvL6V2k';
 
   function sbFetch(table, method, body, params) {
+    var m   = method || 'GET';
     var url = _SB_URL + '/rest/v1/' + table + (params ? '?' + params : '');
-    var opts = {
-      method: method || 'GET',
-      headers: {
-        'apikey': _SB_KEY,
-        'Authorization': 'Bearer ' + _SB_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': method === 'POST' ? 'return=representation' : ''
-      }
+    var headers = {
+      'apikey':        _SB_KEY,
+      'Authorization': 'Bearer ' + _SB_KEY,
+      'Content-Type':  'application/json'
     };
+    // Only add Prefer on writes — never on GET (it would suppress response body)
+    if (m === 'POST' || m === 'PATCH')   headers['Prefer'] = 'return=minimal';
+    if (m === 'DELETE')                  headers['Prefer'] = 'return=minimal';
+    var opts = { method: m, headers: headers };
     if (body) opts.body = JSON.stringify(body);
     return fetch(url, opts).then(function(r) {
       if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
-      return r.status === 204 ? {} : r.json();
+      return (r.status === 204 || m === 'DELETE' || m === 'PATCH') ? {} : r.json();
     });
   }
 
@@ -8081,6 +8079,27 @@ function renderIncidentLog() {
       });
     }
 
+    // Populate subject dropdown based on user's teacherSubjects
+    var subjSel = document.getElementById('asm-subject');
+    if (subjSel) {
+      subjSel.innerHTML = '<option value="">— Select subject —</option>';
+      var u = _currentUser;
+      var ALL_SUBJECTS = ['English','Maths','Cambridge Maths','Science','Russian Language',
+        'Physics','Chemistry','Biology','GP (Hist-Geo)','Economics','ICT',
+        'Uzbek Language','Literature','Art','Physical Education','Chess'];
+      var isAdmin = u && (u.access === 'all' || u.role === 'admin' ||
+                          u.role === 'principal' || u.role === 'founder');
+      var allowedSubjs = isAdmin
+        ? ALL_SUBJECTS
+        : (u && u.teacherSubjects && u.teacherSubjects.length)
+          ? u.teacherSubjects
+          : ALL_SUBJECTS;
+      allowedSubjs.forEach(function(s) {
+        var o = document.createElement('option'); o.value = s; o.textContent = s;
+        subjSel.appendChild(o);
+      });
+    }
+
     // Set default type
     asmSetType('formative');
 
@@ -8477,16 +8496,71 @@ function renderIncidentLog() {
     calLoadEvents();
   }
 
+  // Academic Calendar 2025-26 — Uzbekistan / Redbridge
+  // Color coding from calendar legend:
+  // Quarter begins: #1d4ed8 (dark blue)
+  // Quarter ends:   #991b1b (dark red)
+  // Quarter break:  #f59e0b (amber)
+  // Holidays:       #dc2626 (red)
+  // Monthly Test:   #7c3aed (purple)
+
+  var ACADEMIC_EVENTS = [
+    // ── QUARTERS ─────────────────────────────────────────
+    {id:'q1s', title:'Q1 Begins',          start:'2025-09-02', end:'2025-09-02', color:'#1d4ed8', type:'term'},
+    {id:'q1e', title:'Q1 Ends',            start:'2025-11-03', end:'2025-11-03', color:'#991b1b', type:'term'},
+    {id:'q1b', title:'Autumn Break',       start:'2025-11-04', end:'2025-11-09', color:'#f59e0b', type:'break'},
+    {id:'q2s', title:'Q2 Begins',          start:'2025-11-10', end:'2025-11-10', color:'#1d4ed8', type:'term'},
+    {id:'q2e', title:'Q2 Ends',            start:'2025-12-27', end:'2025-12-27', color:'#991b1b', type:'term'},
+    {id:'q2b', title:'Winter Break',       start:'2025-12-28', end:'2026-01-10', color:'#f59e0b', type:'break'},
+    {id:'q3s', title:'Q3 Begins',          start:'2026-01-11', end:'2026-01-11', color:'#1d4ed8', type:'term'},
+    {id:'q3e', title:'Q3 Ends',            start:'2026-03-20', end:'2026-03-20', color:'#991b1b', type:'term'},
+    {id:'q3b', title:'Spring Break',       start:'2026-03-21', end:'2026-03-27', color:'#f59e0b', type:'break'},
+    {id:'q4s', title:'Q4 Begins',          start:'2026-03-28', end:'2026-03-28', color:'#1d4ed8', type:'term'},
+    {id:'q4e', title:'Q4 Ends',            start:'2026-05-25', end:'2026-05-25', color:'#991b1b', type:'term'},
+    {id:'sum', title:'Summer Break',       start:'2026-05-25', end:'2026-08-31', color:'#f59e0b', type:'break'},
+    // ── HOLIDAYS ─────────────────────────────────────────
+    {id:'h1',  title:'Independence Day',   start:'2025-09-01', end:'2025-09-01', color:'#dc2626', type:'holiday'},
+    {id:'h2',  title:"Teacher's Day",      start:'2025-10-01', end:'2025-10-01', color:'#dc2626', type:'holiday'},
+    {id:'h3',  title:'Constitution Day',   start:'2025-12-08', end:'2025-12-08', color:'#dc2626', type:'holiday'},
+    {id:'h4',  title:"New Year's Day",     start:'2026-01-01', end:'2026-01-01', color:'#dc2626', type:'holiday'},
+    {id:'h5',  title:"Defenders' Day",     start:'2026-01-14', end:'2026-01-14', color:'#dc2626', type:'holiday'},
+    {id:'h6',  title:"Women's Day",        start:'2026-03-08', end:'2026-03-08', color:'#dc2626', type:'holiday'},
+    {id:'h7',  title:'Eid al-Fitr',        start:'2026-03-20', end:'2026-03-20', color:'#dc2626', type:'holiday'},
+    {id:'h8',  title:'Navruz',             start:'2026-03-21', end:'2026-03-21', color:'#dc2626', type:'holiday'},
+    {id:'h9',  title:'Day of Memory',      start:'2026-05-09', end:'2026-05-09', color:'#dc2626', type:'holiday'},
+    // ── MONTHLY TESTS ─────────────────────────────────────
+    {id:'mt1', title:'Monthly Test — Oct', start:'2025-10-27', end:'2025-10-31', color:'#7c3aed', type:'exam'},
+    {id:'mt2', title:'Monthly Test — Nov', start:'2025-11-24', end:'2025-11-28', color:'#7c3aed', type:'exam'},
+    {id:'mt3', title:'Monthly Test — Dec', start:'2025-12-22', end:'2025-12-26', color:'#7c3aed', type:'exam'},
+    {id:'mt4', title:'Monthly Test — Jan', start:'2026-01-26', end:'2026-01-30', color:'#7c3aed', type:'exam'},
+    {id:'mt5', title:'Monthly Test — Feb', start:'2026-02-23', end:'2026-02-27', color:'#7c3aed', type:'exam'},
+    {id:'mt6', title:'Monthly Test — Mar', start:'2026-03-16', end:'2026-03-20', color:'#7c3aed', type:'exam'},
+    {id:'mt7', title:'Monthly Test — Apr', start:'2026-04-27', end:'2026-05-01', color:'#7c3aed', type:'exam'},
+    {id:'mt8', title:'Monthly Test — May', start:'2026-05-18', end:'2026-05-22', color:'#7c3aed', type:'exam'},
+  ];
+
+
   function calLoadEvents() {
     sbFetch('calendar_events', 'GET', null, 'order=start_date.asc&limit=500')
       .then(function(rows) {
-        _calEvents = (rows || []).map(function(r) {
-          return {id:r.id, title:r.title, start:r.start_date, end:r.end_date||r.start_date,
-            type:r.event_type||'general', color:r.color||'#1e3a5f', description:r.description||''};
+        var sbEvents = (rows || []).map(function(r) {
+          return {id:String(r.id), title:r.title, start:r.date, end:r.end_date||r.date,
+            type:r.type||'general', color:r.color||'#3b82f6', description:r.description||''};
         });
+        // Merge: academic events + Supabase events (Supabase events take priority on same id)
+        var sbIds = {};
+        sbEvents.forEach(function(e){ sbIds[e.id]=true; });
+        var merged = ACADEMIC_EVENTS.filter(function(e){ return !sbIds[e.id]; }).concat(sbEvents);
+        _calEvents = merged;
         calRender();
+        var sync = document.getElementById('cal-sync-status');
+        if (sync) sync.textContent = 'Synced';
       })
-      .catch(function() { calRender(); });
+      .catch(function() {
+        // Offline - show academic events only
+        _calEvents = ACADEMIC_EVENTS.slice();
+        calRender();
+      });
   }
 
   function calEventsOnDate(ds) {
@@ -8563,18 +8637,15 @@ function renderIncidentLog() {
     var d = defaultDate || new Date().toISOString().slice(0,10);
     var g = function(id){ return document.getElementById(id); };
     if(g('cal-edit-id'))    g('cal-edit-id').value    = '';
-    if(g('cal-ev-id'))      g('cal-ev-id').value      = '';
     if(g('cal-evt-title'))  g('cal-evt-title').value  = '';
-    if(g('cal-ev-title'))   g('cal-ev-title').value   = '';
     if(g('cal-evt-date'))   g('cal-evt-date').value   = d;
-    if(g('cal-ev-start'))   g('cal-ev-start').value   = d;
     if(g('cal-evt-enddate'))g('cal-evt-enddate').value = d;
-    if(g('cal-ev-end'))     g('cal-ev-end').value     = d;
-    if(g('cal-evt-type'))   g('cal-evt-type').value   = 'general';
-    if(g('cal-ev-type'))    g('cal-ev-type').value    = 'general';
-    if(g('cal-ev-color'))   g('cal-ev-color').value   = '#1e3a5f';
-    if(g('cal-ev-desc'))    g('cal-ev-desc').value    = '';
+    if(g('cal-evt-type'))   g('cal-evt-type').value   = 'event';
+    if(g('cal-evt-color'))  g('cal-evt-color').value  = '#3b82f6';
+    if(g('cal-evt-desc'))   g('cal-evt-desc').value   = '';
     if(g('cal-modal-title'))g('cal-modal-title').textContent = 'Add Event';
+    var delBtn = document.getElementById('cal-delete-btn');
+    if (delBtn) delBtn.style.display = 'none';
     modal.style.display = 'flex';
   }
 
@@ -8583,19 +8654,17 @@ function renderIncidentLog() {
     for (var i = 0; i < _calEvents.length; i++) { if (_calEvents[i].id === id) { ev = _calEvents[i]; break; } }
     if (!ev) return;
     var g = function(eid){ return document.getElementById(eid); };
-    if(g('cal-edit-id'))    g('cal-edit-id').value    = id;
-    if(g('cal-ev-id'))      g('cal-ev-id').value      = id;
-    if(g('cal-evt-title'))  g('cal-evt-title').value  = ev.title;
-    if(g('cal-ev-title'))   g('cal-ev-title').value   = ev.title;
-    if(g('cal-evt-date'))   g('cal-evt-date').value   = ev.start;
-    if(g('cal-ev-start'))   g('cal-ev-start').value   = ev.start;
+    if(g('cal-edit-id'))    g('cal-edit-id').value     = id;
+    if(g('cal-evt-title'))  g('cal-evt-title').value   = ev.title;
+    if(g('cal-evt-date'))   g('cal-evt-date').value    = ev.start;
     if(g('cal-evt-enddate'))g('cal-evt-enddate').value = ev.end || ev.start;
-    if(g('cal-ev-end'))     g('cal-ev-end').value     = ev.end || ev.start;
-    if(g('cal-evt-type'))   g('cal-evt-type').value   = ev.type || 'general';
-    if(g('cal-ev-type'))    g('cal-ev-type').value    = ev.type || 'general';
-    if(g('cal-ev-color'))   g('cal-ev-color').value   = ev.color || '#1e3a5f';
-    if(g('cal-ev-desc'))    g('cal-ev-desc').value    = ev.description || '';
+    if(g('cal-evt-type'))   g('cal-evt-type').value    = ev.type || 'event';
+    if(g('cal-evt-color'))  g('cal-evt-color').value   = ev.color || '#3b82f6';
+    if(g('cal-evt-desc'))   g('cal-evt-desc').value    = ev.description || '';
     if(g('cal-modal-title'))g('cal-modal-title').textContent = 'Edit Event';
+    // Show delete button for saved events (not academic events)
+    var delBtn = document.getElementById('cal-delete-btn');
+    if (delBtn) delBtn.style.display = id.startsWith('ac') || id.startsWith('q') || id.startsWith('h') || id.startsWith('mt') ? 'none' : '';
     var modal = document.getElementById('cal-event-modal');
     if (modal) modal.style.display = 'flex';
   }
@@ -8606,36 +8675,72 @@ function renderIncidentLog() {
   }
 
   function calSaveEvent() {
-    var g = function(id){ var el=document.getElementById(id); return el?el.value:''; };
-    var title = (g('cal-evt-title') || g('cal-ev-title') || '').trim();
-    if (!title) { showToast('Please enter an event title.'); return; }
-    var startDate = g('cal-evt-date') || g('cal-ev-start') || new Date().toISOString().slice(0,10);
-    var endDate   = g('cal-evt-enddate') || g('cal-ev-end') || startDate;
-    var evType    = g('cal-evt-type') || g('cal-ev-type') || 'general';
-    var evColor   = g('cal-ev-color') || '#1e3a5f';
-    var evDesc    = g('cal-ev-desc') || '';
-    var editId    = g('cal-edit-id') || g('cal-ev-id') || '';
-    var ev = {
-      title: title,
-      start_date: startDate,
-      end_date:   endDate || startDate,
-      event_type: evType,
-      color:      evColor,
-      description:evDesc
-    };
-    sbFetch('calendar_events', 'POST', ev)
-      .then(function(res) {
-        calCloseModal();
-        calLoadEvents();
-        showToast('Event saved ✓');
-      })
-      .catch(function() { showToast('Error saving event.'); });
+    var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
+    var title=g('cal-evt-title'),startDate=g('cal-evt-date'),endDate=g('cal-evt-enddate');
+    var evType=g('cal-evt-type')||'event',evColor=g('cal-evt-color')||'#3b82f6';
+    var evDesc=g('cal-evt-desc'),editId=g('cal-edit-id');
+    if(!title){showToast('Please enter a title.');return;}
+    if(!startDate){showToast('Please select a date.');return;}
+    var tc={holiday:'#dc2626',exam:'#7c3aed',break:'#f59e0b',
+      quarter_start:'#1d4ed8',quarter_end:'#991b1b',
+      meeting:'#0369a1',sports:'#16a34a',event:'#3b82f6'};
+    if(!evColor||evColor==='#3b82f6')evColor=tc[evType]||'#3b82f6';
+    var body={title:title,date:startDate,type:evType,color:evColor,description:evDesc||''};
+    if(endDate)body.end_date=endDate;
+    updateCloudStatus('saving');
+    function xhrPost(b,cb){
+      var x=new XMLHttpRequest();
+      x.open('POST',_SB_URL+'/rest/v1/calendar_events',true);
+      x.setRequestHeader('apikey',_SB_KEY);
+      x.setRequestHeader('Authorization','Bearer '+_SB_KEY);
+      x.setRequestHeader('Content-Type','application/json');
+      x.setRequestHeader('Prefer','return=minimal');
+      x.onload=function(){x.status>=200&&x.status<300?cb(null):cb(new Error('HTTP '+x.status+': '+x.responseText));};
+      x.onerror=function(){cb(new Error('Network error'));};
+      x.send(JSON.stringify(b));
+    }
+    function xhrDel(id,cb){
+      var x=new XMLHttpRequest();
+      x.open('DELETE',_SB_URL+'/rest/v1/calendar_events?id=eq.'+id,true);
+      x.setRequestHeader('apikey',_SB_KEY);
+      x.setRequestHeader('Authorization','Bearer '+_SB_KEY);
+      x.setRequestHeader('Prefer','return=minimal');
+      x.onload=function(){x.status>=200&&x.status<300?cb(null):cb(new Error('HTTP '+x.status));};
+      x.onerror=function(){cb(new Error('Network error'));};
+      x.send();
+    }
+    function done(err){
+      if(err){console.error('Cal save:',err);showToast('Error: '+err.message);updateCloudStatus('error');return;}
+      calCloseModal();calLoadEvents();showToast(editId?'Event updated ✓':'Event saved ✓');updateCloudStatus('saved');
+    }
+    if(editId){xhrDel(editId,function(e){if(e){done(e);return;}xhrPost(body,done);});}
+    else{xhrPost(body,done);}
   }
 
   function calDeleteEvent(id) {
+    if (!id) {
+      var editId = (document.getElementById('cal-edit-id')||{}).value;
+      id = editId;
+    }
+    if (!id) { showToast('No event selected.'); return; }
+    // Academic built-in events cannot be deleted from Supabase (they have text IDs like ac1, h1)
+    var builtIn = /^(ac|q[1-4]|h|mt)\d/.test(id);
+    if (builtIn) {
+      // Just hide from local view
+      _calEvents = _calEvents.filter(function(e){ return e.id !== id; });
+      calCloseModal(); calRender();
+      showToast('Event hidden ✓');
+      return;
+    }
     sbFetch('calendar_events', 'DELETE', null, 'id=eq.' + id)
-      .then(function() { _calEvents = _calEvents.filter(function(e) { return e.id !== id; }); calRender(); showToast('Event deleted ✓'); })
-      .catch(function() { showToast('Error deleting event.'); });
+      .then(function() {
+        _calEvents = _calEvents.filter(function(e){ return e.id !== id; });
+        calCloseModal(); calRender(); showToast('Event deleted ✓');
+      })
+      .catch(function(e) {
+        console.error('Delete error:', e);
+        showToast('Error deleting event.');
+      });
   }
 
   function calPrevMonth() { _calMonth--; if (_calMonth < 0) { _calMonth = 11; _calYear--; } calRender(); }
@@ -8982,142 +9087,11 @@ function renderIncidentLog() {
     var wrap=document.createElement('div'); wrap.style.overflowX='auto';
     wrap.appendChild(table); grid.appendChild(wrap);
   }
-
-
 </script>
 
-<div id="new-action-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:16px;">
-  <div style="background:var(--white);border-radius:20px;width:min(580px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,0.3);">
-    <div style="padding:20px 24px 16px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-      <div>
-        <div style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;color:var(--ink);">📋 Log New Action</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Create a task, decision or follow-up</div>
-      </div>
-      <button onclick="closeNewActionModal()" style="background:var(--bg);border:1px solid var(--rule);border-radius:10px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;color:var(--slate);">✕ Close</button>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;">
-      <!-- Quick action shortcuts -->
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-        <button onclick="quickAction('incident')" style="padding:10px;border-radius:10px;border:1.5px solid var(--rule);background:var(--bg);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--slate);text-align:left;">🛡️ Log Incident</button>
-        <button onclick="quickAction('observation')" style="padding:10px;border-radius:10px;border:1.5px solid var(--rule);background:var(--bg);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--slate);text-align:left;">🔍 Observe Teacher</button>
-        <button onclick="quickAction('alert')" style="padding:10px;border-radius:10px;border:1.5px solid var(--rule);background:var(--bg);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--slate);text-align:left;">🔔 View Alerts</button>
-        <button onclick="quickAction('ai')" style="padding:10px;border-radius:10px;border:1.5px solid var(--rule);background:var(--bg);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--slate);text-align:left;">✨ Ask AI</button>
-      </div>
-      <div style="border-top:1px solid var(--rule);padding-top:14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Custom Action</div>
-        <!-- Type -->
-        <div style="margin-bottom:10px;">
-          <label style="font-size:12px;font-weight:600;color:var(--slate);display:block;margin-bottom:5px;">Type</label>
-          <select id="action-type" style="width:100%;padding:9px 12px;border:1.5px solid var(--rule);border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;background:var(--white);color:var(--ink);outline:none;">
-            <option value="task">📋 Task</option>
-            <option value="decision">⚖️ Decision</option>
-            <option value="meeting">📅 Meeting</option>
-            <option value="communication">💬 Communication</option>
-            <option value="follow-up">🔁 Follow-Up</option>
-            <option value="urgent">🚨 Urgent</option>
-          </select>
-        </div>
-        <!-- Description -->
-        <div style="margin-bottom:10px;">
-          <label style="font-size:12px;font-weight:600;color:var(--slate);display:block;margin-bottom:5px;">Description</label>
-          <textarea id="action-desc" rows="2" placeholder="What needs to be done?"
-            style="width:100%;border:1.5px solid var(--rule);border-radius:9px;padding:9px 12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
-        </div>
-        <!-- Assigned + Due -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <div>
-            <label style="font-size:12px;font-weight:600;color:var(--slate);display:block;margin-bottom:5px;">Assign to</label>
-            <input id="action-assigned" type="text" placeholder="e.g. Mr. Smith"
-              style="width:100%;padding:9px 12px;border:1.5px solid var(--rule);border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;">
-          </div>
-          <div>
-            <label style="font-size:12px;font-weight:600;color:var(--slate);display:block;margin-bottom:5px;">Due date</label>
-            <input id="action-due" type="date"
-              style="width:100%;padding:9px 12px;border:1.5px solid var(--rule);border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;outline:none;box-sizing:border-box;">
-          </div>
-        </div>
-        <!-- Priority -->
-        <div style="margin-bottom:14px;">
-          <label style="font-size:12px;font-weight:600;color:var(--slate);display:block;margin-bottom:6px;">Priority</label>
-          <div style="display:flex;gap:8px;">
-            <button onclick="setActionPriority('low',this)" style="flex:1;padding:7px;border-radius:8px;border:1.5px solid #16a34a;background:#dcfce7;color:#15803d;font-weight:700;font-size:12px;cursor:pointer;">Low</button>
-            <button onclick="setActionPriority('medium',this)" style="flex:1;padding:7px;border-radius:8px;border:1.5px solid #ca8a04;background:#fef9c3;color:#a16207;font-weight:700;font-size:12px;cursor:pointer;">Medium</button>
-            <button onclick="setActionPriority('high',this)" style="flex:1;padding:7px;border-radius:8px;border:1.5px solid #dc2626;background:#fee2e2;color:#b91c1c;font-weight:700;font-size:12px;cursor:pointer;">High</button>
-          </div>
-        </div>
-        <button onclick="saveNewAction()" style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(124,58,237,0.3);">+ Log Action</button>
-      </div>
-      <!-- Action log -->
-      <div style="border-top:1px solid var(--rule);padding-top:14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Recent Actions</div>
-        <div id="action-log-list"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TEACHER REPORT MODAL                                        -->
+<!-- STUDENT REPORT MODAL                                        -->
 <!-- ═══════════════════════════════════════════════════════════ -->
-<div id="teacher-report-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#fffdf7;border-radius:20px;width:min(660px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.35);display:flex;flex-direction:column;">
-    <!-- Header -->
-    <div style="background:linear-gradient(135deg,#1e1040 0%,#2d1a6e 60%,#3b1f8a 100%);border-radius:20px 20px 0 0;padding:24px 24px 20px;position:relative;flex-shrink:0;">
-      <button onclick="closeTeacherReport()" style="position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.12);border:none;color:white;font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;line-height:32px;">✕</button>
-      <div style="display:flex;align-items:center;gap:16px;">
-        <div id="tr-avatar" style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;font-family:'Outfit',sans-serif;flex-shrink:0;"></div>
-        <div style="flex:1;min-width:0;">
-          <div id="tr-name" style="font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:#f0ede6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-          <div id="tr-meta" style="font-size:12px;color:rgba(167,139,250,0.85);margin-top:3px;"></div>
-        </div>
-        <div style="text-align:center;flex-shrink:0;">
-          <div style="position:relative;width:72px;height:72px;">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle cx="36" cy="36" r="26" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
-              <circle id="tr-ring" cx="36" cy="36" r="26" fill="none" stroke="#a78bfa" stroke-width="8" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="163" transform="rotate(-90 36 36)" style="transition:stroke-dashoffset 1s ease,stroke 0.5s;"/>
-            </svg>
-            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
-              <div id="tr-pct" style="font-family:'Outfit',sans-serif;font-size:15px;font-weight:900;color:white;"></div>
-            </div>
-          </div>
-          <div id="tr-rating-badge" style="display:inline-block;margin-top:4px;padding:3px 12px;border-radius:20px;font-weight:700;font-size:10px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);white-space:nowrap;"></div>
-        </div>
-      </div>
-      <div id="tr-traffic-summary" style="display:flex;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;"></div>
-    </div>
-    <!-- Body -->
-    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px;">
-      <div id="tr-obs-score" style="padding:12px 16px;background:#faf8f3;border-radius:10px;border-left:3px solid #c9972f;"></div>
-      <div>
-        <div style="font-size:10px;font-weight:700;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;">Subject Performance</div>
-        <div id="tr-subjects" style="display:flex;flex-direction:column;gap:6px;"></div>
-      </div>
-      <div>
-        <div style="font-size:10px;font-weight:700;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;">Classes Taught</div>
-        <div id="tr-classes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;"></div>
-      </div>
-      <div>
-        <div style="font-size:10px;font-weight:700;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;">Recent Observations</div>
-        <div id="tr-observations" style="display:flex;flex-direction:column;gap:5px;"></div>
-      </div>
-      <div style="background:linear-gradient(135deg,#1e1040,#2d1a6e);border-radius:12px;padding:16px 18px;">
-        <div style="font-size:10px;font-weight:700;color:rgba(201,151,47,0.8);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">Student Distribution</div>
-        <div id="tr-distribution"></div>
-      </div>
-      <button onclick="closeTeacherReport()" style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:white;font-weight:700;font-size:13px;cursor:pointer;">Close</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      var swCode = "const CACHE='redbridge-v1';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(clients.claim());});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));});";
-      var blob = new Blob([swCode],{type:'application/javascript'});
-      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function(){});
-    });
-  }
-</script>
 <div id="student-report-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:16px;">
   <div style="background:#fffdf7;border-radius:20px;width:min(640px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.35);display:flex;flex-direction:column;">
     <!-- Header -->
@@ -9330,7 +9304,7 @@ function renderIncidentLog() {
 </div>
 
 <script>
-  if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
       var swCode = "const CACHE='redbridge-v1';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(clients.claim());});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));});";
       var blob = new Blob([swCode],{type:'application/javascript'});
@@ -9338,12 +9312,14 @@ function renderIncidentLog() {
     });
   }
 </script>
-</body>
-</html>
-
-</body>
-</html>
-
-
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      var swCode = "const CACHE='redbridge-v1';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(clients.claim());});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));});";
+      var blob = new Blob([swCode],{type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function(){});
+    });
+  }
+</script>
 </body>
 </html>
