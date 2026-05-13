@@ -834,6 +834,10 @@
     <a class="nav-item" data-panel="assessments" onclick="showPanel('assessments', this)">
       <span class="nav-icon">📋</span> Assessments
     </a>
+    <a class="nav-item" data-panel="messenger" onclick="showPanel('messenger', this)" id="nav-messenger">
+      <span class="nav-icon">💬</span> Messages
+      <span id="msg-badge" style="display:none;background:#dc2626;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:10px;margin-left:4px;">0</span>
+    </a>
     <a class="nav-item" data-panel="ai" onclick="showPanel('ai', this)">
       <span class="nav-icon">✨</span> AI Assistant
     </a>
@@ -2502,6 +2506,73 @@
 
     </div>
 
+
+    <!-- ══ MESSENGER PANEL ══ -->
+    <div class="panel" id="panel-messenger" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 60px);overflow:hidden;">
+
+      <div style="display:flex;height:100%;overflow:hidden;">
+
+        <!-- Sidebar: Channels + DMs -->
+        <div id="msg-sidebar" style="width:240px;min-width:240px;background:#1e1b4b;display:flex;flex-direction:column;overflow:hidden;">
+          <!-- Header -->
+          <div style="padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div style="font-size:15px;font-weight:800;color:white;font-family:'Playfair Display',serif;">💬 Messages</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;">Redbridge Staff</div>
+          </div>
+          <!-- Channel list -->
+          <div style="overflow-y:auto;flex:1;padding:8px 0;">
+            <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);padding:8px 14px 4px;">Channels</div>
+            <div id="msg-channel-list"></div>
+            <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);padding:12px 14px 4px;">Direct Messages</div>
+            <div id="msg-dm-list" style="max-height:300px;overflow-y:auto;"></div>
+          </div>
+        </div>
+
+        <!-- Main chat area -->
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:white;">
+
+          <!-- Chat header -->
+          <div id="msg-chat-header" style="padding:12px 18px;border-bottom:1.5px solid #f1f5f9;display:flex;align-items:center;gap:10px;background:white;flex-shrink:0;">
+            <div id="msg-header-icon" style="font-size:20px;">#</div>
+            <div>
+              <div id="msg-header-name" style="font-size:14px;font-weight:800;color:#0f172a;">general</div>
+              <div id="msg-header-sub" style="font-size:11.5px;color:#64748b;">All staff</div>
+            </div>
+          </div>
+
+          <!-- Messages list -->
+          <div id="msg-messages" style="flex:1;overflow-y:auto;padding:12px 18px;display:flex;flex-direction:column;gap:2px;background:#fafafa;"></div>
+
+          <!-- Reply preview -->
+          <div id="msg-reply-bar" style="display:none;padding:8px 18px;background:#f0f4ff;border-top:1.5px solid #c7d2fe;font-size:12px;color:#1d4ed8;display:flex;align-items:center;justify-content:space-between;">
+            <span id="msg-reply-text" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+            <button onclick="msgClearReply()" style="background:none;border:none;font-size:16px;cursor:pointer;color:#6366f1;margin-left:8px;">✕</button>
+          </div>
+
+          <!-- Emoji picker -->
+          <div id="msg-emoji-picker" style="display:none;padding:10px 12px;background:white;border-top:1.5px solid #e2e8f0;flex-wrap:wrap;gap:4px;max-height:120px;overflow-y:auto;"></div>
+
+          <!-- Input bar -->
+          <div style="padding:10px 14px;border-top:1.5px solid #e2e8f0;background:white;display:flex;align-items:flex-end;gap:8px;flex-shrink:0;">
+            <!-- Image upload -->
+            <label style="cursor:pointer;padding:7px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Send image">
+              🖼
+              <input type="file" id="msg-image-input" accept="image/*" style="display:none;" onchange="msgHandleImage(event)">
+            </label>
+            <!-- Emoji toggle -->
+            <button onclick="msgToggleEmoji()" style="padding:7px 10px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;cursor:pointer;flex-shrink:0;" title="Emoji">😊</button>
+            <!-- Text input -->
+            <textarea id="msg-input" placeholder="Message…" rows="1"
+              style="flex:1;padding:9px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-family:'DM Sans',sans-serif;font-size:13.5px;outline:none;resize:none;max-height:100px;overflow-y:auto;line-height:1.4;"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();msgSend();}"></textarea>
+            <!-- Send -->
+            <button onclick="msgSend()" style="padding:9px 16px;border-radius:10px;border:none;background:#1e1b4b;color:white;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;">Send</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <div class="panel" id="panel-ai">
       <div class="card ai-panel" style="max-width:100%;">
         <div class="card-header">
@@ -2555,12 +2626,13 @@
     rubric: 'Observation Rubric',
     calendar: 'School Calendar',
     assessments: 'Assessments',
+    messenger: 'Messages',
     ai: 'AI Assistant'
   };
 
   var panelIcons = {
     dashboard:'🏠', teachers:'👨‍🏫', discipline:'🛡️', academics:'🎯',
-    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', assessments:'📋', ai:'✨'
+    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', assessments:'📋', messenger:'💬', ai:'✨'
   };
 
   function showPanel(id, el) {
@@ -2580,6 +2652,7 @@
     if (id === 'teachers')    { if(typeof renderPerfTable==='function') renderPerfTable(); }
     if (id === 'results')     { if(typeof renderResults==='function') setTimeout(function(){ renderResults(); }, 50); }
     if (id === 'assessments') { if(typeof asmInit==='function') asmInit(); }
+    if (id === 'messenger')   { if(typeof msgInit==='function') msgInit(); }
   }
 
   // AI Chat
@@ -4688,7 +4761,7 @@ function renderIncidentLog() {
       title: 'Principal',
       avatar: 'AS',
       access: 'all',
-      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments'],
+      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments','messenger'],
       teacherName: 'Sharma Akash',
       teacherClasses: ["10A", "7A", "7B", "8A", "8B", "9A"],
       teacherSubjects: ["English", "Science"]
@@ -4702,7 +4775,7 @@ function renderIncidentLog() {
       title: 'Co-Founder',
       avatar: 'LR',
       access: 'all',
-      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments'],
+      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments','messenger'],
     },
     'lucia.scipova': {
       password: 'redbridge2024',
@@ -4711,7 +4784,7 @@ function renderIncidentLog() {
       title: 'Co-Founder',
       avatar: 'LS',
       access: 'all',
-      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments'],
+      panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments','messenger'],
     },
 
     // ── ADMIN STAFF ──
@@ -4722,7 +4795,7 @@ function renderIncidentLog() {
       title: 'Administration',
       avatar: 'AD',
       access: 'limited',
-      panels: ['dashboard','calendar','classes','dailyreport','assessments'],
+      panels: ['dashboard','calendar','classes','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
 
@@ -4734,7 +4807,7 @@ function renderIncidentLog() {
       title: 'Discipline Officer',
       avatar: 'DO',
       access: 'limited',
-      panels: ['dashboard','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
 
@@ -4755,7 +4828,7 @@ function renderIncidentLog() {
       deptClasses: ['1A','1B','1C','2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
       deptSubjects: ['Maths'],
       deptTeachers: ['Normamatova Sitora Furkatovna','Abdullayeva Gulnara Asatovna'],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments'],
+      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Abdullayeva Gulnara Asatovna',
     },
@@ -4774,7 +4847,7 @@ function renderIncidentLog() {
       deptClasses: ['5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'],
       deptSubjects: ['Maths'],
       deptTeachers: ['Ibragimova Nasiba Ismailovna','Yusupov Abdussator Davlatovich'],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments'],
+      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Ibragimova Nasiba Ismailovna',
     },
@@ -4795,7 +4868,7 @@ function renderIncidentLog() {
       deptClasses: ['1A','1B','1C','2A','2B','2C','2C','3A','3B','3C','4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A'],
       deptSubjects: ['Science'],
       deptTeachers: ['Banu Umera','Egamberdiyev Zafar','Raximova Xilola','Bahretdinova Elsbeth','Sharma Akash'],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments'],
+      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Bahretdinova Elsbeth',
     },
@@ -4810,7 +4883,7 @@ function renderIncidentLog() {
       avatar: 'AF',
       access: 'class',
       classes: ["5A", "6A", "6B", "6C", "7A", "7B", "7C"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Abduazizova Feruza Erkinovna',
       teacherClasses: ["5A", "6A", "6B", "6C", "7A", "7B", "7C"],
@@ -4824,7 +4897,7 @@ function renderIncidentLog() {
       avatar: 'GA',
       access: 'class',
       classes: ["3A", "3B", "3C", "4A", "4B", "4C", "5A"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Abdullayeva Gulnara Asatovna',
       teacherClasses: ["3A","3B","3C","4A","4B","4C","5A"],
@@ -4838,7 +4911,7 @@ function renderIncidentLog() {
       avatar: 'BO',
       access: 'class',
       classes: ["2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7B", "7C", "8A", "8B"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Bobobekova Barno Olimovna',
       teacherClasses: ["2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7B", "7C", "8A", "8B"],
@@ -4852,7 +4925,7 @@ function renderIncidentLog() {
       avatar: 'OD',
       access: 'class',
       classes: ["1A", "1B", "1C", "2A", "2B", "2C"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Djurayeva Oygul Isayevna',
       teacherClasses: ["1A", "1B", "1C", "2A", "2B", "2C"],
@@ -4866,7 +4939,7 @@ function renderIncidentLog() {
       avatar: 'EZ',
       access: 'class',
       classes: ["1A", "1C", "2A", "2B", "2C"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Egamberdiyev Zafar',
       teacherClasses: ["1A", "1C", "2A", "2B", "2C"],
@@ -4880,7 +4953,7 @@ function renderIncidentLog() {
       avatar: 'NI',
       access: 'class',
       classes: ["10A", "5B", "8A", "8B", "9A"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Ibragimova Nasiba Ismailovna',
       teacherClasses: ["10A", "5B", "8A", "8B", "9A"],
@@ -4894,7 +4967,7 @@ function renderIncidentLog() {
       avatar: 'XI',
       access: 'class',
       classes: ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Isomatov Xushbaxt Sadriddinovich',
       teacherClasses: ["1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B"],
@@ -4908,7 +4981,7 @@ function renderIncidentLog() {
       avatar: 'AJ',
       access: 'class',
       classes: ["7A", "7B", "7C"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Jamalova Asalya Alisherovna',
       teacherClasses: ["7A", "7B", "7C"],
@@ -4922,7 +4995,7 @@ function renderIncidentLog() {
       avatar: 'ZN',
       access: 'class',
       classes: ["3A", "3B", "3C", "4A", "4B", "4C", "5B"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Naimova Zarrina Musinovna',
       teacherClasses: ["3A", "3B", "3C", "4A", "4B", "4C", "5B"],
@@ -4936,7 +5009,7 @@ function renderIncidentLog() {
       avatar: 'SN',
       access: 'class',
       classes: ["1A", "1B", "1C", "2A", "2B", "2C"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Normamatova Sitora Furkatovna',
       teacherClasses: ["1A", "1B", "1C", "2A", "2B", "2C"],
@@ -4950,7 +5023,7 @@ function renderIncidentLog() {
       avatar: 'XR',
       access: 'class',
       classes: ["2A", "2B", "2C", "6B", "6C", "7C"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Raximova Xilola',
       teacherClasses: ["2A", "2B", "2C", "6B", "6C", "7C"],
@@ -4964,7 +5037,7 @@ function renderIncidentLog() {
       avatar: 'AY',
       access: 'class',
       classes: ["6A", "6B", "6C", "7A", "7B", "7C"],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Yusupov Abdussator Davlatovich',
       teacherClasses: ["6A", "6B", "6C", "7A", "7B", "7C"],
@@ -4982,7 +5055,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Art", "English", "Maths", "Science"],
       teacherClasses:  ["1A", "1B", "1C"],
       teacherName: 'Banu Umera',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'bulgak.emin': {
@@ -4995,7 +5068,7 @@ function renderIncidentLog() {
       teacherSubjects: ["GP (Hist-Geo)"],
       teacherClasses:  ["3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7B", "8A", "8B"],
       teacherName: 'Bulgak Emine',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'halkou.hous': {
@@ -5008,7 +5081,7 @@ function renderIncidentLog() {
       teacherSubjects: ["English"],
       teacherClasses:  ["4A", "4B", "4C", "5A", "5B", "6A"],
       teacherName: 'Halkouj Houssam',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'hella.manz': {
@@ -5021,7 +5094,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Economics", "Maths"],
       teacherClasses:  ["5B", "6A", "6B", "6C", "7B", "7C", "8A", "8B"],
       teacherName: 'Hella Manzoor Ahmad',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'jamalo.asal': {
@@ -5034,7 +5107,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Physics"],
       teacherClasses:  ["7A", "7B", "7C"],
       teacherName: 'Jamalova Asalya Alisherovna',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'mishra.soni': {
@@ -5047,7 +5120,7 @@ function renderIncidentLog() {
       teacherSubjects: ["English", "Maths"],
       teacherClasses:  ["2A", "2B", "2C", "3A", "3B", "3C"],
       teacherName: 'Mishra Soniya',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'neitng.nans': {
@@ -5060,7 +5133,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Maths"],
       teacherClasses:  ["3A", "3B", "3C", "4A", "4B", "4C", "5A"],
       teacherName: 'Neitngale Nansi Thote',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'rakhim.sabi': {
@@ -5073,7 +5146,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Russian Language", "Uzbek Language"],
       teacherClasses:  ["10A", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "6A", "6B", "6C", "7A", "7C", "8A", "8B", "9A"],
       teacherName: 'Rakhimova Sabina Robertovna',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'raxman.aziz': {
@@ -5086,7 +5159,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Biology"],
       teacherClasses:  ["10A", "7A", "7B", "7C", "8A", "8B", "9A"],
       teacherName: 'Raxmanova Aziza',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'rizaba.rukh': {
@@ -5099,7 +5172,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Biology", "Chemistry"],
       teacherClasses:  ["10A", "7A", "7B", "7C", "8A", "8B", "9A"],
       teacherName: 'Rizabaeva Rukhsora Ravshanovna',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'yaqoob.adee': {
@@ -5112,7 +5185,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Economics", "Maths"],
       teacherClasses:  ["10A", "7A", "7B", "8A", "8B", "9A"],
       teacherName: 'Yaqoob Adeel',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'mrfirdavs': {
@@ -5125,7 +5198,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Chess"],
       teacherClasses:  ["3A", "3B", "3C", "4A", "4B", "4C"],
       teacherName: 'mr.Firdavs',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'mskarina': {
@@ -5138,7 +5211,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Physical Education"],
       teacherClasses:  ["6A", "6B", "6C", "7A", "7B", "7C"],
       teacherName: 'ms.Karina',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'msmadina': {
@@ -5151,7 +5224,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Uzbek Language"],
       teacherClasses:  ["7B", "7C", "8A", "8B"],
       teacherName: 'ms.Madina',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'msnasiba': {
@@ -5164,7 +5237,7 @@ function renderIncidentLog() {
       teacherSubjects: ["Maths"],
       teacherClasses:  ["5B"],
       teacherName: 'ms.Nasiba',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
     'msshahrizoda': {
@@ -5177,7 +5250,7 @@ function renderIncidentLog() {
       teacherSubjects: ["GP (Hist-Geo)"],
       teacherClasses:  ["7B"],
       teacherName: 'ms.Shahrizoda',
-      panels: ['dashboard','results','calendar','dailyreport','assessments'],
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
   };
@@ -7447,16 +7520,18 @@ function renderIncidentLog() {
     var url = _SB_URL + '/rest/v1/' + table + (params ? '?' + params : '');
     var headers = {
       'apikey':        _SB_KEY,
-      'Authorization': 'Bearer ' + _SB_KEY,
-      'Content-Type':  'application/json'
+      'Authorization': 'Bearer ' + _SB_KEY
     };
-    // Only add Prefer on writes — never on GET (it would suppress response body)
-    if (m === 'POST' || m === 'PATCH')   headers['Prefer'] = 'return=minimal';
-    if (m === 'DELETE')                  headers['Prefer'] = 'return=minimal';
+    // Only add Content-Type and Prefer for write operations
+    if (m !== 'GET' && m !== 'DELETE') {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (m === 'POST' || m === 'PATCH') headers['Prefer'] = 'return=minimal';
+    if (m === 'DELETE')                headers['Prefer'] = 'return=minimal';
     var opts = { method: m, headers: headers };
     if (body) opts.body = JSON.stringify(body);
     return fetch(url, opts).then(function(r) {
-      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP '+r.status+' '+r.url.split('/').pop()+': '+t); });
+      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP '+r.status+' on '+table+': '+t); });
       if (r.status === 204 || r.status === 201 || m === 'DELETE' || m === 'PATCH') return {};
       var ct = r.headers.get('content-type') || '';
       return ct.indexOf('json') !== -1 ? r.json() : {};
@@ -7854,6 +7929,7 @@ function renderIncidentLog() {
       nav_timetable: 'Timetable', nav_dailyreport: 'Daily Report',
       nav_assessments: 'Assessments', nav_calendar: 'School Calendar',
       nav_ai: 'AI Assistant',
+      nav_messenger: 'Messages',
       // Panel titles
       title_dashboard: 'Dashboard', title_teachers: 'Teacher Performance',
       title_discipline: 'Discipline Tracker', title_academics: 'Academic Monitoring',
@@ -7914,6 +7990,7 @@ function renderIncidentLog() {
       nav_timetable: 'Расписание', nav_dailyreport: 'Ежедневный отчёт',
       nav_assessments: 'Оценивание', nav_calendar: 'Школьный календарь',
       nav_ai: 'ИИ Помощник',
+      nav_messenger: 'Сообщения',
       // Panel titles
       title_dashboard: 'Главная', title_teachers: 'Успеваемость учителей',
       title_discipline: 'Дисциплина', title_academics: 'Академический мониторинг',
@@ -7974,6 +8051,7 @@ function renderIncidentLog() {
       nav_timetable: 'Dars jadvali', nav_dailyreport: 'Kunlik hisobot',
       nav_assessments: 'Baholash', nav_calendar: 'Maktab kalendari',
       nav_ai: 'AI Yordamchi',
+      nav_messenger: 'Xabarlar',
       // Panel titles
       title_dashboard: 'Bosh sahifa', title_teachers: "Oʻqituvchi natijalari",
       title_discipline: 'Intizom', title_academics: 'Akademik monitoring',
@@ -8587,6 +8665,423 @@ function renderIncidentLog() {
       list.appendChild(section);
     });
   }
+
+  // ══ MESSENGER ════════════════════════════════════════════════════════════
+  var _msgChannel   = 'general';
+  var _msgMessages  = [];
+  var _msgReplyTo   = null;
+  var _msgPollTimer = null;
+  var _msgLastTs    = null;
+  var _msgUnread    = 0;
+  var _msgOnPanel   = false;
+
+  var MSG_CHANNELS = [
+    { id:'general',    name:'# general',     desc:'All staff',          icon:'📢', roles:['all'] },
+    { id:'management', name:'# management',  desc:'Leadership only',    icon:'👩‍💼', roles:['principal','founder','admin','discipline'] },
+    { id:'academic',   name:'# academic',    desc:'Teachers & heads',   icon:'📚', roles:['all'] },
+    { id:'notices',    name:'# notices',     desc:'Announcements',      icon:'📌', roles:['all'] },
+  ];
+
+  var MSG_EMOJI_LIST = ['👍','👎','❤️','😂','😮','😢','🎉','🙏','👏','🔥','✅','❌','😊','🤔','💪','🚀','📚','✏️','📝','👀','💯','🎯','⭐','🙌'];
+
+  function msgInit() {
+    _msgOnPanel = true;
+    msgBuildSidebar();
+    msgLoadChannel(_msgChannel);
+    if (!_msgPollTimer) {
+      _msgPollTimer = setInterval(msgPoll, 4000);
+    }
+    msgBuildEmojiPicker();
+  }
+
+  function msgBuildSidebar() {
+    var u = _currentUser;
+    if (!u) return;
+    var isAdmin = u.access === 'all' || u.role === 'admin' || u.role === 'principal' || u.role === 'founder';
+
+    // Channels
+    var cList = document.getElementById('msg-channel-list');
+    if (!cList) return;
+    cList.innerHTML = '';
+    MSG_CHANNELS.forEach(function(ch) {
+      var allowed = ch.roles.includes('all') || isAdmin || ch.roles.includes(u.role);
+      if (!allowed) return;
+      var div = document.createElement('div');
+      div.id = 'msg-ch-' + ch.id;
+      div.style.cssText = 'padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-radius:6px;margin:1px 6px;font-size:13px;color:rgba(255,255,255,0.7);transition:background 0.1s;';
+      div.innerHTML = '<span style="font-size:14px;">' + ch.icon + '</span><span style="flex:1;font-weight:600;">' + ch.id + '</span><span id="msg-badge-'+ch.id+'" style="display:none;background:#dc2626;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:10px;"></span>';
+      if (ch.id === _msgChannel) { div.style.background='rgba(255,255,255,0.12)'; div.style.color='white'; }
+      div.addEventListener('mouseenter', function(){ if(this.id!=='msg-ch-'+_msgChannel) this.style.background='rgba(255,255,255,0.07)'; });
+      div.addEventListener('mouseleave', function(){ if(this.id!=='msg-ch-'+_msgChannel) this.style.background=''; });
+      div.addEventListener('click', (function(chId){ return function(){ msgLoadChannel(chId); }; })(ch.id));
+      cList.appendChild(div);
+    });
+
+    // DM list — all staff except self
+    var dmList = document.getElementById('msg-dm-list');
+    if (!dmList) return;
+    dmList.innerHTML = '';
+    var allUsers = Object.keys(typeof USERS !== 'undefined' ? USERS : {});
+    allUsers.forEach(function(uname) {
+      if (uname === u.username || uname === (u.user||'')) return;
+      var udata = USERS[uname];
+      if (!udata) return;
+      var dmId = 'dm_' + [u.username||u.user, uname].sort().join('_');
+      var div = document.createElement('div');
+      div.id = 'msg-ch-' + dmId;
+      div.style.cssText = 'padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-radius:6px;margin:1px 6px;font-size:12.5px;color:rgba(255,255,255,0.65);';
+      var initials = udata.name ? udata.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase() : uname.slice(0,2).toUpperCase();
+      div.innerHTML = '<span style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:white;flex-shrink:0;">' + initials + '</span>' +
+        '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (udata.name||uname) + '</span>';
+      div.addEventListener('mouseenter', function(){ this.style.background='rgba(255,255,255,0.07)'; });
+      div.addEventListener('mouseleave', function(){ if(this.id!=='msg-ch-'+_msgChannel) this.style.background=''; });
+      div.addEventListener('click', (function(chId, chName){ return function(){ msgLoadChannel(chId, chName); }; })(dmId, udata.name||uname));
+      dmList.appendChild(div);
+    });
+  }
+
+  function msgLoadChannel(chId, chName) {
+    _msgChannel = chId;
+    _msgMessages = [];
+    _msgReplyTo = null;
+    msgClearReply();
+
+    // Update sidebar active state
+    document.querySelectorAll('[id^="msg-ch-"]').forEach(function(el) {
+      el.style.background = '';
+      el.style.color = 'rgba(255,255,255,0.7)';
+    });
+    var active = document.getElementById('msg-ch-' + chId);
+    if (active) { active.style.background = 'rgba(255,255,255,0.12)'; active.style.color = 'white'; }
+
+    // Update header
+    var ch = MSG_CHANNELS.find(function(c){ return c.id===chId; });
+    var headerName = document.getElementById('msg-header-name');
+    var headerSub  = document.getElementById('msg-header-sub');
+    var headerIcon = document.getElementById('msg-header-icon');
+    if (ch) {
+      if (headerName) headerName.textContent = ch.name;
+      if (headerSub)  headerSub.textContent  = ch.desc;
+      if (headerIcon) headerIcon.textContent = ch.icon;
+    } else {
+      // DM
+      if (headerName) headerName.textContent = '💬 ' + (chName||chId);
+      if (headerSub)  headerSub.textContent  = 'Direct message';
+      if (headerIcon) headerIcon.textContent = '💬';
+    }
+
+    var msgsEl = document.getElementById('msg-messages');
+    if (msgsEl) msgsEl.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;font-size:13px;">Loading…</div>';
+    msgFetchMessages();
+  }
+
+  function msgFetchMessages() {
+    var url = _SB_URL + '/rest/v1/messages?channel=eq.' + encodeURIComponent(_msgChannel) + '&order=created_at.asc&limit=100';
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey':        _SB_KEY,
+        'Authorization': 'Bearer ' + _SB_KEY,
+        'Accept':        'application/json'
+      }
+    })
+    .then(function(r) {
+      if (!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+': '+t); });
+      return r.json();
+    })
+    .then(function(rows) {
+      _msgMessages = rows || [];
+      msgRenderMessages();
+    })
+    .catch(function(e) {
+      console.error('msgFetch error:', e.message);
+      // Show error in chat area so user can see it
+      var el = document.getElementById('msg-messages');
+      if (el) el.innerHTML = '<div style="padding:20px;text-align:center;color:#dc2626;font-size:13px;">⚠️ Could not load messages.<br><span style="color:#64748b;font-size:11.5px;">'+e.message+'</span></div>';
+    });
+  }
+
+  function msgPoll() {
+    if (!_msgOnPanel) return;
+    var lastMsg = _msgMessages.length ? _msgMessages[_msgMessages.length-1] : null;
+    var since = lastMsg ? '&created_at=gt.' + encodeURIComponent(lastMsg.created_at) : '';
+    fetch(_SB_URL+'/rest/v1/messages?channel=eq.'+encodeURIComponent(_msgChannel)+'&order=created_at.asc'+since+'&limit=50', {
+      method:'GET', headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Accept':'application/json'}
+    }).then(function(r){ return r.ok?r.json():[]; })
+      .then(function(rows) {
+        if (!rows || !rows.length) return;
+        _msgMessages = _msgMessages.concat(rows);
+        msgRenderMessages(true);
+      });
+
+    // Also check other channels for unread badge
+    msgCheckUnread();
+  }
+
+  function msgCheckUnread() {
+    // Simple: fetch latest message id from all channels and compare to last seen
+    // For now just show a dot if there are messages in other channels newer than our last poll
+    // This is simplified - a full unread system needs per-user tracking
+  }
+
+  function msgRenderMessages(append) {
+    var el = document.getElementById('msg-messages');
+    if (!el) return;
+    var wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+
+    el.innerHTML = '';
+    var prevSender = null; var prevDate = null;
+    _msgMessages.forEach(function(msg) {
+      var u = _currentUser;
+      var isMine = msg.sender === (u ? (u.username||u.user||u.name) : '');
+      var msgDate = new Date(msg.created_at);
+      var dateStr = msgDate.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+      var timeStr = msgDate.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+
+      // Date divider
+      if (dateStr !== prevDate) {
+        var div = document.createElement('div');
+        div.style.cssText = 'text-align:center;margin:12px 0 6px;';
+        div.innerHTML = '<span style="font-size:11px;color:#94a3b8;background:#fafafa;padding:2px 10px;border-radius:10px;border:1px solid #e2e8f0;">' + dateStr + '</span>';
+        el.appendChild(div);
+        prevDate = dateStr; prevSender = null;
+      }
+
+      var showHeader = msg.sender !== prevSender;
+      prevSender = msg.sender;
+
+      var row = document.createElement('div');
+      row.id = 'msg-' + msg.id;
+      row.style.cssText = 'display:flex;gap:9px;padding:' + (showHeader?'8px':'2px') + ' 6px 2px;align-items:flex-start;border-radius:8px;';
+      row.addEventListener('mouseenter', function(){ this.querySelector('.msg-actions').style.display='flex'; this.style.background='#f1f5f9'; });
+      row.addEventListener('mouseleave', function(){ this.querySelector('.msg-actions').style.display='none'; this.style.background=''; });
+
+      // Avatar
+      var av = document.createElement('div');
+      av.style.cssText = 'width:32px;height:32px;border-radius:8px;background:' + (isMine?'#1e1b4b':'#e2e8f0') + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:' + (isMine?'white':'#475569') + ';flex-shrink:0;margin-top:2px;visibility:' + (showHeader?'visible':'hidden') + ';';
+      av.textContent = (msg.sender_avatar || (msg.sender_name||'').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase());
+      row.appendChild(av);
+
+      // Bubble
+      var bubble = document.createElement('div');
+      bubble.style.cssText = 'flex:1;max-width:75%;' + (isMine ? 'margin-left:auto;' : '');
+
+      if (showHeader) {
+        var nameRow = document.createElement('div');
+        nameRow.style.cssText = 'display:flex;align-items:baseline;gap:6px;margin-bottom:3px;';
+        nameRow.innerHTML = '<span style="font-size:12px;font-weight:700;color:#0f172a;">' + (msg.sender_name||msg.sender) + '</span>' +
+          '<span style="font-size:10.5px;color:#94a3b8;">' + timeStr + '</span>';
+        bubble.appendChild(nameRow);
+      }
+
+      // Reply preview
+      if (msg.reply_preview) {
+        var rp = document.createElement('div');
+        rp.style.cssText = 'padding:4px 10px;background:#f1f5f9;border-left:3px solid #6366f1;border-radius:0 6px 6px 0;font-size:11.5px;color:#475569;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        rp.textContent = msg.reply_preview;
+        bubble.appendChild(rp);
+      }
+
+      // Content
+      var msgBubble = document.createElement('div');
+      msgBubble.style.cssText = 'display:inline-block;padding:8px 12px;border-radius:' + (isMine?'12px 4px 12px 12px':'4px 12px 12px 12px') + ';background:' + (isMine?'#1e1b4b':'white') + ';color:' + (isMine?'white':'#1e293b') + ';font-size:13.5px;line-height:1.45;border:1px solid ' + (isMine?'transparent':'#e2e8f0') + ';max-width:100%;word-break:break-word;box-shadow:0 1px 3px rgba(0,0,0,0.06);';
+
+      if (msg.type === 'image' && msg.content && msg.content.startsWith('data:')) {
+        var img = document.createElement('img');
+        img.src = msg.content;
+        img.style.cssText = 'max-width:240px;max-height:200px;border-radius:8px;display:block;cursor:pointer;';
+        img.addEventListener('click', function(){ window.open(this.src,'_blank'); });
+        msgBubble.appendChild(img);
+      } else {
+        msgBubble.textContent = msg.content || '';
+      }
+      bubble.appendChild(msgBubble);
+
+      // Reactions
+      var reactions = msg.reactions || {};
+      var reactionKeys = Object.keys(reactions);
+      if (reactionKeys.length) {
+        var rRow = document.createElement('div');
+        rRow.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;';
+        reactionKeys.forEach(function(emoji) {
+          var users = reactions[emoji] || [];
+          if (!users.length) return;
+          var rb = document.createElement('button');
+          var myName = _currentUser ? (_currentUser.name||'') : '';
+          var reacted = users.includes(myName);
+          rb.style.cssText = 'padding:2px 7px;border-radius:20px;border:1.5px solid '+(reacted?'#6366f1':'#e2e8f0')+';background:'+(reacted?'#ede9fe':'white')+';font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;';
+          rb.innerHTML = emoji + ' <span style="font-size:11px;font-weight:700;color:#6366f1;">' + users.length + '</span>';
+          rb.addEventListener('click', (function(mId,em){ return function(){ msgToggleReaction(mId,em); }; })(msg.id, emoji));
+          rRow.appendChild(rb);
+        });
+        bubble.appendChild(rRow);
+      }
+
+      row.appendChild(bubble);
+
+      // Actions (reply + react)
+      var actions = document.createElement('div');
+      actions.className = 'msg-actions';
+      actions.style.cssText = 'display:none;align-items:center;gap:4px;flex-shrink:0;margin-top:6px;';
+      var replyBtn = document.createElement('button');
+      replyBtn.textContent = '↩';
+      replyBtn.title = 'Reply';
+      replyBtn.style.cssText = 'padding:3px 7px;border-radius:6px;border:1px solid #e2e8f0;background:white;font-size:13px;cursor:pointer;';
+      replyBtn.addEventListener('click', (function(m){ return function(){ msgSetReply(m); }; })(msg));
+      var reactBtn = document.createElement('button');
+      reactBtn.textContent = '😊';
+      reactBtn.title = 'React';
+      reactBtn.style.cssText = 'padding:3px 7px;border-radius:6px;border:1px solid #e2e8f0;background:white;font-size:13px;cursor:pointer;';
+      reactBtn.addEventListener('click', (function(mId){ return function(){ msgShowReactionPicker(mId); }; })(msg.id));
+      actions.appendChild(replyBtn);
+      actions.appendChild(reactBtn);
+      row.appendChild(actions);
+
+      el.appendChild(row);
+    });
+
+    if (!_msgMessages.length) {
+      el.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;font-size:13px;">No messages yet. Say hello! 👋</div>';
+    }
+
+    if (wasAtBottom || append) el.scrollTop = el.scrollHeight;
+  }
+
+  function msgSend() {
+    var inp = document.getElementById('msg-input');
+    var text = inp ? inp.value.trim() : '';
+    if (!text && !_msgPendingImage) return;
+    var u = _currentUser;
+    if (!u) { showToast('Please log in.'); return; }
+
+    var msg = {
+      sender:       u.username || u.user || u.name || '',
+      sender_name:  u.name || '',
+      sender_avatar: u.avatar || (u.name||'').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase(),
+      channel:      _msgChannel,
+      content:      _msgPendingImage || text,
+      type:         _msgPendingImage ? 'image' : 'text',
+      reply_to:     _msgReplyTo ? _msgReplyTo.id : null,
+      reply_preview:_msgReplyTo ? (_msgReplyTo.sender_name + ': ' + (_msgReplyTo.content||'').slice(0,60)) : null,
+      reactions:    {}
+    };
+
+    fetch(_SB_URL+'/rest/v1/messages', {
+      method:'POST',
+      headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify(msg)
+    }).then(function(r){ if(!r.ok) return r.text().then(function(t){throw new Error(t);}); return {}; })
+      .then(function() {
+        if (inp) inp.value = '';
+        _msgPendingImage = null;
+        msgClearReply();
+        msgFetchMessages();
+      })
+      .catch(function(e){ console.error('msgSend error:',e); showToast('Send failed.'); });
+  }
+
+  var _msgPendingImage = null;
+
+  function msgHandleImage(evt) {
+    var file = evt.target.files[0];
+    if (!file) return;
+    if (file.size > 500000) { showToast('Image too large (max 500KB). Please resize first.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      _msgPendingImage = e.target.result;
+      showToast('Image ready — click Send to share 🖼');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function msgToggleReaction(msgId, emoji) {
+    var msg = _msgMessages.find(function(m){ return String(m.id)===String(msgId); });
+    if (!msg) return;
+    var u = _currentUser;
+    var myName = u ? (u.name||'') : '';
+    var reactions = msg.reactions || {};
+    if (!reactions[emoji]) reactions[emoji] = [];
+    var idx = reactions[emoji].indexOf(myName);
+    if (idx === -1) reactions[emoji].push(myName);
+    else reactions[emoji].splice(idx,1);
+    if (!reactions[emoji].length) delete reactions[emoji];
+    msg.reactions = reactions;
+    msgRenderMessages();
+    fetch(_SB_URL+'/rest/v1/messages?id=eq.'+msgId, {
+      method:'PATCH',
+      headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({reactions:reactions})
+    })
+      .catch(function(e){ console.error('Reaction error:',e); });
+  }
+
+  function msgShowReactionPicker(msgId) {
+    var picker = document.getElementById('msg-reaction-picker-' + msgId);
+    if (picker) { picker.remove(); return; }
+    var p = document.createElement('div');
+    p.id = 'msg-reaction-picker-' + msgId;
+    p.style.cssText = 'position:fixed;z-index:9999;background:white;border:1.5px solid #e2e8f0;border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:4px;width:200px;box-shadow:0 4px 20px rgba(0,0,0,0.15);';
+    MSG_EMOJI_LIST.slice(0,16).forEach(function(em) {
+      var btn = document.createElement('button');
+      btn.textContent = em;
+      btn.style.cssText = 'font-size:18px;border:none;background:none;cursor:pointer;padding:2px 3px;border-radius:5px;';
+      btn.addEventListener('mouseenter', function(){ this.style.background='#f1f5f9'; });
+      btn.addEventListener('mouseleave', function(){ this.style.background=''; });
+      btn.addEventListener('click', function(){ msgToggleReaction(msgId, em); p.remove(); });
+      p.appendChild(btn);
+    });
+    var msgEl = document.getElementById('msg-'+msgId);
+    if (msgEl) {
+      var rect = msgEl.getBoundingClientRect();
+      p.style.top = (rect.bottom + 4) + 'px';
+      p.style.left = Math.min(rect.left, window.innerWidth - 220) + 'px';
+    }
+    document.body.appendChild(p);
+    setTimeout(function(){ document.addEventListener('click', function rm(e){ if(!p.contains(e.target)){p.remove(); document.removeEventListener('click',rm);} }, true); }, 10);
+  }
+
+  function msgSetReply(msg) {
+    _msgReplyTo = msg;
+    var bar = document.getElementById('msg-reply-bar');
+    var txt = document.getElementById('msg-reply-text');
+    if (bar) bar.style.display = 'flex';
+    if (txt) txt.textContent = '↩ ' + (msg.sender_name||'') + ': ' + (msg.content||'').slice(0,80);
+    var inp = document.getElementById('msg-input');
+    if (inp) inp.focus();
+  }
+
+  function msgClearReply() {
+    _msgReplyTo = null;
+    var bar = document.getElementById('msg-reply-bar');
+    if (bar) bar.style.display = 'none';
+  }
+
+  function msgBuildEmojiPicker() {
+    var picker = document.getElementById('msg-emoji-picker');
+    if (!picker) return;
+    picker.innerHTML = '';
+    MSG_EMOJI_LIST.forEach(function(em) {
+      var btn = document.createElement('button');
+      btn.textContent = em;
+      btn.style.cssText = 'font-size:20px;border:none;background:none;cursor:pointer;padding:3px;border-radius:6px;';
+      btn.addEventListener('mouseenter', function(){ this.style.background='#f1f5f9'; });
+      btn.addEventListener('mouseleave', function(){ this.style.background=''; });
+      btn.addEventListener('click', function(){
+        var inp = document.getElementById('msg-input');
+        if (inp) { inp.value += em; inp.focus(); }
+      });
+      picker.appendChild(btn);
+    });
+  }
+
+  function msgToggleEmoji() {
+    var picker = document.getElementById('msg-emoji-picker');
+    if (!picker) return;
+    picker.style.display = picker.style.display === 'flex' ? 'none' : 'flex';
+    picker.style.flexWrap = 'wrap';
+  }
+
+
 
   // ══ CALENDAR ═════════════════════════════════════════════════════════════
   var _calYear, _calMonth, _calEvents = [];
