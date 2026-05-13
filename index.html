@@ -4367,12 +4367,56 @@ function renderIncidentLog() {
         +'<td style="padding:9px 8px;text-align:center;font-size:11.5px;color:#6b7280;'+bd+'">'+(inc.date||'')+(inc.time?'<br><span style="font-size:10px;">'+inc.time+'</span>':'')+'</td>'
         +'<td style="padding:9px 12px;font-size:12px;color:#6b7280;'+bd+'">'+(inc.notes||'—')+'</td>'
         +'<td style="padding:9px 8px;text-align:center;'+bd+'"></td>';
-      // Add resolve button via addEventListener
+      // Add status update dropdown + button
       var btnCell = row.cells[5];
+      var u = _currentUser;
+      var isAdmin = u && (u.access === 'all' || u.role === 'admin' || u.role === 'principal' || u.role === 'founder' || u.role === 'discipline');
+
+      var statusColors = {
+        'logged':           {bg:'#eff6ff',color:'#1d4ed8',border:'#93c5fd'},
+        'in-progress':      {bg:'#fef9c3',color:'#92400e',border:'#fcd34d'},
+        'reported':         {bg:'#fff7ed',color:'#c2410c',border:'#fdba74'},
+        'parent-contacted': {bg:'#fdf4ff',color:'#7e22ce',border:'#d8b4fe'},
+        'escalated':        {bg:'#fee2e2',color:'#b91c1c',border:'#fca5a5'},
+        'resolved':         {bg:'#dcfce7',color:'#15803d',border:'#86efac'}
+      };
+      var cur = inc.status || 'logged';
+      var sc2 = statusColors[cur] || statusColors['logged'];
+
+      // Status badge showing current
+      var badge = document.createElement('div');
+      badge.style.cssText = 'font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:20px;margin-bottom:5px;background:'+sc2.bg+';color:'+sc2.color+';border:1.5px solid '+sc2.border+';text-align:center;white-space:nowrap;';
+      badge.textContent = cur.charAt(0).toUpperCase() + cur.slice(1).replace(/-/g,' ');
+
+      // Status update select
+      var sel = document.createElement('select');
+      sel.style.cssText = 'width:100%;padding:4px 6px;border-radius:6px;border:1.5px solid #e2e8f0;font-size:11px;font-weight:600;outline:none;margin-bottom:4px;cursor:pointer;';
+      var statuses = isAdmin
+        ? ['logged','in-progress','reported','parent-contacted','escalated','resolved']
+        : ['logged','in-progress','reported','parent-contacted'];
+      statuses.forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g,' ');
+        if (s === cur) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      // Update button
       var btn = document.createElement('button');
-      btn.textContent = '✓ Resolve';
-      btn.style.cssText = 'padding:4px 10px;border-radius:6px;border:1.5px solid #16a34a;background:#f0fdf4;color:#16a34a;font-size:11px;font-weight:700;cursor:pointer;';
-      (function(incId){ btn.addEventListener('click', function(){ resolveIncident(incId); }); })(inc.id);
+      btn.textContent = 'Update';
+      btn.style.cssText = 'width:100%;padding:4px 8px;border-radius:6px;border:1.5px solid var(--navy);background:var(--navy);color:white;font-size:11px;font-weight:700;cursor:pointer;';
+
+      (function(incId, badgeEl, selEl) {
+        btn.addEventListener('click', function() {
+          var newStatus = selEl.value;
+          updateIncidentStatus(incId, newStatus, badgeEl, selEl);
+        });
+      })(inc.id, badge, sel);
+
+      btnCell.style.cssText = 'padding:6px 8px;text-align:center;min-width:130px;border-bottom:1px solid #f1f5f9;';
+      btnCell.appendChild(badge);
+      btnCell.appendChild(sel);
       btnCell.appendChild(btn);
       tbody.appendChild(row);
     });
@@ -6865,7 +6909,7 @@ function renderIncidentLog() {
 
     // Build table using DOM (avoids all quote issues)
     var table = document.createElement('table');
-    table.style.cssText = 'border-collapse:collapse;font-size:12.5px;min-width:100%;';
+    table.style.cssText = 'border-collapse:collapse;font-size:13px;min-width:100%;border:1.5px solid #d1d5db;';
 
     // Header row
     var thead = document.createElement('thead');
@@ -6916,7 +6960,9 @@ function renderIncidentLog() {
       var bg        = idx % 2 === 0 ? 'white' : '#f8fafc';
 
       var tr = document.createElement('tr');
-      tr.style.cssText = 'background:' + bg + ';border-bottom:1px solid #f1f5f9;';
+      tr.style.cssText = 'background:' + bg + ';border-bottom:1.5px solid #e2e8f0;transition:background 0.1s;';
+      tr.addEventListener('mouseenter', function(){ if(!this.dataset.selected) this.style.background='#f0f4ff'; });
+      tr.addEventListener('mouseleave', function(){ if(!this.dataset.selected) this.style.background=bg; });
 
       // Name cell
       // Calculate overall average from all recorded marks for this student
@@ -6938,18 +6984,42 @@ function renderIncidentLog() {
       var avgBadge = '';
       if (overallAvg !== null) {
         var avgText = overallAvg%1===0 ? overallAvg.toFixed(0) : overallAvg.toFixed(2);
-        avgBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;border-radius:20px;background:' + avgColor + ';color:white;font-size:11.5px;font-weight:800;padding:0 8px;margin-left:8px;">' + avgText + '</span>';
-      } else { avgBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:24px;border-radius:20px;background:#f1f5f9;color:#94a3b8;font-size:10px;font-weight:700;padding:0 8px;margin-left:8px;">—</span>'; }
+        avgBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:22px;border-radius:6px;background:' + avgColor + ';color:white;font-size:12px;font-weight:800;padding:0 7px;flex-shrink:0;">' + avgText + '</span>';
+      } else { avgBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:22px;border-radius:6px;background:#e2e8f0;color:#94a3b8;font-size:11px;font-weight:700;padding:0 7px;flex-shrink:0;">—</span>'; }
       var tdName = document.createElement('td');
-      tdName.style.cssText = 'padding:8px 14px;font-weight:600;font-size:12.5px;white-space:nowrap;color:var(--ink);position:sticky;left:0;background:' + bg + ';z-index:5;';
-      tdName.innerHTML = '<span style="font-size:10.5px;color:var(--muted);margin-right:5px;">' + (idx+1<10?'0'+(idx+1):idx+1) + '</span>' + fullName + avgBadge;
+      tdName.style.cssText = 'padding:8px 14px;white-space:nowrap;position:sticky;left:0;background:' + bg + ';z-index:5;cursor:pointer;border-right:2px solid #e2e8f0;';
+      tdName.innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span style="font-size:11px;color:#94a3b8;font-weight:600;min-width:22px;">' + (idx+1<10?'0'+(idx+1):idx+1) + '</span>' +
+          '<span style="font-size:13px;font-weight:600;color:#0f172a;flex:1;">' + fullName + '</span>' +
+          avgBadge +
+        '</div>';
+      // Click name → select/deselect whole row
+      (function(capturedTr, capturedBg) {
+        tdName.addEventListener('click', function() {
+          var sel = capturedTr.dataset.selected === '1';
+          // Deselect all rows first
+          capturedTr.closest('tbody').querySelectorAll('tr').forEach(function(r) {
+            r.dataset.selected = '';
+            r.style.background = r._origBg || '';
+          });
+          if (!sel) {
+            capturedTr._origBg = capturedBg;
+            capturedTr.dataset.selected = '1';
+            capturedTr.style.background = '#eff6ff';
+            // Bold the name
+            tdName.querySelector('span:nth-child(2)').style.color = '#1d4ed8';
+            tdName.querySelector('span:nth-child(2)').style.fontWeight = '800';
+          }
+        });
+      })(tr, bg);
       tr.appendChild(tdName);
 
       // Date cells
       dates.forEach(function(dt) {
         var key    = dt.dateStr + '|' + fullName;
         var saved  = dataMap[key];
-        var bord   = dt.isToday ? '2px solid var(--gold)' : '1px solid #f1f5f9';
+        var bord   = dt.isToday ? '2px solid var(--gold)' : '1.5px solid #e2e8f0';
         var td     = document.createElement('td');
         td.style.cssText = 'padding:5px 6px;text-align:center;border-left:' + bord + ';vertical-align:middle;';
         // Find day-level report for topic/hw lookup
@@ -6981,11 +7051,12 @@ function renderIncidentLog() {
           var marks = [saved.cw, saved.hw, saved.disc].map(Number).filter(Boolean);
           var avg   = marks.reduce(function(a,b){return a+b;},0) / marks.length;
           var cc    = markColor(avg) || '#94a3b8';
-          cell.style.background = cc;
-          cell.style.color = 'white';
-          cell.style.cursor = 'pointer';
-          cell.title = 'CW:' + saved.cw + ' HW:' + saved.hw + ' Disc:' + saved.disc + ' — click to edit';
-          cell.textContent = avg % 1 === 0 ? avg.toFixed(0) : avg.toFixed(1);
+          cell.style.cssText = 'text-align:center;cursor:pointer;padding:4px 3px;';
+          var pill = document.createElement('div');
+          pill.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:32px;height:28px;border-radius:7px;background:'+cc+';color:white;font-size:13px;font-weight:800;';
+          pill.textContent = avg%1===0?avg.toFixed(0):avg.toFixed(1);
+          pill.title = 'CW:'+saved.cw+' HW:'+saved.hw+' Disc:'+saved.disc;
+          cell.appendChild(pill);
           cell.addEventListener('mouseenter', function(){ this.style.opacity='0.75'; });
           cell.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
           (function(d, n, c, s) {
@@ -7460,8 +7531,10 @@ function renderIncidentLog() {
 
   function sbUpdateIncident(inc) {
     return sbFetch('incidents', 'PATCH', {
-      status: inc.status, resolution: inc.resolution || '',
-      resolved_at: inc.resolvedAt || ''
+      status:      inc.status,
+      resolution:  inc.resolution  || '',
+      resolved_at: inc.resolvedAt  || '',
+      notes:       inc.notes       || ''
     }, 'id=eq.' + inc.id);
   }
 
@@ -7545,6 +7618,32 @@ function renderIncidentLog() {
     sbSaveIncident(inc)
       .then(function(){ updateCloudStatus('saved'); })
       .catch(function(){ updateCloudStatus('error'); });
+  }
+
+  function updateIncidentStatus(id, newStatus, badgeEl, selEl) {
+    var inc = null;
+    for (var i=0; i<incidentLog.length; i++) { if (incidentLog[i].id===id) { inc=incidentLog[i]; break; } }
+    if (!inc) return;
+    inc.status = newStatus;
+    if (newStatus === 'resolved') inc.resolvedAt = new Date().toISOString();
+    saveIncidents();
+    sbUpdateIncident(inc).then(function(){ updateCloudStatus('saved'); }).catch(function(){ updateCloudStatus('error'); });
+
+    var statusColors = {
+      'logged':           {bg:'#eff6ff',color:'#1d4ed8',border:'#93c5fd'},
+      'in-progress':      {bg:'#fef9c3',color:'#92400e',border:'#fcd34d'},
+      'reported':         {bg:'#fff7ed',color:'#c2410c',border:'#fdba74'},
+      'parent-contacted': {bg:'#fdf4ff',color:'#7e22ce',border:'#d8b4fe'},
+      'escalated':        {bg:'#fee2e2',color:'#b91c1c',border:'#fca5a5'},
+      'resolved':         {bg:'#dcfce7',color:'#15803d',border:'#86efac'}
+    };
+    var sc = statusColors[newStatus] || statusColors['logged'];
+    if (badgeEl) {
+      badgeEl.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1).replace(/-/g,' ');
+      badgeEl.style.background = sc.bg; badgeEl.style.color = sc.color; badgeEl.style.borderColor = sc.border;
+    }
+    showToast('Status updated: ' + newStatus);
+    if (newStatus === 'resolved') setTimeout(renderIncidentLog, 500);
   }
 
   function resolveIncident(id) {
@@ -8543,7 +8642,7 @@ function renderIncidentLog() {
 
 
   function calLoadEvents() {
-    sbFetch('calendar_events', 'GET', null, 'order=start_date.asc&limit=500')
+    sbFetch('calendar_events', 'GET', null, 'order=date.asc&limit=500')
       .then(function(rows) {
         var sbEvents = (rows || []).map(function(r) {
           return {id:String(r.id), title:r.title, start:r.date||'', end:r.end_date||r.date||'',
@@ -8558,9 +8657,12 @@ function renderIncidentLog() {
         var sync = document.getElementById('cal-sync-status');
         if (sync) sync.textContent = 'Synced';
       })
-      .catch(function() {
-        // Offline - show academic events only
-        _calEvents = ACADEMIC_EVENTS.slice();
+      .catch(function(err) {
+        console.error('calLoadEvents error:', err);
+        // On failure: keep existing events rather than wiping to academic-only
+        if (!_calEvents || !_calEvents.length) {
+          _calEvents = ACADEMIC_EVENTS.slice();
+        }
         calRender();
       });
   }
@@ -8746,13 +8848,34 @@ function renderIncidentLog() {
       .then(function() {
         showToast(editId ? 'Event updated ✓' : 'Event saved ✓');
         updateCloudStatus('saved');
-        _calEvents = _calEvents.filter(function(e){ return e.id !== localId; });
-        setTimeout(calLoadEvents, 300);
+        // Reload from cloud — only remove local placeholder if reload succeeds
+        setTimeout(function() {
+          sbFetch('calendar_events', 'GET', null, 'order=date.asc&limit=500')
+            .then(function(rows) {
+              var sbEvents = (rows || []).map(function(r) {
+                return {id:String(r.id), title:r.title, start:r.date||'', end:r.end_date||r.date||'',
+                  type:r.type||'general', color:r.color||'#3b82f6', description:r.description||''};
+              });
+              var sbIds = {};
+              sbEvents.forEach(function(e){ sbIds[e.id]=true; });
+              // Merge: remove local placeholder, keep academic events, add Supabase events
+              _calEvents = ACADEMIC_EVENTS.filter(function(e){ return !sbIds[e.id]; }).concat(sbEvents);
+              calRender();
+            })
+            .catch(function() {
+              // Cloud reload failed — just remove local placeholder, keep what we have
+              _calEvents = _calEvents.filter(function(e){ return e.id !== localId; });
+              calRender();
+            });
+        }, 400);
       })
       .catch(function(e) {
         console.error('Cal save error:', e.message);
-        showToast('Save failed: ' + (e.message||'Unknown'));
+        showToast('Save failed: ' + (e.message||'Unknown error'));
         updateCloudStatus('error');
+        // Remove local placeholder since save failed
+        _calEvents = _calEvents.filter(function(e){ return e.id !== localId; });
+        calRender();
       });
   }
 
@@ -8945,7 +9068,7 @@ function renderIncidentLog() {
     ['Lesson','Time'].concat(activeDays).forEach(function(h) {
       var th = document.createElement('th');
       var isToday = (h === todayName);
-      th.style.cssText = 'padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;' +
+      th.style.cssText = 'padding:8px 8px;text-align:center;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;' +
         (isToday ? 'color:var(--gold);' : 'color:rgba(255,255,255,0.8);');
       th.textContent = h + (isToday ? ' ★' : '');
       hRow.appendChild(th);
