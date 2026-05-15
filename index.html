@@ -319,6 +319,7 @@
   /* ── PANELS ── */
   .panel { display: none; animation: fadeIn 0.2s ease; }
   .panel.active { display: block; }
+  #panel-messenger.active { display: flex !important; flex-direction: column; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
 
   /* ── STAT CARDS ── */
@@ -2508,7 +2509,7 @@
 
 
     <!-- ══ MESSENGER PANEL ══ -->
-    <div class="panel" id="panel-messenger" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 60px);overflow:hidden;">
+    <div class="panel" id="panel-messenger" style="padding:0;height:calc(100vh - 60px);overflow:hidden;">
 
       <div style="display:flex;height:100%;overflow:hidden;">
 
@@ -6982,7 +6983,7 @@ function renderIncidentLog() {
 
     // Build table using DOM (avoids all quote issues)
     var table = document.createElement('table');
-    table.style.cssText = 'border-collapse:collapse;font-size:13px;min-width:100%;border:1.5px solid #d1d5db;';
+    table.style.cssText = 'border-collapse:collapse;font-size:13px;min-width:100%;border:2px solid #64748b;';
 
     // Header row
     var thead = document.createElement('thead');
@@ -7033,8 +7034,8 @@ function renderIncidentLog() {
       var bg        = idx % 2 === 0 ? 'white' : '#f8fafc';
 
       var tr = document.createElement('tr');
-      tr.style.cssText = 'background:' + bg + ';border-bottom:1.5px solid #e2e8f0;transition:background 0.1s;';
-      tr.addEventListener('mouseenter', function(){ if(!this.dataset.selected) this.style.background='#f0f4ff'; });
+      tr.style.cssText = 'background:' + bg + ';border-bottom:1.5px solid #94a3b8;transition:background 0.1s;';
+      tr.addEventListener('mouseenter', function(){ if(!this.dataset.selected) this.style.background='#dbeafe'; });
       tr.addEventListener('mouseleave', function(){ if(!this.dataset.selected) this.style.background=bg; });
 
       // Name cell
@@ -7063,8 +7064,8 @@ function renderIncidentLog() {
       tdName.style.cssText = 'padding:8px 14px;white-space:nowrap;position:sticky;left:0;background:' + bg + ';z-index:5;cursor:pointer;border-right:2px solid #e2e8f0;';
       tdName.innerHTML =
         '<div style="display:flex;align-items:center;gap:8px;">' +
-          '<span style="font-size:11px;color:#94a3b8;font-weight:600;min-width:22px;">' + (idx+1<10?'0'+(idx+1):idx+1) + '</span>' +
-          '<span style="font-size:13px;font-weight:600;color:#0f172a;flex:1;">' + fullName + '</span>' +
+          '<span style="font-size:11px;color:#94a3b8;font-weight:600;min-width:22px;flex-shrink:0;">' + (idx+1<10?'0'+(idx+1):idx+1) + '</span>' +
+          '<span style="font-size:13px;font-weight:600;color:#0f172a;margin-right:8px;">' + fullName + '</span>' +
           avgBadge +
         '</div>';
       // Click name → select/deselect whole row
@@ -7092,7 +7093,7 @@ function renderIncidentLog() {
       dates.forEach(function(dt) {
         var key    = dt.dateStr + '|' + fullName;
         var saved  = dataMap[key];
-        var bord   = dt.isToday ? '2px solid var(--gold)' : '1.5px solid #e2e8f0';
+        var bord   = dt.isToday ? '2px solid var(--gold)' : '1.5px solid #94a3b8';
         var td     = document.createElement('td');
         td.style.cssText = 'padding:5px 6px;text-align:center;border-left:' + bord + ';vertical-align:middle;';
         // Find day-level report for topic/hw lookup
@@ -7151,14 +7152,18 @@ function renderIncidentLog() {
 
         } else {
           // Past day, no marks - subtle clickable to add/view
-          cell.style.background = '#f8fafc';
-          cell.style.color = '#cbd5e1';
-          cell.style.fontSize = '13px';
-          cell.style.cursor = 'pointer';
-          cell.textContent = '+';
-          cell.title = 'Click to add or view marks';
-          cell.addEventListener('mouseenter', function(){ this.style.background='#e2e8f0'; this.style.color='#64748b'; });
-          cell.addEventListener('mouseleave', function(){ this.style.background='#f8fafc'; this.style.color='#cbd5e1'; });
+          cell.style.cssText = 'text-align:center;padding:4px 3px;background:white;cursor:pointer;';
+          var plusPill = document.createElement('div');
+          plusPill.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:32px;height:28px;border-radius:7px;border:1.5px solid #475569;color:#475569;font-size:16px;font-weight:300;';
+          plusPill.textContent = '+';
+          cell.appendChild(plusPill);
+          cell.title = 'Click to add marks';
+          cell.addEventListener('mouseenter', function(){
+            plusPill.style.background='#0f172a';plusPill.style.color='white';plusPill.style.borderColor='#0f172a';
+          });
+          cell.addEventListener('mouseleave', function(){
+            plusPill.style.background='';plusPill.style.color='#475569';plusPill.style.borderColor='#475569';
+          });
           (function(d, n, c, s) {
             cell.addEventListener('click', function() { drGridCellClick(d, n, c, s); });
           })(dt.dateStr, fullName, cls, subject);
