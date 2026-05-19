@@ -2509,9 +2509,9 @@
 
 
     <!-- ══ MESSENGER PANEL ══ -->
-    <div class="panel" id="panel-messenger" style="padding:0;height:calc(100vh - 60px);overflow:hidden;">
+    <div class="panel" id="panel-messenger" style="padding:0;">
 
-      <div style="display:flex;height:100%;overflow:hidden;">
+      <div style="display:flex;height:calc(100vh - 60px);overflow:hidden;">
 
         <!-- Sidebar: Channels + DMs -->
         <div id="msg-sidebar" style="width:240px;min-width:240px;background:#1e1b4b;display:flex;flex-direction:column;overflow:hidden;">
@@ -2638,6 +2638,11 @@
 
   function showPanel(id, el) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    // Stop messenger polling when switching away
+    if (id !== 'messenger') {
+      _msgOnPanel = false;
+      if (_msgPollTimer) { clearInterval(_msgPollTimer); _msgPollTimer = null; }
+    }
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     var panelEl = document.getElementById('panel-' + id);
     if (panelEl) panelEl.classList.add('active');
@@ -6595,7 +6600,59 @@ function renderIncidentLog() {
     // Build lesson cards from timetable
     drBuildLessonCards();
     drPopulateFilters(drGetAllowedClasses());
-    drFilterReports();
+    drFilterReports(); // show localStorage data immediately
+
+    // Then load from Supabase and merge
+    drLoadFromSupabase();
+  }
+
+  function drLoadFromSupabase() {
+    var u = _currentUser;
+    var params = 'order=created_at.desc&limit=500';
+    // Teachers only see their own reports
+    if (u && u.access !== 'all' && u.name) {
+      params += '&teacher_name=eq.' + encodeURIComponent(u.name);
+    }
+    fetch(_SB_URL + '/rest/v1/daily_reports?' + params, {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      if (!rows || !rows.length) return;
+      var existingIds = {};
+      dailyReports.forEach(function(r){ existingIds[r.id] = 1; });
+      var added = 0;
+      rows.forEach(function(r) {
+        var rep = {
+          id:       String(r.id || r.teacher_username + '_' + r.class + '_' + r.date),
+          cls:      r.class,
+          subject:  r.subject,
+          teacher:  r.teacher_name || '',
+          date:     r.date,
+          period:   r.period   || '',
+          topic:    r.topic    || '',
+          homework: r.homework || '',
+          remark:   r.remark   || '',
+          students: r.students || []
+        };
+        if (!existingIds[rep.id]) {
+          dailyReports.push(rep);
+          existingIds[rep.id] = 1;
+          added++;
+        } else {
+          // Update existing with Supabase version (more authoritative)
+          for (var j=0; j<dailyReports.length; j++) {
+            if (dailyReports[j].id === rep.id) {
+              dailyReports[j] = rep; break;
+            }
+          }
+        }
+      });
+      saveDailyReports(); // sync to localStorage
+      drFilterReports();  // re-render with full data
+      updateCloudStatus('saved');
+    })
+    .catch(function(e){ console.error('drLoadFromSupabase:', e); updateCloudStatus('error'); });
   }
 
 
@@ -7462,7 +7519,8 @@ function renderIncidentLog() {
         showToast('✓ Report submitted to Supabase for Class ' + cls);
         updateCloudStatus('saved');
       }).catch(function(e) {
-        showToast('Saved locally. Sync to Supabase failed.');
+        console.error('Daily report Supabase error:', e);
+        showToast('Saved locally. Sync failed: ' + (e.message||'check console'));
         updateCloudStatus('error');
       });
     } else {
@@ -7544,11 +7602,32 @@ function renderIncidentLog() {
   }
 
   function sbSaveDailyReport(rep) {
-    return sbFetch('daily_reports', 'POST', {
-      teacher_name: rep.teacher, teacher_username: _currentUser ? _currentUser.username : '',
-      class: rep.cls, subject: rep.subject, date: rep.date,
-      period: rep.period || '', topic: rep.topic || '', remark: rep.remark || '',
-      homework: rep.homework || '', students: rep.students || []
+    var payload = {
+      teacher_name:     rep.teacher || '',
+      teacher_username: _currentUser ? (_currentUser.username||_currentUser.user||'') : '',
+      class:            rep.cls,
+      subject:          rep.subject,
+      date:             rep.date,
+      period:           rep.period   || '',
+      topic:            rep.topic    || '',
+      remark:           rep.remark   || '',
+      homework:         rep.homework || '',
+      students:         rep.students || []
+    };
+    // Try upsert with id so duplicate reports get updated not rejected
+    if (rep.id) payload.id = rep.id;
+    return fetch(_SB_URL + '/rest/v1/daily_reports', {
+      method:  'POST',
+      headers: {
+        'apikey':        _SB_KEY,
+        'Authorization': 'Bearer ' + _SB_KEY,
+        'Content-Type':  'application/json',
+        'Prefer':        'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(payload)
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+': '+t); });
+      return {};
     });
   }
 
