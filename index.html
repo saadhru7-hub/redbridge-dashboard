@@ -898,6 +898,7 @@
 
       </div>
 
+    </div>
 
     <div class="panel" id="panel-teachers">
 
@@ -919,6 +920,71 @@
       </div>
       <div id="obs-form-section" style="display:none;"></div>
       <div id="obs-list-section"></div>
+
+    </div>
+
+    <div class="panel" id="panel-discipline">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;" data-i18n="disc_title">Discipline Tracker</h2>
+          <div style="font-size:12.5px;color:var(--text-3);" data-i18n="disc_sub">Log and track student discipline incidents</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="document.getElementById('add-incident-form').style.display='block'" class="btn btn-primary"><span data-i18n="disc_log_incident">+ Log Incident</span></button>
+          <button onclick="discShowResolved()" class="btn btn-outline"><span data-i18n="disc_view_resolved">View Resolved</span></button>
+        </div>
+      </div>
+
+      <div id="add-incident-form" style="display:none;margin-bottom:20px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title" data-i18n="disc_log_new">Log New Incident</div></div>
+          <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_student_name">Student Name</label>
+              <input id="inc-student" type="text" placeholder="Full name" data-i18n-ph="disc_full_name_ph"></div>
+            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_class">Class</label>
+              <select id="inc-class"><option value="" data-i18n="opt_select_class">— Select class —</option></select></div>
+            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_incident_type">Incident Type</label>
+              <select id="inc-type"><option data-i18n="inc_fighting">Fighting</option><option data-i18n="inc_bullying">Bullying</option><option data-i18n="inc_disrespect">Disrespect</option><option data-i18n="inc_cheating">Cheating</option><option data-i18n="inc_vandalism">Vandalism</option><option data-i18n="inc_late">Late</option><option data-i18n="inc_phone">Phone use</option><option data-i18n="inc_other">Other</option></select></div>
+            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_stage">Stage</label>
+              <select id="inc-stage"><option value="1" data-i18n="stage_1">Stage 1 — Minor</option><option value="2" data-i18n="stage_2">Stage 2 — Moderate</option><option value="3" data-i18n="stage_3">Stage 3 — Serious</option><option value="4" data-i18n="stage_4">Stage 4 — Critical</option></select></div>
+            <div style="grid-column:1/-1;">
+              <label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_notes">Notes</label>
+              <textarea id="inc-notes" rows="2" placeholder="Brief description of the incident…" data-i18n-ph="disc_notes_ph"></textarea>
+            </div>
+            <div style="grid-column:1/-1;display:flex;gap:8px;">
+              <button onclick="logIncident()" class="btn btn-primary"><span data-i18n="disc_save">Save Incident</span></button>
+              <button onclick="document.getElementById('add-incident-form').style.display='none'" class="btn btn-outline"><span data-i18n="disc_cancel">Cancel</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title" data-i18n="disc_active">Active Incidents</div><div class="card-subtitle" data-i18n="disc_open_cases">Open cases requiring action</div></div>
+        </div>
+        <div id="incident-log-body" style="padding:40px;text-align:center;color:var(--text-4);">
+          <div style="font-size:36px;margin-bottom:12px;">✓</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:6px;" data-i18n="disc_no_active">No active incidents</div>
+          <div style="font-size:12.5px;" data-i18n="disc_all_clear">All clear for 2026–27</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-academics">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;">Academic Monitoring</h2>
+          <div style="font-size:12.5px;color:var(--text-3);">Monitor performance across classes and subjects</div>
+        </div>
+      </div>
+      <div class="card" style="text-align:center;padding:60px 20px;">
+        <div style="font-size:36px;margin-bottom:12px;">📊</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px;">No academic data yet</div>
+        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:16px;">Academic performance data will appear as teachers submit assessments and daily reports.</div>
+        <button onclick="showPanel('assessments',null)" class="btn btn-primary">Go to Assessments</button>
+      </div>
+    </div>
 
     <div class="panel" id="panel-classes">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
@@ -1156,6 +1222,8 @@
         </div>
       </div>
 
+    </div>
+
     <div class="panel" id="panel-subjects">
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
@@ -1167,6 +1235,8 @@
         <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;">No subject data yet</div>
         <div style="font-size:13px;color:var(--muted);">Subject information for 2026–27 will appear here once configured.</div>
       </div>
+
+    </div>
 
     <div class="panel" id="panel-results">
 
@@ -1180,6 +1250,8 @@
         <div style="font-size:13px;color:var(--muted);">Student results for 2026–27 will appear here as assessments are completed and results are uploaded.</div>
         <div style="margin-top:20px;"><button onclick="showPanel('assessments',null)" class="btn btn-primary">Go to Assessments</button></div>
       </div>
+
+    </div>
 
     <div class="panel" id="panel-rubric">
 
@@ -1196,6 +1268,8 @@
       </div>
       <div id="obs-view-section" style="margin-top:20px;"></div>
 
+    </div>
+
     <div class="panel" id="panel-timetable">
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
@@ -1207,6 +1281,8 @@
         <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;">Timetable not set up yet</div>
         <div style="font-size:13px;color:var(--muted);">The 2026–27 timetable will be uploaded here. Contact the principal to upload the new schedule.</div>
       </div>
+
+    </div>
 
     <div class="panel" id="panel-dailyreport">
 
@@ -9377,65 +9453,3 @@ function saveDailyReport() {
 
 </body>
 </html>
-    <div class="panel" id="panel-discipline">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-        <div>
-          <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;" data-i18n="disc_title">Discipline Tracker</h2>
-          <div style="font-size:12.5px;color:var(--text-3);" data-i18n="disc_sub">Log and track student discipline incidents</div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button onclick="document.getElementById('add-incident-form').style.display='block'" class="btn btn-primary"><span data-i18n="disc_log_incident">+ Log Incident</span></button>
-          <button onclick="discShowResolved()" class="btn btn-outline"><span data-i18n="disc_view_resolved">View Resolved</span></button>
-        </div>
-      </div>
-
-      <div id="add-incident-form" style="display:none;margin-bottom:20px;">
-        <div class="card">
-          <div class="card-header"><div class="card-title" data-i18n="disc_log_new">Log New Incident</div></div>
-          <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_student_name">Student Name</label>
-              <input id="inc-student" type="text" placeholder="Full name" data-i18n-ph="disc_full_name_ph"></div>
-            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_class">Class</label>
-              <select id="inc-class"><option value="" data-i18n="opt_select_class">— Select class —</option></select></div>
-            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_incident_type">Incident Type</label>
-              <select id="inc-type"><option data-i18n="inc_fighting">Fighting</option><option data-i18n="inc_bullying">Bullying</option><option data-i18n="inc_disrespect">Disrespect</option><option data-i18n="inc_cheating">Cheating</option><option data-i18n="inc_vandalism">Vandalism</option><option data-i18n="inc_late">Late</option><option data-i18n="inc_phone">Phone use</option><option data-i18n="inc_other">Other</option></select></div>
-            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_stage">Stage</label>
-              <select id="inc-stage"><option value="1" data-i18n="stage_1">Stage 1 — Minor</option><option value="2" data-i18n="stage_2">Stage 2 — Moderate</option><option value="3" data-i18n="stage_3">Stage 3 — Serious</option><option value="4" data-i18n="stage_4">Stage 4 — Critical</option></select></div>
-            <div style="grid-column:1/-1;">
-              <label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_notes">Notes</label>
-              <textarea id="inc-notes" rows="2" placeholder="Brief description of the incident…" data-i18n-ph="disc_notes_ph"></textarea>
-            </div>
-            <div style="grid-column:1/-1;display:flex;gap:8px;">
-              <button onclick="logIncident()" class="btn btn-primary"><span data-i18n="disc_save">Save Incident</span></button>
-              <button onclick="document.getElementById('add-incident-form').style.display='none'" class="btn btn-outline"><span data-i18n="disc_cancel">Cancel</span></button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <div><div class="card-title" data-i18n="disc_active">Active Incidents</div><div class="card-subtitle" data-i18n="disc_open_cases">Open cases requiring action</div></div>
-        </div>
-        <div id="incident-log-body" style="padding:40px;text-align:center;color:var(--text-4);">
-          <div style="font-size:36px;margin-bottom:12px;">✓</div>
-          <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:6px;" data-i18n="disc_no_active">No active incidents</div>
-          <div style="font-size:12.5px;" data-i18n="disc_all_clear">All clear for 2026–27</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-academics">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-        <div>
-          <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;">Academic Monitoring</h2>
-          <div style="font-size:12.5px;color:var(--text-3);">Monitor performance across classes and subjects</div>
-        </div>
-      </div>
-      <div class="card" style="text-align:center;padding:60px 20px;">
-        <div style="font-size:36px;margin-bottom:12px;">📊</div>
-        <div style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px;">No academic data yet</div>
-        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:16px;">Academic performance data will appear as teachers submit assessments and daily reports.</div>
-        <button onclick="showPanel('assessments',null)" class="btn btn-primary">Go to Assessments</button>
-      </div>
-    </div>
