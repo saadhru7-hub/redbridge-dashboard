@@ -1082,12 +1082,12 @@
       <!-- Header row -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
-          <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--navy);margin-bottom:3px;">📝 Daily Lesson Report</h2>
-          <div style="font-size:12.5px;color:var(--muted);">Record marks and remarks for each lesson</div>
+          <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--navy);margin-bottom:3px;"><span data-i18n="dr_h_title">📝 Daily Lesson Report</span></h2>
+          <div style="font-size:12.5px;color:var(--muted);" data-i18n="dr_h_sub">Record marks and remarks for each lesson</div>
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-outline" onclick="switchDailyTab('submit')" id="dr-tab-submit" style="font-size:12.5px;">✍️ Submit Report</button>
-          <button class="btn btn-primary" onclick="switchDailyTab('view')" id="dr-tab-view" style="font-size:12.5px;">📋 View Reports</button>
+          <button class="btn btn-outline" onclick="switchDailyTab('submit')" id="dr-tab-submit" style="font-size:12.5px;"><span data-i18n="dr_tab_submit">✍️ Submit Report</span></button>
+          <button class="btn btn-primary" onclick="switchDailyTab('view')" id="dr-tab-view" style="font-size:12.5px;"><span data-i18n="dr_tab_view">📋 View Reports</span></button>
         </div>
       </div>
 
@@ -1099,13 +1099,13 @@
           <div class="card">
             <div class="card-header" style="background:linear-gradient(135deg,var(--navy),#1a2448);">
               <div>
-                <div class="card-title" style="color:white;">New Lesson Entry</div>
-                <div class="card-subtitle" style="color:rgba(200,210,240,0.7);">Fill in details for today's lesson</div>
+                <div class="card-title" style="color:white;" data-i18n="dr_new_entry">New Lesson Entry</div>
+                <div class="card-subtitle" style="color:rgba(200,210,240,0.7);" data-i18n="dr_fill_details">Fill in details for today's lesson</div>
               </div>
               <div id="dr-date-display" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);font-weight:700;"></div>
             </div>
             <div style="padding:14px 22px 0;border-bottom:1.5px solid var(--cream);">
-              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">📅 Today's Lessons — Click to fill report</div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;" data-i18n="dr_todays_lessons">📅 Today's Lessons — Click to fill report</div>
               <div id="dr-today-schedule"></div>
             </div>
             <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
@@ -1113,31 +1113,31 @@
               <!-- Class & Subject row -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div>
-                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Class</div>
+                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_class">Class</div>
                   <div style="display:flex;gap:8px;align-items:stretch;">
                     <select id="dr-class" onchange="drLoadStudents();" style="flex:1;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
-                      <option value="">— Select class —</option>
+                      <option value="" data-i18n="opt_select_class">— Select class —</option>
                     </select>
-                    <button onclick="drLoadStudents()" style="padding:9px 14px;border-radius:9px;border:none;background:var(--navy);color:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Load ↓</button>
+                    <button onclick="drLoadStudents()" style="padding:9px 14px;border-radius:9px;border:none;background:var(--navy);color:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;" data-i18n="dr_load">Load ↓</button>
                   </div>
                 </div>
                 <div>
-                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Subject</div>
+                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_subject">Subject</div>
                   <select id="dr-subject" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
-                    <option value="">— Select subject —</option>
-                    <option>English</option>
-                    <option>Maths</option>
-                    <option>Cambridge Maths</option>
-                    <option>Science</option>
-                    <option>Physics</option>
-                    <option>Chemistry</option>
-                    <option>Biology</option>
-                    <option>Russian Language</option>
-                    <option>GP (Hist-Geo)</option>
-                    <option>Economics</option>
-                    <option>Physical Education</option>
-                    <option>Art</option>
-                    <option>ICT</option>
+                    <option value="" data-i18n="opt_select_subject">— Select subject —</option>
+                    <option data-i18n="subj_english">English</option>
+                    <option data-i18n="subj_maths">Maths</option>
+                    <option data-i18n="subj_cmaths">Cambridge Maths</option>
+                    <option data-i18n="subj_science">Science</option>
+                    <option data-i18n="subj_physics">Physics</option>
+                    <option data-i18n="subj_chemistry">Chemistry</option>
+                    <option data-i18n="subj_biology">Biology</option>
+                    <option data-i18n="subj_russian">Russian Language</option>
+                    <option data-i18n="subj_gp">GP (Hist-Geo)</option>
+                    <option data-i18n="subj_econ">Economics</option>
+                    <option data-i18n="subj_pe">Physical Education</option>
+                    <option data-i18n="subj_art">Art</option>
+                    <option data-i18n="subj_ict">ICT</option>
                   </select>
                 </div>
               </div>
@@ -1145,44 +1145,58 @@
               <!-- Date & Period -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div>
-                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Date</div>
+                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_date">Date</div>
                   <input id="dr-date" type="date" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
                 </div>
                 <div>
-                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Lesson Period</div>
+                  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_period">Lesson Period</div>
                   <select id="dr-period" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
-                    <option value="1">Period 1</option>
-                    <option value="2">Period 2</option>
-                    <option value="3">Period 3</option>
-                    <option value="4">Period 4</option>
-                    <option value="5">Period 5</option>
-                    <option value="6">Period 6</option>
-                    <option value="7">Period 7</option>
-                    <option value="8">Period 8</option>
+                    <option value="1" data-i18n="period_1">Period 1</option>
+                    <option value="2" data-i18n="period_2">Period 2</option>
+                    <option value="3" data-i18n="period_3">Period 3</option>
+                    <option value="4" data-i18n="period_4">Period 4</option>
+                    <option value="5" data-i18n="period_5">Period 5</option>
+                    <option value="6" data-i18n="period_6">Period 6</option>
+                    <option value="7" data-i18n="period_7">Period 7</option>
+                    <option value="8" data-i18n="period_8">Period 8</option>
                   </select>
                 </div>
               </div>
 
               <!-- Topic covered -->
               <div>
-                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Topic / Lesson Title</div>
-                <input id="dr-topic" type="text" placeholder="e.g. Quadratic Equations — Chapter 5" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_topic">Topic / Lesson Title</div>
+                <input id="dr-topic" type="text" placeholder="e.g. Quadratic Equations — Chapter 5" data-i18n-ph="dr_topic_ph" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                  <label style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:7px;border:1.5px dashed var(--rule);background:var(--bg,#f8fafc);cursor:pointer;font-size:11.5px;color:var(--muted);font-weight:600;">
+                    📎 <span data-i18n="dr_attach_file">Attach file (image/PDF/Word)</span>
+                    <input type="file" id="dr-topic-file" accept="image/*,.pdf,.doc,.docx" style="display:none;" onchange="drHandleFileSelect(this,'topic')">
+                  </label>
+                  <span id="dr-topic-file-name" style="font-size:11px;color:var(--navy);font-weight:600;"></span>
+                </div>
               </div>
 
               <!-- General remark -->
               <div>
-                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Class Remark / Observations</div>
-                <textarea id="dr-remark" placeholder="General observation about the class today..." style="width:100%;height:70px;border-radius:9px;border:1.5px solid var(--rule);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;resize:none;outline:none;background:var(--white);"></textarea>
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_remark">Class Remark / Observations</div>
+                <textarea id="dr-remark" placeholder="General observation about the class today..." data-i18n-ph="dr_remark_ph" style="width:100%;height:70px;border-radius:9px;border:1.5px solid var(--rule);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;resize:none;outline:none;background:var(--white);"></textarea>
               </div>
 
               <!-- Homework assigned -->
               <div>
-                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Homework Assigned</div>
-                <input id="dr-homework" type="text" placeholder="e.g. Exercise 5.3 — Q1 to Q10 (due Thursday)" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_homework">Homework Assigned</div>
+                <input id="dr-homework" type="text" placeholder="e.g. Exercise 5.3 — Q1 to Q10 (due Thursday)" data-i18n-ph="dr_homework_ph" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                  <label style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:7px;border:1.5px dashed var(--rule);background:var(--bg,#f8fafc);cursor:pointer;font-size:11.5px;color:var(--muted);font-weight:600;">
+                    📎 <span data-i18n="dr_attach_file">Attach file (image/PDF/Word)</span>
+                    <input type="file" id="dr-homework-file" accept="image/*,.pdf,.doc,.docx" style="display:none;" onchange="drHandleFileSelect(this,'homework')">
+                  </label>
+                  <span id="dr-homework-file-name" style="font-size:11px;color:var(--navy);font-weight:600;"></span>
+                </div>
               </div>
 
               <button onclick="saveDailyReport()" style="padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--navy),#1a2448);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 14px rgba(10,15,46,0.2);" onmouseenter="this.style.transform='translateY(-1px)'" onmouseleave="this.style.transform='translateY(0)'">
-                💾 Save Lesson Report
+                <span data-i18n="dr_save">💾 Save Lesson Report</span>
               </button>
             </div>
           </div>
@@ -1190,12 +1204,12 @@
           <!-- Right: Student marks table -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title">Student Marks</div>
-              <div class="card-subtitle" id="dr-students-subtitle">Select a class to load students</div>
+              <div class="card-title" data-i18n="dr_student_marks">Student Marks</div>
+              <div class="card-subtitle" id="dr-students-subtitle" data-i18n="dr_select_class_load">Select a class to load students</div>
             </div>
             <div style="padding:0;" id="dr-students-wrap">
               <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">
-                👆 Select a class above to load the student list
+                <span data-i18n="dr_select_above">👆 Select a class above to load the student list</span>
               </div>
             </div>
           </div>
@@ -1207,21 +1221,21 @@
         <div class="card" style="margin-bottom:20px;">
           <div class="card-header">
             <div>
-              <div class="card-title">📋 Submitted Reports</div>
-              <div class="card-subtitle" id="dr-view-subtitle">All lesson reports</div>
+              <div class="card-title" data-i18n="dr_submitted_reports">📋 Submitted Reports</div>
+              <div class="card-subtitle" id="dr-view-subtitle" data-i18n="dr_all_reports">All lesson reports</div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <select id="dr-filter-class" onchange="drFilterReports()" style="padding:7px 12px;border-radius:8px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:12.5px;outline:none;">
-                <option value="">All Classes</option>
+                <option value="" data-i18n="opt_all_classes">All Classes</option>
               </select>
               <select id="dr-filter-subject" onchange="drFilterReports()" style="padding:7px 12px;border-radius:8px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:12.5px;outline:none;">
-                <option value="">All Subjects</option>
+                <option value="" data-i18n="opt_all_subjects">All Subjects</option>
               </select>
-              <button class="btn btn-outline" onclick="drExportReports()" style="font-size:12px;">⬇ Export</button>
+              <button class="btn btn-outline" onclick="drExportReports()" style="font-size:12px;"><span data-i18n="dr_export">⬇ Export</span></button>
             </div>
           </div>
           <div id="dr-reports-list" style="padding:0;">
-            <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">No reports submitted yet.</div>
+            <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;" data-i18n="dr_no_reports">No reports submitted yet.</div>
           </div>
         </div>
       </div>
@@ -1270,40 +1284,40 @@
 
     <div class="panel" id="panel-assessments">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-        <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;">📋 Assessments</h2><div style="font-size:12.5px;color:var(--muted);">Record formative and summative assessment scores</div></div>
-        <div style="display:flex;gap:8px;"><button onclick="asmSwitchTab('submit')" id="asm-tab-submit" class="btn btn-primary">✍️ Submit Assessment</button><button onclick="asmSwitchTab('view')" id="asm-tab-view" class="btn btn-outline">📊 View Results</button></div>
+        <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;"><span data-i18n="asm_title">📋 Assessments</span></h2><div style="font-size:12.5px;color:var(--muted);" data-i18n="asm_sub">Record formative and summative assessment scores</div></div>
+        <div style="display:flex;gap:8px;"><button onclick="asmSwitchTab('submit')" id="asm-tab-submit" class="btn btn-primary"><span data-i18n="asm_tab_submit">✍️ Submit Assessment</span></button><button onclick="asmSwitchTab('view')" id="asm-tab-view" class="btn btn-outline"><span data-i18n="asm_tab_view">📊 View Results</span></button></div>
       </div>
       <div id="asm-submit-section">
         <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px;">
           <div class="card">
-            <div class="card-header" style="background:linear-gradient(135deg,#0F172A,#1E293B);"><div><div class="card-title" style="color:white;">Assessment Details</div><div class="card-subtitle" style="color:rgba(255,255,255,0.5);">Fill in details then enter scores</div></div></div>
+            <div class="card-header" style="background:linear-gradient(135deg,#0F172A,#1E293B);"><div><div class="card-title" style="color:white;" data-i18n="asm_details">Assessment Details</div><div class="card-subtitle" style="color:rgba(255,255,255,0.5);" data-i18n="asm_fill_details">Fill in details then enter scores</div></div></div>
             <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
-              <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Class</div><select id="asm-class" onchange="asmLoadStudents()"><option value="">— Select class —</option></select></div>
-              <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Subject</div><select id="asm-subject" onchange="asmLoadStudents()"><option value="">— Select subject —</option></select></div>
-              <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Assessment Type</div>
+              <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;" data-i18n="disc_class">Class</div><select id="asm-class" onchange="asmLoadStudents()"><option value="" data-i18n="opt_select_class">— Select class —</option></select></div>
+              <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;" data-i18n="dr_subject">Subject</div><select id="asm-subject" onchange="asmLoadStudents()"><option value="" data-i18n="opt_select_subject">— Select subject —</option></select></div>
+              <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;" data-i18n="asm_type">Assessment Type</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                  <button id="asm-type-formative" onclick="asmSetType('formative')" style="padding:10px;border-radius:9px;border:2px solid var(--primary);background:var(--primary-light);color:var(--primary-deep);font-size:12.5px;font-weight:700;cursor:pointer;">📝 Formative</button>
-                  <button id="asm-type-summative" onclick="asmSetType('summative')" style="padding:10px;border-radius:9px;border:2px solid var(--rule);background:white;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;">📊 Summative</button>
+                  <button id="asm-type-formative" onclick="asmSetType('formative')" style="padding:10px;border-radius:9px;border:2px solid var(--primary);background:var(--primary-light);color:var(--primary-deep);font-size:12.5px;font-weight:700;cursor:pointer;"><span data-i18n="asm_formative">📝 Formative</span></button>
+                  <button id="asm-type-summative" onclick="asmSetType('summative')" style="padding:10px;border-radius:9px;border:2px solid var(--rule);background:white;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;"><span data-i18n="asm_summative">📊 Summative</span></button>
                 </div>
               </div>
-              <div id="asm-name-section"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Assessment Name</div><select id="asm-name"><option value="">— Select —</option></select></div>
+              <div id="asm-name-section"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;" data-i18n="asm_name">Assessment Name</div><select id="asm-name"><option value="" data-i18n="opt_select">— Select —</option></select></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Total Marks</div><input id="asm-total" type="number" value="100" min="1" onchange="asmUpdateTotalLabel()"></div>
-                <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;">Date</div><input id="asm-date" type="date"></div>
+                <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;" data-i18n="asm_total">Total Marks</div><input id="asm-total" type="number" value="100" min="1" onchange="asmUpdateTotalLabel()"></div>
+                <div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;" data-i18n="dr_date">Date</div><input id="asm-date" type="date"></div>
               </div>
-              <button onclick="asmSaveAssessment()" class="btn btn-primary" style="width:100%;padding:11px;">✓ Save Assessment</button>
+              <button onclick="asmSaveAssessment()" class="btn btn-primary" style="width:100%;padding:11px;"><span data-i18n="asm_save">✓ Save Assessment</span></button>
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><div><div class="card-title">Student Scores</div><div class="card-subtitle" id="asm-students-sub">Select a class to load students</div></div><div id="asm-pct-badge"></div></div>
-            <div style="padding:0;max-height:480px;overflow-y:auto;"><div id="asm-students-wrap"><div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">Select class and subject to load students</div></div></div>
+            <div class="card-header"><div><div class="card-title" data-i18n="asm_student_scores">Student Scores</div><div class="card-subtitle" id="asm-students-sub" data-i18n="dr_select_class_load">Select a class to load students</div></div><div id="asm-pct-badge"></div></div>
+            <div style="padding:0;max-height:480px;overflow-y:auto;"><div id="asm-students-wrap"><div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;" data-i18n="asm_select_both">Select class and subject to load students</div></div></div>
           </div>
         </div>
       </div>
       <div id="asm-view-section" style="display:none;">
         <div class="card">
-          <div class="card-header"><div><div class="card-title">Assessment Records</div><div class="card-subtitle" id="asm-view-sub">All assessments</div></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;"><select id="asm-filter-class" onchange="asmFilterView()"><option value="">All Classes</option></select><select id="asm-filter-type" onchange="asmFilterView()"><option value="">All Types</option><option value="formative">Formative</option><option value="summative">Summative</option></select><select id="asm-filter-subject" onchange="asmFilterView()"><option value="">All Subjects</option></select></div>
+          <div class="card-header"><div><div class="card-title" data-i18n="asm_records">Assessment Records</div><div class="card-subtitle" id="asm-view-sub" data-i18n="asm_all">All assessments</div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;"><select id="asm-filter-class" onchange="asmFilterView()"><option value="" data-i18n="opt_all_classes">All Classes</option></select><select id="asm-filter-type" onchange="asmFilterView()"><option value="" data-i18n="asm_all_types">All Types</option><option value="formative" data-i18n="asm_formative_plain">Formative</option><option value="summative" data-i18n="asm_summative_plain">Summative</option></select><select id="asm-filter-subject" onchange="asmFilterView()"><option value="" data-i18n="opt_all_subjects">All Subjects</option></select></div>
           </div>
           <div id="asm-view-list" style="padding:0;"></div>
         </div>
@@ -1314,24 +1328,24 @@
     <div class="panel" id="panel-messenger" style="padding:0;">
       <div style="display:flex;height:calc(100vh - 60px);overflow:hidden;">
         <div id="msg-sidebar" style="width:240px;min-width:240px;background:#0F172A;display:flex;flex-direction:column;overflow:hidden;">
-          <div style="padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.08);"><div style="font-size:15px;font-weight:800;color:white;font-family:'Outfit',sans-serif;">💬 Messages</div><div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px;">Redbridge Staff</div></div>
+          <div style="padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.08);"><div style="font-size:15px;font-weight:800;color:white;font-family:'Outfit',sans-serif;" data-i18n="msg_title">💬 Messages</div><div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px;" data-i18n="msg_staff">Redbridge Staff</div></div>
           <div style="overflow-y:auto;flex:1;padding:8px 0;">
-            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.15em;color:rgba(255,255,255,0.25);padding:8px 14px 4px;">Channels</div>
+            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.15em;color:rgba(255,255,255,0.25);padding:8px 14px 4px;" data-i18n="msg_channels">Channels</div>
             <div id="msg-channel-list"></div>
-            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.15em;color:rgba(255,255,255,0.25);padding:12px 14px 4px;">Direct Messages</div>
+            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.15em;color:rgba(255,255,255,0.25);padding:12px 14px 4px;" data-i18n="msg_dms">Direct Messages</div>
             <div id="msg-dm-list" style="max-height:300px;overflow-y:auto;"></div>
           </div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:white;">
-          <div id="msg-chat-header" style="padding:12px 18px;border-bottom:1.5px solid var(--rule);display:flex;align-items:center;gap:10px;background:white;flex-shrink:0;"><div id="msg-header-icon" style="font-size:20px;">#</div><div><div id="msg-header-name" style="font-size:14px;font-weight:800;color:var(--ink);">general</div><div id="msg-header-sub" style="font-size:11.5px;color:var(--muted);">All staff</div></div></div>
+          <div id="msg-chat-header" style="padding:12px 18px;border-bottom:1.5px solid var(--rule);display:flex;align-items:center;gap:10px;background:white;flex-shrink:0;"><div id="msg-header-icon" style="font-size:20px;">#</div><div><div id="msg-header-name" style="font-size:14px;font-weight:800;color:var(--ink);">general</div><div id="msg-header-sub" style="font-size:11.5px;color:var(--muted);" data-i18n="msg_all_staff">All staff</div></div></div>
           <div id="msg-messages" style="flex:1;overflow-y:auto;padding:12px 18px;display:flex;flex-direction:column;gap:2px;background:var(--bg-subtle);"></div>
           <div id="msg-reply-bar" style="display:none;padding:8px 18px;background:#EEF2FF;border-top:1.5px solid #C7D2FE;font-size:12px;color:var(--primary);align-items:center;justify-content:space-between;"><span id="msg-reply-text" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span><button onclick="msgClearReply()" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--primary);margin-left:8px;">✕</button></div>
           <div id="msg-emoji-picker" style="display:none;padding:10px 12px;background:white;border-top:1.5px solid var(--rule);flex-wrap:wrap;gap:4px;max-height:120px;overflow-y:auto;"></div>
           <div style="padding:10px 14px;border-top:1.5px solid var(--rule);background:white;display:flex;align-items:flex-end;gap:8px;flex-shrink:0;">
             <label style="cursor:pointer;padding:8px;border-radius:8px;border:1.5px solid var(--rule);background:var(--bg);display:flex;align-items:center;">🖼<input type="file" id="msg-image-input" accept="image/*" style="display:none;" onchange="msgHandleImage(event)"></label>
             <button onclick="msgToggleEmoji()" style="padding:8px;border-radius:8px;border:1.5px solid var(--rule);background:var(--bg);font-size:16px;cursor:pointer;">😊</button>
-            <textarea id="msg-input" placeholder="Message…" rows="1" style="flex:1;padding:9px 12px;border-radius:10px;border:1.5px solid var(--rule);font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;outline:none;resize:none;max-height:100px;overflow-y:auto;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();msgSend();}"></textarea>
-            <button onclick="msgSend()" class="btn btn-primary">Send</button>
+            <textarea id="msg-input" placeholder="Message…" data-i18n-ph="msg_placeholder" rows="1" style="flex:1;padding:9px 12px;border-radius:10px;border:1.5px solid var(--rule);font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;outline:none;resize:none;max-height:100px;overflow-y:auto;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();msgSend();}"></textarea>
+            <button onclick="msgSend()" class="btn btn-primary"><span data-i18n="msg_send">Send</span></button>
           </div>
         </div>
       </div>
@@ -3186,10 +3200,19 @@ function renderIncidentLog() {
       var cur = inc.status || 'logged';
       var sc2 = statusColors[cur] || statusColors['logged'];
 
+      var STATUS_LABEL_RU = {
+        'logged':'Зарегистрирован', 'in-progress':'В процессе', 'reported':'Сообщено',
+        'parent-contacted':'Связались с родителями', 'escalated':'Эскалировано', 'resolved':'Решено'
+      };
+      function statusLabel(s) {
+        if (_lang === 'ru' && STATUS_LABEL_RU[s]) return STATUS_LABEL_RU[s];
+        return s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g,' ');
+      }
+
       // Status badge showing current
       var badge = document.createElement('div');
       badge.style.cssText = 'font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:20px;margin-bottom:5px;background:'+sc2.bg+';color:'+sc2.color+';border:1.5px solid '+sc2.border+';text-align:center;white-space:nowrap;';
-      badge.textContent = cur.charAt(0).toUpperCase() + cur.slice(1).replace(/-/g,' ');
+      badge.textContent = statusLabel(cur);
 
       // Status update select
       var sel = document.createElement('select');
@@ -3200,14 +3223,14 @@ function renderIncidentLog() {
       statuses.forEach(function(s) {
         var opt = document.createElement('option');
         opt.value = s;
-        opt.textContent = s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g,' ');
+        opt.textContent = statusLabel(s);
         if (s === cur) opt.selected = true;
         sel.appendChild(opt);
       });
 
       // Update button
       var btn = document.createElement('button');
-      btn.textContent = 'Update';
+      btn.textContent = (_lang === 'ru' ? 'Обновить' : 'Update');
       btn.style.cssText = 'width:100%;padding:4px 8px;border-radius:6px;border:1.5px solid var(--navy);background:var(--navy);color:white;font-size:11px;font-weight:700;cursor:pointer;';
 
       (function(incId, badgeEl, selEl) {
@@ -5045,7 +5068,14 @@ function renderIncidentLog() {
 
   // ALL classes in school
   var ALL_CLASSES = ['1A','1B','1C','2A','2B','2C','3A','3B','3C',
-    '4A','4B','4C','5A','5B','6A','6B','6C','7A','7B','7C','8A','8B','9A','10A'];
+    '4A','4B','4C','5A','5B','5C','6A','6B','7A','7B','7C',
+    '8A','8B','8C','9A','9B','10-11'];
+
+  var CLASS_FACULTY = {
+    '8A': 'Physics & Maths', '8B': 'Chemistry & Biology', '8C': 'Humanities',
+    '9A': 'Physics & Maths', '9B': 'Chemistry & Biology',
+    '10-11': 'Humanities (Combined)'
+  };
 
   // Class teacher map — who is teacher of which class
   var CLASS_TEACHER_MAP = {};
@@ -5147,16 +5177,20 @@ function renderIncidentLog() {
       var added = 0;
       rows.forEach(function(r) {
         var rep = {
-          id:       String(r.id || r.teacher_username + '_' + r.class + '_' + r.date),
-          cls:      r.class,
-          subject:  r.subject,
-          teacher:  r.teacher_name || '',
-          date:     r.date,
-          period:   r.period   || '',
-          topic:    r.topic    || '',
-          homework: r.homework || '',
-          remark:   r.remark   || '',
-          students: r.students || []
+          id:               String(r.id || r.teacher_username + '_' + r.class + '_' + r.date),
+          cls:              r.class,
+          subject:          r.subject,
+          teacher:          r.teacher_name || '',
+          date:             r.date,
+          period:           r.period   || '',
+          topic:            r.topic    || '',
+          homework:         r.homework || '',
+          remark:           r.remark   || '',
+          students:         r.students || [],
+          topic_file_url:   r.topic_file_url    || '',
+          topic_file_name:  r.topic_file_name   || '',
+          homework_file_url:  r.homework_file_url  || '',
+          homework_file_name: r.homework_file_name || ''
         };
         if (!existingIds[rep.id]) {
           dailyReports.push(rep);
@@ -5262,7 +5296,58 @@ function renderIncidentLog() {
   }
 
   // ── SAVE DAILY REPORT ─────────────────────────────────────────────────────
-  function saveDailyReport() {
+    // ══ DAILY REPORT FILE ATTACHMENTS ═══════════════════════════════════════
+  var _drPendingFiles = { topic: null, homework: null };
+
+  function drHandleFileSelect(input, field) {
+    var file = input.files[0];
+    if (!file) return;
+
+    // 10MB limit
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('File too large. Max size is 10MB.');
+      input.value = '';
+      return;
+    }
+
+    _drPendingFiles[field] = file;
+    var nameEl = document.getElementById('dr-' + field + '-file-name');
+    if (nameEl) nameEl.textContent = '✓ ' + file.name;
+  }
+
+  function drUploadFile(file) {
+    // Uploads to Supabase Storage bucket 'daily-report-files', returns {url, name}
+    var ext = file.name.split('.').pop();
+    var safeName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    var path = safeName;
+
+    return file.arrayBuffer().then(function(buf) {
+      return fetch(_SB_URL + '/storage/v1/object/daily-report-files/' + path, {
+        method: 'POST',
+        headers: {
+          'apikey': _SB_KEY,
+          'Authorization': 'Bearer ' + _SB_KEY,
+          'Content-Type': file.type || 'application/octet-stream'
+        },
+        body: buf
+      }).then(function(r) {
+        if (!r.ok) return r.text().then(function(t){ throw new Error('Upload failed: ' + t); });
+        var publicUrl = _SB_URL + '/storage/v1/object/public/daily-report-files/' + path;
+        return { url: publicUrl, name: file.name };
+      });
+    });
+  }
+
+  function drClearFileInputs() {
+    _drPendingFiles = { topic: null, homework: null };
+    var t1 = document.getElementById('dr-topic-file'); if (t1) t1.value = '';
+    var t2 = document.getElementById('dr-homework-file'); if (t2) t2.value = '';
+    var n1 = document.getElementById('dr-topic-file-name'); if (n1) n1.textContent = '';
+    var n2 = document.getElementById('dr-homework-file-name'); if (n2) n2.textContent = '';
+  }
+
+
+function saveDailyReport() {
     var cls     = (document.getElementById('dr-class')||{}).value;
     var subject = (document.getElementById('dr-subject')||{}).value;
     var dateEl  = document.getElementById('dr-date');
@@ -5286,14 +5371,38 @@ function renderIncidentLog() {
     }
     var rep = { id:'dr'+Date.now(), date:date, cls:cls, subject:subject,
       teacher: _currentUser ? _currentUser.name : '',
-      period:period, topic:topic, remark:remark, homework:homework, students:students };
-    dailyReports.push(rep);
-    saveDailyReports();
-    if (typeof sbSaveDailyReport === 'function') {
-      sbSaveDailyReport(rep).then(function(){ updateCloudStatus('saved'); })
-        .catch(function(){ updateCloudStatus('error'); });
+      period:period, topic:topic, remark:remark, homework:homework, students:students,
+      topicFileUrl:'', topicFileName:'', homeworkFileUrl:'', homeworkFileName:'' };
+
+    showToast('Saving report…');
+
+    // Upload any attached files first, then save the report
+    var uploadPromises = [];
+    if (_drPendingFiles.topic) {
+      uploadPromises.push(
+        drUploadFile(_drPendingFiles.topic).then(function(res) {
+          rep.topicFileUrl = res.url; rep.topicFileName = res.name;
+        }).catch(function(e){ console.error('Topic file upload failed:', e); })
+      );
     }
-    showToast('Report saved for Class ' + cls + ' · ' + subject);
+    if (_drPendingFiles.homework) {
+      uploadPromises.push(
+        drUploadFile(_drPendingFiles.homework).then(function(res) {
+          rep.homeworkFileUrl = res.url; rep.homeworkFileName = res.name;
+        }).catch(function(e){ console.error('Homework file upload failed:', e); })
+      );
+    }
+
+    Promise.all(uploadPromises).then(function() {
+      dailyReports.push(rep);
+      saveDailyReports();
+      if (typeof sbSaveDailyReport === 'function') {
+        sbSaveDailyReport(rep).then(function(){ updateCloudStatus('saved'); })
+          .catch(function(){ updateCloudStatus('error'); });
+      }
+      drClearFileInputs();
+      showToast('Report saved for Class ' + cls + ' · ' + subject);
+    });
   }
 
   // ── VIEW REPORTS ──────────────────────────────────────────────────────────
@@ -5342,7 +5451,33 @@ function renderIncidentLog() {
       var body = document.createElement('div');
       body.id = id;
       body.style.cssText = 'display:none;padding:12px 16px;border-top:1px solid var(--rule);';
-      body.innerHTML = drRenderStudentRows(rep);
+
+      var lessonInfo = '';
+      if (rep.topic || rep.topic_file_url || rep.homework || rep.homework_file_url || rep.remark) {
+        lessonInfo += '<div style="background:#f8fafc;border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12.5px;">';
+        if (rep.topic) {
+          lessonInfo += '<div style="margin-bottom:6px;"><b>Topic:</b> ' + rep.topic + '</div>';
+        }
+        if (rep.topic_file_url || rep.topicFileUrl) {
+          var tUrl = rep.topic_file_url || rep.topicFileUrl;
+          var tName = rep.topic_file_name || rep.topicFileName || 'Classwork file';
+          lessonInfo += '<div style="margin-bottom:6px;"><a href="' + tUrl + '" target="_blank" style="color:var(--navy,var(--blue));font-weight:700;text-decoration:none;">📎 ' + tName + ' ↗</a></div>';
+        }
+        if (rep.homework) {
+          lessonInfo += '<div style="margin-bottom:6px;"><b>Homework:</b> ' + rep.homework + '</div>';
+        }
+        if (rep.homework_file_url || rep.homeworkFileUrl) {
+          var hUrl = rep.homework_file_url || rep.homeworkFileUrl;
+          var hName = rep.homework_file_name || rep.homeworkFileName || 'Homework file';
+          lessonInfo += '<div style="margin-bottom:6px;"><a href="' + hUrl + '" target="_blank" style="color:var(--navy,var(--blue));font-weight:700;text-decoration:none;">📎 ' + hName + ' ↗</a></div>';
+        }
+        if (rep.remark) {
+          lessonInfo += '<div><b>Remark:</b> ' + rep.remark + '</div>';
+        }
+        lessonInfo += '</div>';
+      }
+
+      body.innerHTML = lessonInfo + drRenderStudentRows(rep);
 
       var delBtn = document.createElement('button');
       delBtn.textContent = 'Delete';
@@ -6126,16 +6261,20 @@ function renderIncidentLog() {
 
   function sbSaveDailyReport(rep) {
     var payload = {
-      teacher_name:     rep.teacher || '',
-      teacher_username: _currentUser ? (_currentUser.username||_currentUser.user||'') : '',
-      class:            rep.cls,
-      subject:          rep.subject,
-      date:             rep.date,
-      period:           rep.period   || '',
-      topic:            rep.topic    || '',
-      remark:           rep.remark   || '',
-      homework:         rep.homework || '',
-      students:         rep.students || []
+      teacher_name:        rep.teacher || '',
+      teacher_username:    _currentUser ? (_currentUser.username||_currentUser.user||'') : '',
+      class:               rep.cls,
+      subject:             rep.subject,
+      date:                rep.date,
+      period:              rep.period   || '',
+      topic:                rep.topic    || '',
+      remark:              rep.remark   || '',
+      homework:            rep.homework || '',
+      students:            rep.students || [],
+      topic_file_url:      rep.topicFileUrl    || null,
+      topic_file_name:     rep.topicFileName   || null,
+      homework_file_url:   rep.homeworkFileUrl || null,
+      homework_file_name:  rep.homeworkFileName|| null
     };
     // Try upsert with id so duplicate reports get updated not rejected
     if (rep.id) payload.id = rep.id;
@@ -6801,6 +6940,61 @@ function renderIncidentLog() {
       student: 'Ученик', class: 'Класс', subject: 'Предмет',
       date: 'Дата', teacher: 'Учитель', score: 'Балл',
       new_action: '＋ Новое действие', export_btn: '⬇ Экспорт',
+    
+      // Daily Report
+      dr_h_title: 'Дневной отчёт по уроку', dr_h_sub: 'Запись оценок и заметок по каждому уроку',
+      dr_tab_submit: '✍️ Подать отчёт', dr_tab_view: '📋 Просмотр отчётов',
+      dr_new_entry: 'Новая запись урока', dr_fill_details: 'Заполните данные сегодняшнего урока',
+      dr_todays_lessons: '📅 Сегодняшние уроки — нажмите для заполнения',
+      dr_class: 'Класс', dr_load: 'Загрузить ↓', dr_subject: 'Предмет',
+      dr_date: 'Дата', dr_period: 'Урок по расписанию',
+      dr_topic: 'Тема / название урока', dr_topic_ph: 'напр. Квадратные уравнения — Глава 5',
+      dr_remark: 'Замечание по классу / наблюдения', dr_remark_ph: 'Общее наблюдение о классе сегодня...',
+      dr_homework: 'Домашнее задание', dr_homework_ph: 'напр. Упражнение 5.3 — с 1 по 10 (до четверга)',
+      dr_save: '💾 Сохранить отчёт', dr_student_marks: 'Оценки учеников',
+      dr_select_class_load: 'Выберите класс для загрузки учеников',
+      dr_select_above: '👆 Выберите класс выше, чтобы загрузить список учеников',
+      dr_submitted_reports: '📋 Поданные отчёты', dr_all_reports: 'Все отчёты по урокам',
+      dr_export: '⬇ Экспорт', dr_no_reports: 'Отчёты ещё не поданы.', dr_attach_file: 'Прикрепить файл (изображение/PDF/Word)',
+      opt_select_class: '— Выберите класс —', opt_select_subject: '— Выберите предмет —',
+      opt_all_classes: 'Все классы', opt_all_subjects: 'Все предметы', opt_select: '— Выбрать —',
+      subj_english: 'Английский', subj_maths: 'Математика', subj_cmaths: 'Кембриджская математика',
+      subj_science: 'Естествознание', subj_physics: 'Физика', subj_chemistry: 'Химия',
+      subj_biology: 'Биология', subj_russian: 'Русский язык', subj_gp: 'ОП (История-География)',
+      subj_econ: 'Экономика', subj_pe: 'Физкультура', subj_art: 'Искусство', subj_ict: 'ИКТ',
+      period_1: 'Урок 1', period_2: 'Урок 2', period_3: 'Урок 3', period_4: 'Урок 4',
+      period_5: 'Урок 5', period_6: 'Урок 6', period_7: 'Урок 7', period_8: 'Урок 8',
+
+      // Discipline
+      disc_title: 'Трекер дисциплины', disc_sub: 'Регистрация и отслеживание случаев нарушения дисциплины',
+      disc_log_incident: '+ Зарегистрировать случай', disc_view_resolved: 'Просмотр решённых',
+      disc_log_new: 'Регистрация нового случая', disc_student_name: 'Имя ученика',
+      disc_full_name_ph: 'Полное имя', disc_class: 'Класс', disc_incident_type: 'Тип нарушения',
+      inc_fighting: 'Драка', inc_bullying: 'Травля', inc_disrespect: 'Неуважение',
+      inc_cheating: 'Списывание', inc_vandalism: 'Порча имущества', inc_late: 'Опоздание',
+      inc_phone: 'Использование телефона', inc_other: 'Другое',
+      disc_stage: 'Этап', stage_1: 'Этап 1 — Незначительный', stage_2: 'Этап 2 — Умеренный',
+      stage_3: 'Этап 3 — Серьёзный', stage_4: 'Этап 4 — Критический',
+      disc_notes: 'Заметки', disc_notes_ph: 'Краткое описание случая…',
+      disc_save: 'Сохранить случай', disc_cancel: 'Отмена',
+      disc_active: 'Активные случаи', disc_open_cases: 'Открытые случаи, требующие действий',
+      disc_no_active: 'Нет активных случаев', disc_all_clear: 'Всё чисто на 2026–27 год',
+
+      // Assessments
+      asm_title: '📋 Оценивание', asm_sub: 'Запись формативных и суммативных оценок',
+      asm_tab_submit: '✍️ Подать оценку', asm_tab_view: '📊 Просмотр результатов',
+      asm_details: 'Детали оценивания', asm_fill_details: 'Заполните детали, затем внесите баллы',
+      asm_type: 'Тип оценивания', asm_formative: '📝 Формативное', asm_summative: '📊 Суммативное',
+      asm_name: 'Название оценивания', asm_total: 'Максимальный балл',
+      asm_save: '✓ Сохранить оценивание', asm_student_scores: 'Баллы учеников',
+      asm_select_both: 'Выберите класс и предмет для загрузки учеников',
+      asm_records: 'Записи оценивания', asm_all: 'Все оценивания',
+      asm_all_types: 'Все типы', asm_formative_plain: 'Формативное', asm_summative_plain: 'Суммативное',
+
+      // Messenger
+      msg_title: '💬 Сообщения', msg_staff: 'Персонал Redbridge', msg_channels: 'Каналы',
+      msg_dms: 'Личные сообщения', msg_all_staff: 'Весь персонал',
+      msg_placeholder: 'Сообщение…', msg_send: 'Отправить',
     },
 
     uz: {
@@ -6888,6 +7082,25 @@ function renderIncidentLog() {
   }
 
   function applyTranslations() {
+    // Generic pass — translate every element tagged with data-i18n / data-i18n-ph
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
+      var val = t(key);
+      if (val) el.textContent = val;
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-ph');
+      var val = t(key);
+      if (val) el.placeholder = val;
+    });
+    // Re-translate messenger channel list + incident statuses if visible
+    if (typeof msgBuildSidebar === 'function' && document.getElementById('msg-channel-list')) {
+      msgBuildSidebar();
+    }
+    if (typeof renderIncidentLog === 'function' && document.getElementById('incident-log-body')) {
+      renderIncidentLog();
+    }
+
     // Nav items
     var navMap = {
       dashboard:'nav_dashboard', teachers:'nav_teachers', classes:'nav_classes',
@@ -7862,8 +8075,10 @@ function renderIncidentLog() {
       var tile = document.createElement('div');
       tile.id = 'class-tile-' + cls;
       tile.style.cssText = 'background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 14px;cursor:pointer;text-align:center;transition:all 0.12s;';
+      var faculty = (typeof CLASS_FACULTY !== 'undefined' && CLASS_FACULTY[cls]) ? CLASS_FACULTY[cls] : '';
       tile.innerHTML =
-        '<div style="font-size:16px;font-weight:700;color:var(--text-1);margin-bottom:4px;">' + cls + '</div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text-1);margin-bottom:2px;">' + cls + '</div>' +
+        (faculty ? '<div style="font-size:9.5px;color:var(--blue,var(--navy));font-weight:600;margin-bottom:4px;">' + faculty + '</div>' : '') +
         '<div id="class-count-' + cls + '" style="font-size:11px;color:var(--text-3);">0 students</div>';
       tile.addEventListener('mouseenter', function(){ if(_selectedClass!==cls){ this.style.borderColor='var(--blue)'; this.style.boxShadow='var(--shadow-2)'; } });
       tile.addEventListener('mouseleave', function(){ if(_selectedClass!==cls){ this.style.borderColor='var(--border)'; this.style.boxShadow='none'; } });
@@ -8991,34 +9206,34 @@ function renderIncidentLog() {
     <div class="panel" id="panel-discipline">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
-          <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;">Discipline Tracker</h2>
-          <div style="font-size:12.5px;color:var(--text-3);">Log and track student discipline incidents</div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;" data-i18n="disc_title">Discipline Tracker</h2>
+          <div style="font-size:12.5px;color:var(--text-3);" data-i18n="disc_sub">Log and track student discipline incidents</div>
         </div>
         <div style="display:flex;gap:8px;">
-          <button onclick="document.getElementById('add-incident-form').style.display='block'" class="btn btn-primary">+ Log Incident</button>
-          <button onclick="discShowResolved()" class="btn btn-outline">View Resolved</button>
+          <button onclick="document.getElementById('add-incident-form').style.display='block'" class="btn btn-primary"><span data-i18n="disc_log_incident">+ Log Incident</span></button>
+          <button onclick="discShowResolved()" class="btn btn-outline"><span data-i18n="disc_view_resolved">View Resolved</span></button>
         </div>
       </div>
 
       <div id="add-incident-form" style="display:none;margin-bottom:20px;">
         <div class="card">
-          <div class="card-header"><div class="card-title">Log New Incident</div></div>
+          <div class="card-header"><div class="card-title" data-i18n="disc_log_new">Log New Incident</div></div>
           <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Student Name</label>
-              <input id="inc-student" type="text" placeholder="Full name"></div>
-            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Class</label>
-              <select id="inc-class"><option value="">— Select class —</option></select></div>
-            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Incident Type</label>
-              <select id="inc-type"><option>Fighting</option><option>Bullying</option><option>Disrespect</option><option>Cheating</option><option>Vandalism</option><option>Late</option><option>Phone use</option><option>Other</option></select></div>
-            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Stage</label>
-              <select id="inc-stage"><option value="1">Stage 1 — Minor</option><option value="2">Stage 2 — Moderate</option><option value="3">Stage 3 — Serious</option><option value="4">Stage 4 — Critical</option></select></div>
+            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_student_name">Student Name</label>
+              <input id="inc-student" type="text" placeholder="Full name" data-i18n-ph="disc_full_name_ph"></div>
+            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_class">Class</label>
+              <select id="inc-class"><option value="" data-i18n="opt_select_class">— Select class —</option></select></div>
+            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_incident_type">Incident Type</label>
+              <select id="inc-type"><option data-i18n="inc_fighting">Fighting</option><option data-i18n="inc_bullying">Bullying</option><option data-i18n="inc_disrespect">Disrespect</option><option data-i18n="inc_cheating">Cheating</option><option data-i18n="inc_vandalism">Vandalism</option><option data-i18n="inc_late">Late</option><option data-i18n="inc_phone">Phone use</option><option data-i18n="inc_other">Other</option></select></div>
+            <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_stage">Stage</label>
+              <select id="inc-stage"><option value="1" data-i18n="stage_1">Stage 1 — Minor</option><option value="2" data-i18n="stage_2">Stage 2 — Moderate</option><option value="3" data-i18n="stage_3">Stage 3 — Serious</option><option value="4" data-i18n="stage_4">Stage 4 — Critical</option></select></div>
             <div style="grid-column:1/-1;">
-              <label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Notes</label>
-              <textarea id="inc-notes" rows="2" placeholder="Brief description of the incident…"></textarea>
+              <label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_notes">Notes</label>
+              <textarea id="inc-notes" rows="2" placeholder="Brief description of the incident…" data-i18n-ph="disc_notes_ph"></textarea>
             </div>
             <div style="grid-column:1/-1;display:flex;gap:8px;">
-              <button onclick="logIncident()" class="btn btn-primary">Save Incident</button>
-              <button onclick="document.getElementById('add-incident-form').style.display='none'" class="btn btn-outline">Cancel</button>
+              <button onclick="logIncident()" class="btn btn-primary"><span data-i18n="disc_save">Save Incident</span></button>
+              <button onclick="document.getElementById('add-incident-form').style.display='none'" class="btn btn-outline"><span data-i18n="disc_cancel">Cancel</span></button>
             </div>
           </div>
         </div>
@@ -9026,12 +9241,12 @@ function renderIncidentLog() {
 
       <div class="card">
         <div class="card-header">
-          <div><div class="card-title">Active Incidents</div><div class="card-subtitle">Open cases requiring action</div></div>
+          <div><div class="card-title" data-i18n="disc_active">Active Incidents</div><div class="card-subtitle" data-i18n="disc_open_cases">Open cases requiring action</div></div>
         </div>
         <div id="incident-log-body" style="padding:40px;text-align:center;color:var(--text-4);">
           <div style="font-size:36px;margin-bottom:12px;">✓</div>
-          <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:6px;">No active incidents</div>
-          <div style="font-size:12.5px;">All clear for 2026–27</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:6px;" data-i18n="disc_no_active">No active incidents</div>
+          <div style="font-size:12.5px;" data-i18n="disc_all_clear">All clear for 2026–27</div>
         </div>
       </div>
     </div>
