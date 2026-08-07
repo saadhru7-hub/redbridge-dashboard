@@ -3276,6 +3276,10 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
 </script>
 
 <script>
+  // ══ SUPABASE CLIENT (loaded first, before anything that could throw) ══
+    // ══ SUPABASE CLIENT ══════════════════════════════════════════════════════
+  var _SB_URL='https://rqbdfwdegblwzbdqjsdo.supabase.co', _SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYmRmd2RlZ2Jsd3piZHFqc2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMjEzMzgsImV4cCI6MjA4OTc5NzMzOH0.GdfidDRBpdD1tZEam7_gjWaj5basR60FOjUOxvL6V2k';
+
 function renderIncidentLog() {
     var body = document.getElementById('incident-log-body');
     if (!body) return;
@@ -6382,8 +6386,7 @@ function saveDailyReport() {
   function drLoadStudents() { /* replaced by grid */ }
 
 
-  // ══ SUPABASE CLIENT ══════════════════════════════════════════════════════
-  var _SB_URL='https://rqbdfwdegblwzbdqjsdo.supabase.co', _SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYmRmd2RlZ2Jsd3piZHFqc2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMjEzMzgsImV4cCI6MjA4OTc5NzMzOH0.GdfidDRBpdD1tZEam7_gjWaj5basR60FOjUOxvL6V2k';
+
 
   function sbFetch(table, method, body, params) {
     var m   = method || 'GET';
