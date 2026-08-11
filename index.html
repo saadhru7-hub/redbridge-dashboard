@@ -906,8 +906,7 @@
         <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;">👨‍🏫 Teacher Performance</h2>
         <div style="font-size:12.5px;color:var(--muted);">Track and monitor teaching staff performance</div></div>
         <div style="display:flex;gap:8px;">
-          <button onclick="obsShowForm()" class="btn btn-primary">+ Add Observation</button>
-          <button onclick="switchDashboardTab('overview')" class="btn btn-outline">📊 Overview</button>
+          <button onclick="showPanel('rubric', null)" class="btn btn-primary">+ Add Observation</button>
         </div>
       </div>
       <div id="teacher-overview-section">
@@ -915,7 +914,7 @@
           <div style="font-size:48px;margin-bottom:16px;">👨‍🏫</div>
           <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;">No teacher data yet</div>
           <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Add teachers and conduct observations to see performance data here.</div>
-          <button onclick="obsShowForm()" class="btn btn-primary">Add First Observation</button>
+          <button onclick="showPanel('rubric', null)" class="btn btn-primary">Add First Observation</button>
         </div>
       </div>
       <div id="obs-form-section" style="display:none;"></div>
@@ -1175,8 +1174,12 @@
           <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
             <input type="hidden" id="stu-edit-id">
             <div>
-              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Full Name *</label>
-              <input id="stu-name" type="text" placeholder="e.g. Aliyev Sardor">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Full Name — English *</label>
+              <input id="stu-name-en" type="text" placeholder="e.g. Aliyev Sardor">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Full Name — Russian (Полное имя) *</label>
+              <input id="stu-name-ru" type="text" placeholder="напр. Алиев Сардор">
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div>
@@ -1203,12 +1206,48 @@
               </div>
             </div>
             <div>
-              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Parent / Guardian Name</label>
-              <input id="stu-parent" type="text" placeholder="Full name">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Father's Name — English</label>
+              <input id="stu-father-en" type="text" placeholder="e.g. Aliyev Rustam">
             </div>
             <div>
-              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Parent Phone</label>
-              <input id="stu-phone" type="text" placeholder="+998 90 000 00 00">
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Father's Name — Russian (Имя отца)</label>
+              <input id="stu-father-ru" type="text" placeholder="напр. Алиев Рустам">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Father's Phone</label>
+              <input id="stu-father-phone" type="text" placeholder="+998 90 000 00 00">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Mother's Name — English</label>
+              <input id="stu-mother-en" type="text" placeholder="e.g. Aliyeva Nodira">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Mother's Name — Russian (Имя матери)</label>
+              <input id="stu-mother-ru" type="text" placeholder="напр. Алиева Нодира">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Mother's Phone</label>
+              <input id="stu-mother-phone" type="text" placeholder="+998 90 000 00 00">
+            </div>
+
+            <div style="border-top:1.5px solid var(--border);padding-top:14px;margin-top:2px;">
+              <div style="font-size:11.5px;font-weight:700;color:var(--text-2);margin-bottom:10px;">Guardian (if different from parents)</div>
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Guardian's Name — English</label>
+              <input id="stu-guardian-en" type="text" placeholder="e.g. Aliyev Bekzod">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Guardian's Name — Russian</label>
+              <input id="stu-guardian-ru" type="text" placeholder="напр. Алиев Бекзод">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Relationship</label>
+              <input id="stu-guardian-rel" type="text" placeholder="e.g. Uncle, Grandmother">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Guardian's Phone</label>
+              <input id="stu-guardian-phone" type="text" placeholder="+998 90 000 00 00">
             </div>
             <div>
               <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Notes (optional)</label>
@@ -1254,23 +1293,120 @@
     </div>
 
     <div class="panel" id="panel-rubric">
-
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-        <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;">🔍 Observation Rubric</h2>
-        <div style="font-size:12.5px;color:var(--muted);">Cambridge teaching standards observation framework</div></div>
-        <button onclick="obsShowForm()" class="btn btn-primary">+ New Observation</button>
+        <div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-1,var(--ink));margin-bottom:2px;">Observation Rubric</h2>
+          <div style="font-size:12.5px;color:var(--text-3,var(--muted));">Cambridge teaching standards observation framework</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="obsCambSwitchTab('new')" id="obsc-tab-new" class="btn btn-primary">+ New Observation</button>
+          <button onclick="obsCambSwitchTab('reports')" id="obsc-tab-reports" class="btn btn-outline">📋 Saved Reports</button>
+        </div>
       </div>
-      <div class="card" style="text-align:center;padding:60px 20px;">
-        <div style="font-size:48px;margin-bottom:16px;">🔍</div>
-        <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;">No observations yet</div>
-        <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Classroom observations for 2026–27 will be recorded here using the Cambridge rubric framework.</div>
-        <button onclick="obsShowForm()" class="btn btn-primary">Start First Observation</button>
+
+      <!-- ══ NEW OBSERVATION FORM ══ -->
+      <div id="obsc-form-section">
+        <div class="card">
+          <div class="card-header" style="background:linear-gradient(135deg,#0F172A,#1E293B);">
+            <div>
+              <div class="card-title" style="color:white;">Cambridge Classroom Observation</div>
+              <div class="card-subtitle" style="color:rgba(255,255,255,0.5);">Complete all six criteria to generate the report</div>
+            </div>
+          </div>
+          <div class="card-body">
+
+            <!-- Basic info -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Teacher Observed *</label>
+                <select id="obsc-teacher"><option value="">— Select teacher —</option></select>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Class *</label>
+                <select id="obsc-class"><option value="">— Select class —</option></select>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Subject *</label>
+                <select id="obsc-subject"><option value="">— Select subject —</option></select>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Date</label>
+                <input id="obsc-date" type="date">
+              </div>
+              <div style="grid-column:span 2;">
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Lesson Topic Observed</label>
+                <input id="obsc-topic" type="text" placeholder="e.g. Quadratic Equations — Chapter 5">
+              </div>
+            </div>
+
+            <!-- Criteria scoring -->
+            <div style="font-size:13px;font-weight:700;color:var(--text-1,var(--ink));margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border,var(--rule));">Assessment Criteria</div>
+            <div id="obsc-criteria-list" style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;"></div>
+
+            <!-- Total score display -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-radius:12px;margin-bottom:20px;" id="obsc-total-box">
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:0.7;">Overall Score</div>
+                <div id="obsc-total-score" style="font-size:24px;font-weight:800;">0 / 24</div>
+              </div>
+              <div id="obsc-total-rating" style="font-size:14px;font-weight:800;padding:6px 16px;border-radius:20px;">—</div>
+            </div>
+
+            <!-- Narrative fields -->
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Strengths Observed</label>
+                <textarea id="obsc-strengths" rows="2" placeholder="What went well in this lesson…"></textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Areas for Development</label>
+                <textarea id="obsc-development" rows="2" placeholder="Suggestions for growth…"></textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Recommended Follow-up Action</label>
+                <textarea id="obsc-action" rows="2" placeholder="e.g. Peer observation, CPD session, follow-up visit in 4 weeks…"></textarea>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;">
+              <button onclick="obsCambSave()" class="btn btn-primary" style="padding:11px 24px;">✓ Save Observation Report</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="obs-view-section" style="margin-top:20px;"></div>
+
+      <!-- ══ SAVED REPORTS LIST ══ -->
+      <div id="obsc-reports-section" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Observation Reports</div>
+              <div class="card-subtitle" id="obsc-reports-sub">All saved observations</div>
+            </div>
+            <select id="obsc-filter-teacher" onchange="obsCambFilterReports()" style="width:200px;"><option value="">All Teachers</option></select>
+          </div>
+          <div id="obsc-reports-list" style="padding:0;"></div>
+        </div>
+      </div>
+
+      <!-- ══ REPORT DETAIL / PRINT VIEW MODAL ══ -->
+      <div id="obsc-detail-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:640px;">
+          <div class="modal-header">
+            <div style="font-size:15px;font-weight:700;color:var(--text-1,var(--ink));">Observation Report</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button onclick="obsCambPrint()" class="btn btn-outline" style="padding:6px 12px;font-size:12px;">🖨 Print</button>
+              <button onclick="document.getElementById('obsc-detail-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3,var(--muted));">✕</button>
+            </div>
+          </div>
+          <div id="obsc-detail-body" style="padding:20px;"></div>
+        </div>
+      </div>
 
     </div>
 
-    <div class="panel" id="panel-timetable">
+    <div class="panel" 
+id="panel-timetable">
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;">📅 Timetable</h2>
@@ -1464,43 +1600,49 @@
 
     <!-- ── CALENDAR PANEL ── -->
     <div class="panel" id="panel-calendar">
-      <div class="two-col">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-1,var(--ink));margin-bottom:2px;">School Calendar</h2>
+          <div style="font-size:12.5px;color:var(--text-3,var(--muted));">Academic Year 2026–2027</div>
+        </div>
+        <button onclick="calOpenAddEvent(new Date().toISOString().slice(0,10))" class="btn btn-primary">+ New Event</button>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:10px 16px;background:var(--bg,#f8fafc);border-radius:10px;border:1px solid var(--border,var(--rule));">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.07em;margin-right:4px;">Legend:</div>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:10px;height:10px;border-radius:3px;background:#1d4ed8;display:inline-block;"></span>Quarter Begins</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:10px;height:10px;border-radius:3px;background:#991b1b;display:inline-block;"></span>Quarter Ends</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:10px;height:10px;border-radius:3px;background:#f59e0b;display:inline-block;"></span>Break</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:10px;height:10px;border-radius:3px;background:#dc2626;display:inline-block;"></span>Holiday</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;"><span style="width:10px;height:10px;border-radius:3px;background:#7c3aed;display:inline-block;"></span>Test / Exam</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:18px;">
+
+        <!-- Calendar grid -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">March 2027</div>
-            <div class="card-subtitle">Academic calendar view</div>
+            <button onclick="calPrevMonth()" style="background:none;border:1px solid var(--border,var(--rule));border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:14px;">←</button>
+            <div id="cal-month-label" style="font-size:14.5px;font-weight:700;color:var(--text-1,var(--ink));">Month Year</div>
+            <button onclick="calNextMonth()" style="background:none;border:1px solid var(--border,var(--rule));border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:14px;">→</button>
           </div>
           <div class="card-body">
-            <div class="cal-grid">
-              <div class="cal-day-name">Sun</div><div class="cal-day-name">Mon</div><div class="cal-day-name">Tue</div><div class="cal-day-name">Wed</div><div class="cal-day-name">Thu</div><div class="cal-day-name">Fri</div><div class="cal-day-name">Sat</div>
-              <div class="cal-day muted">23</div><div class="cal-day muted">24</div><div class="cal-day muted">25</div><div class="cal-day muted">26</div><div class="cal-day muted">27</div><div class="cal-day muted">28</div><div class="cal-day">1</div>
-              <div class="cal-day">2</div><div class="cal-day has-event">3</div><div class="cal-day">4</div><div class="cal-day">5</div><div class="cal-day has-event">6</div><div class="cal-day">7</div><div class="cal-day">8</div>
-              <div class="cal-day">9</div><div class="cal-day has-event">10</div><div class="cal-day">11</div><div class="cal-day">12</div><div class="cal-day today">13</div><div class="cal-day">14</div><div class="cal-day">15</div>
-              <div class="cal-day">16</div><div class="cal-day has-event">17</div><div class="cal-day has-event">18</div><div class="cal-day has-event">19</div><div class="cal-day has-event">20</div><div class="cal-day has-event">21</div><div class="cal-day">22</div>
-              <div class="cal-day">23</div><div class="cal-day">24</div><div class="cal-day">25</div><div class="cal-day has-event">26</div><div class="cal-day">27</div><div class="cal-day has-event">28</div><div class="cal-day">29</div>
-              <div class="cal-day has-event">30</div><div class="cal-day">31</div>
-            </div>
+            <div id="cal-grid-container"></div>
           </div>
         </div>
 
+        <!-- Upcoming events sidebar -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">Upcoming Events</div>
           </div>
-          <div class="card-body">
-            <div class="event-list">
-              <div class="event-item"><div class="event-dot" style="background:var(--danger)"></div><div><div class="event-name">Substitution Coverage — Hella Manzoor</div><div class="event-date">Ongoing · All affected classes</div></div></div>
-              <div class="event-item"><div class="event-dot" style="background:var(--gold)"></div><div><div class="event-name">IELTS Mock Exam — Day 1</div><div class="event-date">Mar 30 · All day</div></div></div>
-              <div class="event-item"><div class="event-dot" style="background:var(--gold)"></div><div><div class="event-name">IELTS Mock Exam — Day 2</div><div class="event-date">Mar 31 · All day</div></div></div>
-              <div class="event-item"><div class="event-dot" style="background:var(--slate)"></div><div><div class="event-name">SAT Mock Exam</div><div class="event-date">Apr 6 · All day</div></div></div>
-              <div class="event-item"><div class="event-dot" style="background:var(--forest)"></div><div><div class="event-name">Parent–Teacher Meetings (Gr. 1–6)</div><div class="event-date">April · Date TBC</div></div></div>
-            </div>
+          <div id="cal-upcoming-list" style="padding:6px 0;max-height:520px;overflow-y:auto;">
+            <div style="padding:20px;text-align:center;color:var(--text-4,var(--muted));font-size:12.5px;">Loading…</div>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- ── AI ASSISTANT PANEL ── -->
 
     <div class="panel" id="panel-assessments">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
@@ -1673,6 +1815,7 @@
     if (id === 'results')     { if(typeof renderResults==='function') setTimeout(function(){ renderResults(); }, 50); }
     if (id === 'assessments') { if(typeof asmInit==='function') asmInit(); }
     if (id === 'classes')      { if(typeof classesInitPanel==='function') classesInitPanel(); }
+    if (id === 'rubric')       { if(typeof obsCambInit==='function') obsCambInit(); }
     if (id === 'messenger')   { if(typeof msgInit==='function') msgInit(); }
   }
 
@@ -1707,19 +1850,17 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     conversationHistory.push({ role: 'user', content: msg });
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/.netlify/functions/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
           system: systemPrompt,
           messages: conversationHistory
         })
       });
 
       const data = await res.json();
-      const reply = data.content?.map(c => c.text || '').join('') || 'I encountered an error. Please try again.';
+      const reply = data.reply || data.error || 'I encountered an error. Please try again.';
       conversationHistory.push({ role: 'assistant', content: reply });
 
       document.getElementById('typing')?.remove();
@@ -6754,11 +6895,7 @@ function saveDailyReport() {
     // Load from localStorage immediately
     try { _obsData = JSON.parse(localStorage.getItem('rb_observations') || '[]'); } catch(e) { _obsData = []; }
     if (!_obsData.length) {
-      _obsData = [
-        {id:'o1', category:'strength', text:'Attendance (89% green) and Punctuality (86%) are strong school-wide. Grade 4 leads punctuality at 97%.', related:'School-wide', date:'Feb 2026'},
-        {id:'o2', category:'concern',  text:'Behaviour at Grade 5 (52%) and Grade 6 (62%) needs attention. Homework completion drops in Grades 5–6.', related:'Grade 5–6', date:'Feb 2026'},
-        {id:'o3', category:'concern',  text:'Class 6B has the highest red discipline rate at 20%. Escalation needed.', related:'Class 6B', date:'Feb 2026'}
-      ];
+      _obsData = []; // no seeded demo data — clean for 2026-27
       obsPersist();
     }
     obsRender();
@@ -7332,6 +7469,10 @@ function saveDailyReport() {
       var val = t(key);
       if (val) el.placeholder = val;
     });
+    // Re-render student roster with the correct language name, if a class is open
+    if (typeof _selectedClass !== 'undefined' && _selectedClass && typeof stuRenderRoster === 'function') {
+      stuRenderRoster(_selectedClass);
+    }
     // Re-translate messenger channel list + incident statuses if visible
     if (typeof msgBuildSidebar === 'function' && document.getElementById('msg-channel-list')) {
       msgBuildSidebar();
@@ -8387,6 +8528,30 @@ function saveDailyReport() {
     stuRenderRoster(cls);
   }
 
+  function stuDisplayName(s) {
+    // Show the name matching the current interface language.
+    // Falls back to whichever name is filled in if the other is missing.
+    if (typeof _lang !== 'undefined' && _lang === 'ru') {
+      return s.full_name_ru || s.full_name_en || '';
+    }
+    return s.full_name_en || s.full_name_ru || '';
+  }
+
+  function stuParentDisplay(s) {
+    if (typeof _lang !== 'undefined' && _lang === 'ru') {
+      return s.father_name_ru || s.father_name_en ||
+             s.mother_name_ru || s.mother_name_en ||
+             s.guardian_name_ru || s.guardian_name_en || '';
+    }
+    return s.father_name_en || s.father_name_ru ||
+           s.mother_name_en || s.mother_name_ru ||
+           s.guardian_name_en || s.guardian_name_ru || '';
+  }
+
+  function stuParentPhoneDisplay(s) {
+    return s.father_phone || s.mother_phone || s.guardian_phone || '';
+  }
+
   function stuRenderRoster(cls) {
     var students = _studentsCache.filter(function(s){ return s.class === cls; });
     document.getElementById('roster-class-title').textContent = 'Class ' + cls;
@@ -8394,7 +8559,11 @@ function saveDailyReport() {
 
     var searchVal = (document.getElementById('roster-search').value || '').toLowerCase();
     if (searchVal) {
-      students = students.filter(function(s){ return (s.full_name||'').toLowerCase().indexOf(searchVal) !== -1; });
+      students = students.filter(function(s){
+        return stuDisplayName(s).toLowerCase().indexOf(searchVal) !== -1 ||
+               (s.full_name_en||'').toLowerCase().indexOf(searchVal) !== -1 ||
+               (s.full_name_ru||'').toLowerCase().indexOf(searchVal) !== -1;
+      });
     }
 
     var tbody = document.getElementById('roster-tbody');
@@ -8405,17 +8574,17 @@ function saveDailyReport() {
       return;
     }
 
-    students.sort(function(a,b){ return (a.full_name||'').localeCompare(b.full_name||''); });
+    students.sort(function(a,b){ return stuDisplayName(a).localeCompare(stuDisplayName(b)); });
 
     students.forEach(function(s, idx) {
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td style="color:var(--text-4);">' + (idx+1) + '</td>' +
-        '<td style="font-weight:600;color:var(--text-1);">' + (s.full_name||'') + '</td>' +
+        '<td style="font-weight:600;color:var(--text-1);">' + stuDisplayName(s) + '</td>' +
         '<td>' + (s.gender||'—') + '</td>' +
         '<td class="mono" style="font-size:12px;">' + (s.admission_no||'—') + '</td>' +
-        '<td>' + (s.parent_name||'—') + '</td>' +
-        '<td class="mono" style="font-size:12px;">' + (s.parent_phone||'—') + '</td>' +
+        '<td>' + (stuParentDisplay(s)||'—') + '</td>' +
+        '<td class="mono" style="font-size:12px;">' + (stuParentPhoneDisplay(s)||'—') + '</td>' +
         '<td></td>';
       var actionsTd = tr.lastElementChild;
       var editBtn = document.createElement('button');
@@ -8427,7 +8596,7 @@ function saveDailyReport() {
       delBtn.textContent = '🗑';
       delBtn.title = 'Delete';
       delBtn.style.cssText = 'padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;';
-      delBtn.addEventListener('click', function(){ stuDeleteStudent(s.id, s.full_name); });
+      delBtn.addEventListener('click', function(){ stuDeleteStudent(s.id, stuDisplayName(s)); });
       actionsTd.appendChild(editBtn);
       actionsTd.appendChild(delBtn);
       tbody.appendChild(tr);
@@ -8453,12 +8622,21 @@ function saveDailyReport() {
   function stuOpenAddModal() {
     document.getElementById('student-modal-title').textContent = 'Add Student';
     document.getElementById('stu-edit-id').value = '';
-    document.getElementById('stu-name').value = '';
+    document.getElementById('stu-name-en').value = '';
+    document.getElementById('stu-name-ru').value = '';
     document.getElementById('stu-gender').value = '';
     document.getElementById('stu-dob').value = '';
     document.getElementById('stu-admission').value = '';
-    document.getElementById('stu-parent').value = '';
-    document.getElementById('stu-phone').value = '';
+    document.getElementById('stu-father-en').value = '';
+    document.getElementById('stu-father-ru').value = '';
+    document.getElementById('stu-father-phone').value = '';
+    document.getElementById('stu-mother-en').value = '';
+    document.getElementById('stu-mother-ru').value = '';
+    document.getElementById('stu-mother-phone').value = '';
+    document.getElementById('stu-guardian-en').value = '';
+    document.getElementById('stu-guardian-ru').value = '';
+    document.getElementById('stu-guardian-rel').value = '';
+    document.getElementById('stu-guardian-phone').value = '';
     document.getElementById('stu-notes').value = '';
     stuPopulateClassDropdown();
     if (_selectedClass) document.getElementById('stu-class').value = _selectedClass;
@@ -8469,13 +8647,22 @@ function saveDailyReport() {
     document.getElementById('student-modal-title').textContent = 'Edit Student';
     stuPopulateClassDropdown();
     document.getElementById('stu-edit-id').value = s.id;
-    document.getElementById('stu-name').value = s.full_name || '';
+    document.getElementById('stu-name-en').value = s.full_name_en || '';
+    document.getElementById('stu-name-ru').value = s.full_name_ru || '';
     document.getElementById('stu-class').value = s.class || '';
     document.getElementById('stu-gender').value = s.gender || '';
     document.getElementById('stu-dob').value = s.dob || '';
     document.getElementById('stu-admission').value = s.admission_no || '';
-    document.getElementById('stu-parent').value = s.parent_name || '';
-    document.getElementById('stu-phone').value = s.parent_phone || '';
+    document.getElementById('stu-father-en').value = s.father_name_en || '';
+    document.getElementById('stu-father-ru').value = s.father_name_ru || '';
+    document.getElementById('stu-father-phone').value = s.father_phone || '';
+    document.getElementById('stu-mother-en').value = s.mother_name_en || '';
+    document.getElementById('stu-mother-ru').value = s.mother_name_ru || '';
+    document.getElementById('stu-mother-phone').value = s.mother_phone || '';
+    document.getElementById('stu-guardian-en').value = s.guardian_name_en || '';
+    document.getElementById('stu-guardian-ru').value = s.guardian_name_ru || '';
+    document.getElementById('stu-guardian-rel').value = s.guardian_relationship || '';
+    document.getElementById('stu-guardian-phone').value = s.guardian_phone || '';
     document.getElementById('stu-notes').value = s.notes || '';
     document.getElementById('student-modal').style.display = 'flex';
   }
@@ -8485,21 +8672,32 @@ function saveDailyReport() {
   }
 
   function stuSaveStudent() {
-    var name  = document.getElementById('stu-name').value.trim();
-    var cls   = document.getElementById('stu-class').value;
+    var nameEn = document.getElementById('stu-name-en').value.trim();
+    var nameRu = document.getElementById('stu-name-ru').value.trim();
+    var cls    = document.getElementById('stu-class').value;
     var editId = document.getElementById('stu-edit-id').value;
 
-    if (!name) { showToast("Please enter the student's name."); return; }
-    if (!cls)  { showToast('Please select a class.'); return; }
+    if (!nameEn) { showToast("Please enter the student's name in English."); return; }
+    if (!nameRu) { showToast("Please enter the student's name in Russian."); return; }
+    if (!cls)    { showToast('Please select a class.'); return; }
 
     var payload = {
-      full_name:     name,
+      full_name_en:  nameEn,
+      full_name_ru:  nameRu,
       class:         cls,
       gender:        document.getElementById('stu-gender').value || null,
       dob:           document.getElementById('stu-dob').value || null,
       admission_no:  document.getElementById('stu-admission').value.trim() || null,
-      parent_name:   document.getElementById('stu-parent').value.trim() || null,
-      parent_phone:  document.getElementById('stu-phone').value.trim() || null,
+      father_name_en: document.getElementById('stu-father-en').value.trim() || null,
+      father_name_ru: document.getElementById('stu-father-ru').value.trim() || null,
+      father_phone:   document.getElementById('stu-father-phone').value.trim() || null,
+      mother_name_en: document.getElementById('stu-mother-en').value.trim() || null,
+      mother_name_ru: document.getElementById('stu-mother-ru').value.trim() || null,
+      mother_phone:   document.getElementById('stu-mother-phone').value.trim() || null,
+      guardian_name_en: document.getElementById('stu-guardian-en').value.trim() || null,
+      guardian_name_ru: document.getElementById('stu-guardian-ru').value.trim() || null,
+      guardian_relationship: document.getElementById('stu-guardian-rel').value.trim() || null,
+      guardian_phone: document.getElementById('stu-guardian-phone').value.trim() || null,
       notes:         document.getElementById('stu-notes').value.trim() || null
     };
 
@@ -8604,6 +8802,7 @@ function saveDailyReport() {
         var merged = ACADEMIC_EVENTS.filter(function(e){ return !sbIds[e.id]; }).concat(sbEvents);
         _calEvents = merged;
         calRender();
+        calRenderUpcoming();
         var sync = document.getElementById('cal-sync-status');
         if (sync) sync.textContent = 'Synced';
       })
@@ -8623,6 +8822,355 @@ function saveDailyReport() {
       var end   = e.end   || e.start || '';
       return start <= ds && ds <= end;
     });
+  }
+
+  // ══ CAMBRIDGE OBSERVATION FORM ═══════════════════════════════════════════
+  var _obscScores = {};   // { criteriaId: score(1-4) }
+  var _obscReports = [];
+
+  function obsCambInit() {
+    obsCambPopulateTeachers();
+    obsCambPopulateClasses();
+    obsCambPopulateSubjects();
+    obsCambBuildCriteria();
+    obsCambSwitchTab('new');
+    var dateEl = document.getElementById('obsc-date');
+    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+  }
+
+  function obsCambSwitchTab(tab) {
+    var formSec = document.getElementById('obsc-form-section');
+    var repSec  = document.getElementById('obsc-reports-section');
+    var btnNew  = document.getElementById('obsc-tab-new');
+    var btnRep  = document.getElementById('obsc-tab-reports');
+    if (tab === 'new') {
+      if (formSec) formSec.style.display = 'block';
+      if (repSec)  repSec.style.display  = 'none';
+      if (btnNew)  btnNew.className = 'btn btn-primary';
+      if (btnRep)  btnRep.className = 'btn btn-outline';
+    } else {
+      if (formSec) formSec.style.display = 'none';
+      if (repSec)  repSec.style.display  = 'block';
+      if (btnNew)  btnNew.className = 'btn btn-outline';
+      if (btnRep)  btnRep.className = 'btn btn-primary';
+      obsCambLoadReports();
+    }
+  }
+
+  function obsCambPopulateTeachers() {
+    var sel = document.getElementById('obsc-teacher');
+    var filterSel = document.getElementById('obsc-filter-teacher');
+    if (!sel || typeof USERS === 'undefined') return;
+    var names = [];
+    Object.keys(USERS).forEach(function(uname) {
+      var u = USERS[uname];
+      if (u.name) names.push(u.name);
+    });
+    names.sort();
+    sel.innerHTML = '<option value="">— Select teacher —</option>';
+    if (filterSel) filterSel.innerHTML = '<option value="">All Teachers</option>';
+    names.forEach(function(n) {
+      var opt = document.createElement('option'); opt.value = n; opt.textContent = n;
+      sel.appendChild(opt);
+      if (filterSel) {
+        var opt2 = document.createElement('option'); opt2.value = n; opt2.textContent = n;
+        filterSel.appendChild(opt2);
+      }
+    });
+  }
+
+  function obsCambPopulateClasses() {
+    var sel = document.getElementById('obsc-class');
+    if (!sel || typeof ALL_CLASSES === 'undefined') return;
+    sel.innerHTML = '<option value="">— Select class —</option>';
+    ALL_CLASSES.forEach(function(c) {
+      var opt = document.createElement('option'); opt.value = c; opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  }
+
+  function obsCambPopulateSubjects() {
+    var sel = document.getElementById('obsc-subject');
+    if (!sel) return;
+    var subs = ['English','Maths','Cambridge Maths','Science','Physics','Chemistry','Biology',
+      'Russian Language','Literature','GP (Hist-Geo)','Economics','ICT','Uzbek Language','Art','Physical Education'];
+    sel.innerHTML = '<option value="">— Select subject —</option>';
+    subs.forEach(function(s) {
+      var opt = document.createElement('option'); opt.value = s; opt.textContent = s;
+      sel.appendChild(opt);
+    });
+  }
+
+  function obsCambBuildCriteria() {
+    var wrap = document.getElementById('obsc-criteria-list');
+    if (!wrap || typeof OBS_CRITERIA === 'undefined') return;
+    _obscScores = {};
+    wrap.innerHTML = '';
+    OBS_CRITERIA.forEach(function(crit) {
+      _obscScores[crit.id] = 0;
+      var row = document.createElement('div');
+      row.style.cssText = 'border:1.5px solid var(--border,var(--rule));border-radius:10px;padding:14px;';
+      row.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">' +
+          '<div style="font-size:13px;font-weight:700;color:var(--text-1,var(--ink));">' + crit.label + '</div>' +
+          '<div id="obsc-rate-' + crit.id + '" style="display:flex;gap:6px;"></div>' +
+        '</div>' +
+        '<textarea id="obsc-comment-' + crit.id + '" rows="1" placeholder="Optional comment…" style="font-size:12.5px;"></textarea>';
+      wrap.appendChild(row);
+
+      var rateWrap = row.querySelector('#obsc-rate-' + crit.id);
+      [1,2,3,4].forEach(function(score) {
+        var btn = document.createElement('button');
+        var lbl = (typeof OBS_LABELS !== 'undefined' && OBS_LABELS[score]) ? OBS_LABELS[score] : score;
+        btn.type = 'button';
+        btn.textContent = score + ' · ' + lbl;
+        btn.style.cssText = 'padding:5px 10px;border-radius:7px;border:1.5px solid var(--border,var(--rule));background:white;color:var(--text-3,var(--muted));font-size:11px;font-weight:600;cursor:pointer;';
+        btn.addEventListener('click', (function(cid, sc, b) {
+          return function() {
+            _obscScores[cid] = sc;
+            var siblings = document.getElementById('obsc-rate-' + cid).children;
+            for (var i=0;i<siblings.length;i++) {
+              siblings[i].style.background = 'white';
+              siblings[i].style.color = 'var(--text-3, var(--muted))';
+              siblings[i].style.borderColor = 'var(--border, var(--rule))';
+            }
+            var col = (typeof OBS_COLORS !== 'undefined' && OBS_COLORS[sc]) ? OBS_COLORS[sc] : 'var(--blue,var(--navy))';
+            b.style.background = col; b.style.color = 'white'; b.style.borderColor = col;
+            obsCambUpdateTotal();
+          };
+        })(crit.id, score, btn));
+        rateWrap.appendChild(btn);
+      });
+    });
+    obsCambUpdateTotal();
+  }
+
+  function obsCambUpdateTotal() {
+    var total = 0;
+    Object.keys(_obscScores).forEach(function(k){ total += (_obscScores[k]||0); });
+    var max = (typeof OBS_CRITERIA !== 'undefined' ? OBS_CRITERIA.length : 6) * 4;
+    var el = document.getElementById('obsc-total-score');
+    if (el) el.textContent = total + ' / ' + max;
+
+    var box = document.getElementById('obsc-total-box');
+    var ratingEl = document.getElementById('obsc-total-rating');
+    if (typeof obsRating === 'function') {
+      var r = obsRating(total);
+      if (ratingEl) { ratingEl.textContent = r[0]; ratingEl.style.color = r[1]; ratingEl.style.background = r[2]; }
+      if (box) { box.style.background = r[2]; }
+      if (el) el.style.color = r[1];
+    }
+  }
+
+  function obsCambSave() {
+    var teacher = document.getElementById('obsc-teacher').value;
+    var cls     = document.getElementById('obsc-class').value;
+    var subject = document.getElementById('obsc-subject').value;
+    var date    = document.getElementById('obsc-date').value;
+    var topic   = document.getElementById('obsc-topic').value.trim();
+
+    if (!teacher) { showToast('Please select the teacher observed.'); return; }
+    if (!cls)     { showToast('Please select a class.'); return; }
+    if (!subject) { showToast('Please select a subject.'); return; }
+
+    var total = 0;
+    var scoresDetail = {};
+    if (typeof OBS_CRITERIA !== 'undefined') {
+      var allScored = true;
+      OBS_CRITERIA.forEach(function(crit) {
+        var sc = _obscScores[crit.id] || 0;
+        if (!sc) allScored = false;
+        total += sc;
+        scoresDetail[crit.id] = {
+          score: sc,
+          comment: (document.getElementById('obsc-comment-' + crit.id)||{}).value || ''
+        };
+      });
+      if (!allScored) { showToast('Please rate all six criteria before saving.'); return; }
+    }
+
+    var obs = {
+      observer: _currentUser ? _currentUser.name : '',
+      teacher: teacher, cls: cls, subject: subject, date: date, topic: topic,
+      scores: scoresDetail, total: total,
+      strengths:   document.getElementById('obsc-strengths').value.trim(),
+      development: document.getElementById('obsc-development').value.trim(),
+      action:      document.getElementById('obsc-action').value.trim()
+    };
+
+    sbSaveObservation(obs)
+      .then(function() {
+        showToast('Observation report saved ✓');
+        updateCloudStatus('saved');
+        obsCambResetForm();
+        obsCambSwitchTab('reports');
+      })
+      .catch(function(e) {
+        console.error('Save observation error:', e);
+        showToast('Error saving observation.');
+        updateCloudStatus('error');
+      });
+  }
+
+  function obsCambResetForm() {
+    document.getElementById('obsc-teacher').value = '';
+    document.getElementById('obsc-class').value = '';
+    document.getElementById('obsc-subject').value = '';
+    document.getElementById('obsc-topic').value = '';
+    document.getElementById('obsc-strengths').value = '';
+    document.getElementById('obsc-development').value = '';
+    document.getElementById('obsc-action').value = '';
+    document.getElementById('obsc-date').value = new Date().toISOString().slice(0,10);
+    obsCambBuildCriteria();
+  }
+
+  function obsCambLoadReports() {
+    var list = document.getElementById('obsc-reports-list');
+    if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4,var(--muted));font-size:12.5px;">Loading…</div>';
+    sbLoadObservations()
+      .then(function(rows) {
+        _obscReports = rows || [];
+        obsCambRenderReports();
+      })
+      .catch(function(e) {
+        console.error('Load observations error:', e);
+        if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4,var(--muted));font-size:12.5px;">Could not load reports.</div>';
+      });
+  }
+
+  function obsCambFilterReports() { obsCambRenderReports(); }
+
+  function obsCambRenderReports() {
+    var list = document.getElementById('obsc-reports-list');
+    if (!list) return;
+    var filterTeacher = (document.getElementById('obsc-filter-teacher')||{}).value || '';
+    var rows = _obscReports.filter(function(r) { return !filterTeacher || r.teacher === filterTeacher; });
+
+    var sub = document.getElementById('obsc-reports-sub');
+    if (sub) sub.textContent = rows.length + ' report' + (rows.length===1?'':'s');
+
+    if (!rows.length) {
+      list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-4,var(--muted));"><div style="font-size:36px;margin-bottom:12px;">📋</div><div style="font-size:14px;font-weight:600;color:var(--text-1,var(--ink));margin-bottom:6px;">No observation reports yet</div><div style="font-size:12.5px;">Complete a new observation to see it here.</div></div>';
+      return;
+    }
+
+    rows.sort(function(a,b){ return new Date(b.date||b.created_at) - new Date(a.date||a.created_at); });
+
+    list.innerHTML = '';
+    rows.forEach(function(r) {
+      var rating = (typeof obsRating === 'function') ? obsRating(r.total||0) : ['—','#666','#eee'];
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--rule-light,#f1f5f9);cursor:pointer;';
+      row.innerHTML =
+        '<div style="flex:1;">' +
+          '<div style="font-size:13.5px;font-weight:700;color:var(--text-1,var(--ink));">' + (r.teacher||'') + ' — Class ' + (r.class||'') + '</div>' +
+          '<div style="font-size:11.5px;color:var(--text-3,var(--muted));margin-top:2px;">' + (r.subject||'') + ' · ' + (r.date||'') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+          '<span style="font-size:12px;font-weight:700;color:' + rating[1] + ';background:' + rating[2] + ';padding:4px 12px;border-radius:20px;">' + rating[0] + ' (' + (r.total||0) + '/24)</span>' +
+        '</div>';
+      row.addEventListener('click', (function(rep) { return function() { obsCambShowDetail(rep); }; })(r));
+      list.appendChild(row);
+    });
+  }
+
+  var _obscCurrentDetail = null;
+
+  function obsCambShowDetail(r) {
+    _obscCurrentDetail = r;
+    var rating = (typeof obsRating === 'function') ? obsRating(r.total||0) : ['—','#666','#eee'];
+    var body = document.getElementById('obsc-detail-body');
+
+    var criteriaHtml = '';
+    if (typeof OBS_CRITERIA !== 'undefined' && r.scores) {
+      OBS_CRITERIA.forEach(function(crit) {
+        var s = r.scores[crit.id] || {};
+        var lbl = (typeof OBS_LABELS !== 'undefined' && OBS_LABELS[s.score]) ? OBS_LABELS[s.score] : '';
+        criteriaHtml +=
+          '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--rule-light,#f1f5f9);">' +
+            '<div><div style="font-size:12.5px;font-weight:600;color:var(--text-1,var(--ink));">' + crit.label + '</div>' +
+            (s.comment ? '<div style="font-size:11.5px;color:var(--text-3,var(--muted));margin-top:2px;">' + s.comment + '</div>' : '') + '</div>' +
+            '<div style="font-size:12px;font-weight:700;color:var(--blue,var(--navy));white-space:nowrap;margin-left:12px;">' + (s.score||0) + '/4 — ' + lbl + '</div>' +
+          '</div>';
+      });
+    }
+
+    body.innerHTML =
+      '<div style="margin-bottom:16px;">' +
+        '<div style="font-size:16px;font-weight:800;color:var(--text-1,var(--ink));">' + (r.teacher||'') + '</div>' +
+        '<div style="font-size:12.5px;color:var(--text-3,var(--muted));">Class ' + (r.class||'') + ' · ' + (r.subject||'') + ' · ' + (r.date||'') + '</div>' +
+        (r.topic ? '<div style="font-size:12.5px;color:var(--text-2,var(--slate));margin-top:4px;">Topic: ' + r.topic + '</div>' : '') +
+        '<div style="font-size:11.5px;color:var(--text-3,var(--muted));margin-top:4px;">Observed by: ' + (r.observer||'') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:10px;background:' + rating[2] + ';margin-bottom:16px;">' +
+        '<span style="font-size:13px;font-weight:700;color:' + rating[1] + ';">Overall Rating</span>' +
+        '<span style="font-size:16px;font-weight:800;color:' + rating[1] + ';">' + rating[0] + ' (' + (r.total||0) + '/24)</span>' +
+      '</div>' +
+      '<div style="font-size:12px;font-weight:700;color:var(--text-3,var(--muted));text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Criteria Breakdown</div>' +
+      criteriaHtml +
+      (r.strengths ? '<div style="margin-top:16px;"><div style="font-size:11px;font-weight:700;color:var(--text-3,var(--muted));text-transform:uppercase;margin-bottom:4px;">Strengths</div><div style="font-size:12.5px;color:var(--text-2,var(--slate));">' + r.strengths + '</div></div>' : '') +
+      (r.development ? '<div style="margin-top:12px;"><div style="font-size:11px;font-weight:700;color:var(--text-3,var(--muted));text-transform:uppercase;margin-bottom:4px;">Areas for Development</div><div style="font-size:12.5px;color:var(--text-2,var(--slate));">' + r.development + '</div></div>' : '') +
+      (r.action ? '<div style="margin-top:12px;"><div style="font-size:11px;font-weight:700;color:var(--text-3,var(--muted));text-transform:uppercase;margin-bottom:4px;">Recommended Action</div><div style="font-size:12.5px;color:var(--text-2,var(--slate));">' + r.action + '</div></div>' : '');
+
+    document.getElementById('obsc-detail-modal').style.display = 'flex';
+  }
+
+  function obsCambPrint() {
+    if (!_obscCurrentDetail) return;
+    var r = _obscCurrentDetail;
+    var rating = (typeof obsRating === 'function') ? obsRating(r.total||0) : ['—','#666','#eee'];
+    var criteriaRows = '';
+    if (typeof OBS_CRITERIA !== 'undefined' && r.scores) {
+      OBS_CRITERIA.forEach(function(crit) {
+        var s = r.scores[crit.id] || {};
+        var lbl = (typeof OBS_LABELS !== 'undefined' && OBS_LABELS[s.score]) ? OBS_LABELS[s.score] : '';
+        criteriaRows += '<tr><td style="padding:8px;border:1px solid #ddd;">' + crit.label + '</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">' + (s.score||0) + '/4 (' + lbl + ')</td><td style="padding:8px;border:1px solid #ddd;">' + (s.comment||'') + '</td></tr>';
+      });
+    }
+    var html = '<html><head><title>Observation Report — ' + (r.teacher||'') + '</title>' +
+      '<style>body{font-family:Arial,sans-serif;padding:30px;color:#111;} h1{font-size:20px;} table{border-collapse:collapse;width:100%;margin:16px 0;} th{background:#f3f4f6;padding:8px;border:1px solid #ddd;text-align:left;}</style></head><body>' +
+      '<h1>Redbridge International School — Classroom Observation Report</h1>' +
+      '<p><b>Teacher:</b> ' + (r.teacher||'') + ' &nbsp; <b>Class:</b> ' + (r.class||'') + ' &nbsp; <b>Subject:</b> ' + (r.subject||'') + '</p>' +
+      '<p><b>Date:</b> ' + (r.date||'') + ' &nbsp; <b>Observed by:</b> ' + (r.observer||'') + '</p>' +
+      (r.topic ? '<p><b>Lesson Topic:</b> ' + r.topic + '</p>' : '') +
+      '<p><b>Overall Rating:</b> ' + rating[0] + ' (' + (r.total||0) + '/24)</p>' +
+      '<table><thead><tr><th>Criterion</th><th>Score</th><th>Comment</th></tr></thead><tbody>' + criteriaRows + '</tbody></table>' +
+      (r.strengths ? '<p><b>Strengths:</b><br>' + r.strengths + '</p>' : '') +
+      (r.development ? '<p><b>Areas for Development:</b><br>' + r.development + '</p>' : '') +
+      (r.action ? '<p><b>Recommended Action:</b><br>' + r.action + '</p>' : '') +
+      '</body></html>';
+    var win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.print();
+  }
+
+
+  function calRenderUpcoming() {
+    var list = document.getElementById('cal-upcoming-list');
+    if (!list) return;
+    var today = new Date().toISOString().slice(0,10);
+    var upcoming = (_calEvents || [])
+      .filter(function(e){ return e.start >= today; })
+      .sort(function(a,b){ return a.start > b.start ? 1 : -1; })
+      .slice(0, 15);
+
+    if (!upcoming.length) {
+      list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-4,var(--muted));font-size:12.5px;">No upcoming events</div>';
+      return;
+    }
+
+    list.innerHTML = upcoming.map(function(ev) {
+      var d = new Date(ev.start + 'T12:00:00');
+      var dateStr = d.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+      return '<div onclick="calOpenAddEvent(\''+ev.start+'\')" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--rule-light,#f1f5f9);cursor:pointer;">' +
+        '<div style="width:8px;height:8px;border-radius:50%;background:'+(ev.color||'#3b82f6')+';flex-shrink:0;"></div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:12.5px;font-weight:600;color:var(--text-1,var(--ink));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+ev.title+'</div>' +
+          '<div style="font-size:11px;color:var(--text-3,var(--muted));">'+dateStr+'</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
   }
 
   function calRender() {
