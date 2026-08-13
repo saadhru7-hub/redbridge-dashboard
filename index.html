@@ -1281,13 +1281,32 @@
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;">📊 Student Results</h2>
-        <div style="font-size:12.5px;color:var(--muted);">Cambridge results and academic performance</div></div>
+        <div style="font-size:12.5px;color:var(--muted);">Average scores per subject, computed live from Assessments</div></div>
       </div>
-      <div class="card" style="text-align:center;padding:60px 20px;">
-        <div style="font-size:48px;margin-bottom:16px;">📋</div>
-        <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;">No results yet</div>
-        <div style="font-size:13px;color:var(--muted);">Student results for 2026–27 will appear here as assessments are completed and results are uploaded.</div>
-        <div style="margin-top:20px;"><button onclick="showPanel('assessments',null)" class="btn btn-primary">Go to Assessments</button></div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;padding:16px;">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Class</label>
+            <select id="res-class" onchange="renderResults()"><option value="">— Select class —</option></select>
+          </div>
+          <div style="font-size:12px;color:var(--muted);padding-bottom:9px;" id="res-subtitle"></div>
+        </div>
+      </div>
+
+      <div id="results-body" class="card" style="overflow-x:auto;">
+        <div style="padding:40px;text-align:center;color:var(--muted);">👆 Select a class to view results</div>
+      </div>
+
+      <!-- Student detail modal -->
+      <div id="res-student-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:520px;">
+          <div class="modal-header">
+            <div id="res-student-name" style="font-size:15px;font-weight:700;color:var(--ink);">Student</div>
+            <button onclick="document.getElementById('res-student-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">✕</button>
+          </div>
+          <div id="res-student-body" style="padding:20px;max-height:60vh;overflow-y:auto;"></div>
+        </div>
       </div>
 
     </div>
@@ -1410,12 +1429,49 @@ id="panel-timetable">
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;">📅 Timetable</h2>
-        <div style="font-size:12.5px;color:var(--muted);">School timetable for Academic Year 2026–2027</div></div>
+        <div style="font-size:12.5px;color:var(--muted);">School timetable for Academic Year 2026–2027 · click any lesson to edit</div></div>
       </div>
-      <div class="card" style="text-align:center;padding:60px 20px;">
-        <div style="font-size:48px;margin-bottom:16px;">📅</div>
-        <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;">Timetable not set up yet</div>
-        <div style="font-size:13px;color:var(--muted);">The 2026–27 timetable will be uploaded here. Contact the principal to upload the new schedule.</div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;padding:16px;">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Class</label>
+            <select id="tt-class" onchange="ttRenderGrid()"><option value="">— Select class —</option></select>
+          </div>
+          <div style="display:flex;gap:6px;" id="tt-day-tabs"></div>
+        </div>
+      </div>
+
+      <div id="tt-grid-body" class="card">
+        <div style="padding:40px;text-align:center;color:var(--muted);">👆 Select a class to view its timetable</div>
+      </div>
+
+      <!-- Edit lesson modal -->
+      <div id="tt-edit-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:420px;">
+          <div class="modal-header">
+            <div id="tt-edit-title" style="font-size:15px;font-weight:700;color:var(--ink);">Edit Lesson</div>
+            <button onclick="document.getElementById('tt-edit-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">✕</button>
+          </div>
+          <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+            <input type="hidden" id="tt-edit-id">
+            <input type="hidden" id="tt-edit-day">
+            <input type="hidden" id="tt-edit-period">
+            <input type="hidden" id="tt-edit-class">
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Subject</label>
+              <input id="tt-edit-subject" type="text" placeholder="e.g. English">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Teacher</label>
+              <input id="tt-edit-teacher" type="text" placeholder="e.g. Zafar">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:4px;">
+              <button onclick="ttSaveLesson()" class="btn btn-primary" style="flex:1;">Save</button>
+              <button onclick="ttClearLesson()" class="btn btn-outline" style="color:#dc2626;">Clear</button>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -2208,11 +2264,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   function initResultsPanel() {
     const sel = document.getElementById('res-class');
     if (!sel || sel.options.length > 1) return;
-    const classes = Object.keys(resultsData).sort((a,b) => {
-      const ga = parseInt(a), gb = parseInt(b);
-      if (ga !== gb) return ga - gb;
-      return a.localeCompare(b);
-    });
+    const classes = (typeof ALL_CLASSES !== 'undefined') ? ALL_CLASSES : [];
     classes.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c; opt.textContent = 'Class ' + c;
@@ -2230,145 +2282,104 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   }
 
   function renderResults() {
-    const cls   = (document.getElementById('res-class')||{}).value || '';
-    const month = (document.getElementById('res-month')||{}).value || 'January';
-    const view  = (document.getElementById('res-view')||{}).value || 'both';
-    const body  = document.getElementById('results-body');
-    const sub   = document.getElementById('results-subtitle');
-    const badges= document.getElementById('results-top-badges');
-    const taEl  = document.getElementById('teacher-assignments');
-    const sumBar= document.getElementById('results-summary-bar');
+    const cls  = (document.getElementById('res-class')||{}).value || '';
+    const body = document.getElementById('results-body');
+    const sub  = document.getElementById('res-subtitle');
+    if (!body) return;
 
     if (!cls) {
-      body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">👆 Please select a class and month to view results</div>';
-      taEl.style.display='none'; sumBar.style.display='none';
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">👆 Select a class to view results</div>';
+      if (sub) sub.textContent = '';
       return;
     }
 
-    const monthData = (resultsData[cls]||{});
-    const students  = monthData[month] || [];
-    const tData     = ((teachersData[cls]||{})[month]) || {};
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">Loading…</div>';
 
-    sub.textContent = 'Class ' + cls + ' · ' + month + ' · ' + students.length + ' students';
+    Promise.all([
+      fetchClassStudents(cls),
+      fetch(_SB_URL + '/rest/v1/assessments?class=eq.' + encodeURIComponent(cls) + '&select=*', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; })
+    ]).then(function(results) {
+      renderResultsTable(cls, results[0] || [], results[1] || []);
+    });
+  }
 
-    // ── Teacher assignments card ──
-    if (Object.keys(tData).length) {
-      const tPills = Object.entries(tData).map(([subj,teacher]) =>
-        '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--cream);border-radius:10px;padding:8px 14px;min-width:110px;">' +
-        '<div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);">' + subj + '</div>' +
-        '<div style="font-size:12.5px;font-weight:600;color:var(--ink);">' + teacher + '</div>' +
-        '</div>'
-      ).join('');
-      taEl.innerHTML = '<div class="card"><div class="card-header"><div class="card-title" style="font-size:14px;">📋 Subject Teachers — Class ' + cls + '</div></div>' +
-        '<div class="card-body" style="display:flex;flex-wrap:wrap;gap:10px;">' + tPills + '</div></div>';
-      taEl.style.display = 'block';
-    } else {
-      taEl.style.display = 'none';
-    }
+  function renderResultsTable(cls, students, assessments) {
+    const body = document.getElementById('results-body');
+    const sub  = document.getElementById('res-subtitle');
 
     if (!students.length) {
-      body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No data available for this class/month.</div>';
-      badges.innerHTML=''; sumBar.style.display='none';
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">No students in Class ' + cls + ' yet.</div>';
+      if (sub) sub.textContent = '';
       return;
     }
 
-    // ── Collect all subjects ──
-    const trafficSubjects = [], scoreSubjects = [], discLabels = [];
-    students.forEach(st => {
-      Object.keys(st.traffic_light||{}).forEach(s => { if(!trafficSubjects.includes(s)) trafficSubjects.push(s); });
-      Object.keys(st.scores||{}).forEach(s => { if(!scoreSubjects.includes(s)) scoreSubjects.push(s); });
-      Object.keys(st.discipline||{}).forEach(d => { if(!discLabels.includes(d)) discLabels.push(d); });
-    });
+    // Collect distinct subjects that have been assessed for this class
+    const subjects = [];
+    assessments.forEach(function(a) { if (a.subject && subjects.indexOf(a.subject) === -1) subjects.push(a.subject); });
 
-    // ── Summary counts ──
-    let g=0,y=0,r=0,ab=0;
-    students.forEach(st => {
-      [...Object.values(st.traffic_light||{}), ...Object.values(st.scores||{}).map(sc=>sc.color)].forEach(clr => {
-        if(clr==='green') g++; else if(clr==='yellow') y++; else if(clr==='red') r++; else if(clr==='grey') ab++;
+    if (sub) sub.textContent = students.length + ' students · ' + assessments.length + ' assessment' + (assessments.length===1?'':'s') + ' recorded';
+
+    if (!assessments.length) {
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);"><div style="font-size:36px;margin-bottom:12px;">📋</div>No assessments recorded for Class ' + cls + ' yet.<br><button onclick="showPanel(\'assessments\',null)" class="btn btn-primary" style="margin-top:14px;">Go to Assessments</button></div>';
+      return;
+    }
+
+    // Build lookup: studentName -> subject -> [percentages]
+    const pctMap = {};
+    assessments.forEach(function(a) {
+      (a.students || []).forEach(function(s) {
+        if (s.absent || s.pct === null || s.pct === undefined) return;
+        pctMap[s.name] = pctMap[s.name] || {};
+        pctMap[s.name][a.subject] = pctMap[s.name][a.subject] || [];
+        pctMap[s.name][a.subject].push(s.pct);
       });
     });
-    badges.innerHTML =
-      '<span style="font-size:12px;padding:4px 12px;border-radius:20px;background:#dcfce7;color:#15803d;font-weight:700;">🟢 '+g+'</span>' +
-      '<span style="font-size:12px;padding:4px 12px;border-radius:20px;background:#fef9c3;color:#a16207;font-weight:700;">🟡 '+y+'</span>' +
-      '<span style="font-size:12px;padding:4px 12px;border-radius:20px;background:#fee2e2;color:#b91c1c;font-weight:700;">🔴 '+r+'</span>';
 
-    // ── Build table ──
-    const showTraffic = (view==='both'||view==='traffic');
-    const showScores  = (view==='both'||view==='scores');
+    function avgColor(pct) {
+      if (pct === null) return { bg:'#f1f5f9', color:'#94a3b8', text:'—' };
+      if (pct >= 70) return { bg:'#dcfce7', color:'#15803d', text:pct+'%' };
+      if (pct >= 50) return { bg:'#fef9c3', color:'#a16207', text:pct+'%' };
+      return { bg:'#fee2e2', color:'#b91c1c', text:pct+'%' };
+    }
 
-    let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
-    // Header
-    html += '<thead><tr style="background:var(--ink);color:var(--paper);">';
-    html += '<th style="padding:10px 14px;text-align:left;font-size:11px;min-width:160px;position:sticky;left:0;background:var(--ink);">Student</th>';
-    if (showTraffic && trafficSubjects.length) {
-      html += '<th colspan="' + trafficSubjects.length + '" style="padding:8px;text-align:center;font-size:10px;letter-spacing:0.08em;border-left:2px solid #444;border-right:2px solid #444;">🚦 TRAFFIC LIGHT LEVEL</th>';
-    }
-    if (showScores && scoreSubjects.length) {
-      html += '<th colspan="' + scoreSubjects.length + '" style="padding:8px;text-align:center;font-size:10px;letter-spacing:0.08em;border-left:2px solid #444;border-right:2px solid #444;">📊 TEST SCORES (%)</th>';
-    }
-    if (discLabels.length) {
-      html += '<th colspan="' + discLabels.length + '" style="padding:8px;text-align:center;font-size:10px;letter-spacing:0.08em;border-left:2px solid #444;border-right:2px solid #444;">📋 DISCIPLINE & PUNCTUALITY</th>';
-    }
-    html += '<th style="padding:8px;text-align:center;font-size:10px;letter-spacing:0.08em;border-left:2px solid #444;">🎯 EXTRACURRICULAR</th>';
-    html += '</tr>';
-    // Sub-header
-    html += '<tr style="background:#1e1e1e;color:#ccc;">';
-    html += '<th style="padding:6px 14px;text-align:left;font-size:10px;position:sticky;left:0;background:#1e1e1e;"> </th>';
-    if (showTraffic) trafficSubjects.forEach(s => {
-      html += '<th style="padding:6px 6px;text-align:center;font-size:10px;min-width:70px;border-left:1px solid #333;">' + s.replace('Cambridge Maths','Cam.Math').replace('Russian Language','Russian').replace('GP (Hist-Geo)','GP') + '</th>';
+    let html = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">';
+    html += '<thead><tr style="background:var(--ink,#0f172a);color:white;">';
+    html += '<th style="padding:10px 14px;text-align:left;font-size:11px;min-width:180px;position:sticky;left:0;background:var(--ink,#0f172a);">Student</th>';
+    subjects.forEach(function(s) {
+      html += '<th style="padding:8px 10px;text-align:center;font-size:10.5px;min-width:90px;">' + s + '</th>';
     });
-    if (showScores)  scoreSubjects.forEach(s => {
-      html += '<th style="padding:6px 6px;text-align:center;font-size:10px;min-width:60px;border-left:1px solid #333;">' + s.replace('Cambridge Maths','Cam.Math').replace('Russian Language','Russian').replace('GP (Hist-Geo)','GP') + '</th>';
-    });
-    discLabels.forEach(d => {
-      html += '<th style="padding:6px 6px;text-align:center;font-size:10px;min-width:70px;border-left:1px solid #333;">' + (DISC_ICONS[d]||'') + ' ' + d + '</th>';
-    });
-    html += '<th style="padding:6px 8px;text-align:center;font-size:10px;border-left:1px solid #333;">Mon-Wed · Tue-Thu</th>';
+    html += '<th style="padding:8px 10px;text-align:center;font-size:10.5px;min-width:80px;">Overall</th>';
     html += '</tr></thead><tbody>';
 
-    students.forEach((st, i) => {
-      const bg = i%2===0 ? 'var(--white)' : '#fafaf7';
-      html += '<tr style="background:' + bg + ';">';
-      // Store student in global cache for onclick access
-      window._srCache = window._srCache || {};
-      var srKey = 'sr_' + i;
-      window._srCache[srKey] = {name: st.surname+' '+st.firstname, cls: cls, month: month};
-      html += '<td style="padding:8px 14px;font-weight:600;font-size:12.5px;white-space:nowrap;position:sticky;left:0;background:' + bg + ';"><span onclick="openStudentReport(window._srCache[\'' + srKey + '\'])" style="cursor:pointer;color:var(--navy);text-decoration:underline;text-underline-offset:3px;text-decoration-style:dotted;transition:color 0.15s;" onmouseenter="this.style.color=\'var(--gold)\'" onmouseleave="this.style.color=\'var(--navy)\'">' + st.surname + ' ' + st.firstname + '</span></td>';
-      
-      if (showTraffic) trafficSubjects.forEach(subj => {
-        const clr = (st.traffic_light||{})[subj];
-        html += '<td style="padding:5px 4px;text-align:center;border-left:1px solid var(--rule);">' +
-          (clr ? colorCell(clr, '', true) : '<span style="color:#ddd;font-size:10px;">—</span>') + '</td>';
+    window._resStudentCache = {};
+    students.forEach(function(st, i) {
+      const name = stuDisplayName(st);
+      const bg = i%2===0 ? 'white' : '#f8fafc';
+      const key = 'res_' + i;
+      window._resStudentCache[key] = { id: st.id, name: name };
+
+      html += '<tr style="background:'+bg+';border-bottom:1px solid #f1f5f9;">';
+      html += '<td style="padding:8px 14px;font-weight:600;position:sticky;left:0;background:'+bg+';white-space:nowrap;">' +
+        '<span onclick="openStudentReport(window._resStudentCache[\''+key+'\'])" style="cursor:pointer;color:var(--blue,var(--navy));text-decoration:underline;text-underline-offset:3px;">' + name + '</span></td>';
+
+      const allPcts = [];
+      subjects.forEach(function(subj) {
+        const arr = (pctMap[name] && pctMap[name][subj]) || [];
+        const avg = arr.length ? Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length) : null;
+        if (avg !== null) allPcts.push(avg);
+        const c = avgColor(avg);
+        html += '<td style="padding:6px;text-align:center;"><span style="display:inline-block;min-width:44px;padding:3px 8px;border-radius:7px;background:'+c.bg+';color:'+c.color+';font-weight:700;font-size:11.5px;">'+c.text+'</span></td>';
       });
-      if (showScores)  scoreSubjects.forEach(subj => {
-        const sc = (st.scores||{})[subj];
-        html += '<td style="padding:5px 4px;text-align:center;border-left:1px solid var(--rule);">' +
-          (sc ? colorCell(sc.color, sc.raw, false) : '<span style="color:#ddd;font-size:10px;">—</span>') + '</td>';
-      });
-      discLabels.forEach(d => {
-        const dc = (st.discipline||{})[d];
-        if (dc) {
-          const clr = dc.color || (dc.raw ? (parseFloat(dc.raw)>=80?'green':parseFloat(dc.raw)>=41?'yellow':'red') : null);
-          html += '<td style="padding:5px 4px;text-align:center;border-left:1px solid var(--rule);">' +
-            (clr ? colorCell(clr, dc.raw||'', !dc.raw) : '<span style="color:#ddd;font-size:10px;">—</span>') + '</td>';
-        } else {
-          html += '<td style="padding:5px 4px;text-align:center;border-left:1px solid var(--rule);"><span style="color:#ddd;font-size:10px;">—</span></td>';
-        }
-      });
-      // Extracurricular
-      const ex = st.extracurricular || {};
-      const monWed = ex['Mon–Wed'] || '—';
-      const tueThu = ex['Tue–Thu'] || '—';
-      html += '<td style="padding:6px 10px;text-align:center;font-size:11.5px;color:var(--slate);border-left:1px solid var(--rule);white-space:nowrap;">' +
-        '<div style="font-size:11px;"><span style="color:var(--muted);font-size:10px;">M-W:</span> ' + monWed + '</div>' +
-        '<div style="font-size:11px;"><span style="color:var(--muted);font-size:10px;">T-T:</span> ' + tueThu + '</div>' +
-        '</td>';
+      const overallAvg = allPcts.length ? Math.round(allPcts.reduce(function(a,b){return a+b;},0)/allPcts.length) : null;
+      const oc = avgColor(overallAvg);
+      html += '<td style="padding:6px;text-align:center;"><span style="display:inline-block;min-width:44px;padding:3px 8px;border-radius:7px;background:'+oc.bg+';color:'+oc.color+';font-weight:800;font-size:12px;">'+oc.text+'</span></td>';
       html += '</tr>';
     });
     html += '</tbody></table>';
     body.innerHTML = html;
-
-}
+  }
 
   // Patch showPanel
   // ── Update Teacher Performance panel with subject assignments ──
@@ -3881,8 +3892,9 @@ function renderIncidentLog() {
       access: 'all',
       panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments','messenger'],
       teacherName: 'Sharma Akash',
-      teacherClasses: [],
-      teacherSubjects: []
+      loadName: 'Akash',
+      teacherClasses: ['10-11','7A','7B','7C'],
+      teacherSubjects: ['IELTS']
     },
 
     // ── CO-FOUNDERS ──
@@ -3935,61 +3947,42 @@ function renderIncidentLog() {
       password: 'maths2024',
       name: 'Abdullayeva Gulnara Asatovna',
       role: 'dept_head',
-      title: 'Head of Maths — Grades 1–5A',
+      title: 'Head of Maths — Grades 1–5A · Class Teacher 3A & 4A',
       avatar: 'GA',
       access: 'dept',
       dept: 'Maths',
-      // As subject teacher: Maths Gr3-5A
-      teacherSubjects: [],
-      teacherClasses: [],
-      // As dept head: Maths dept Gr1-5A (includes Normamatova's classes)
+      classes: ['3A','4A'],
+      teacherSubjects: ['Maths-Rus'],
+      teacherClasses: ['3A','3B','3C','4A','4B','4C'],
       deptClasses: [],
       deptSubjects: [],
       deptTeachers: [],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments','messenger'],
+      panels: ['dashboard','academics','results','teachers','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Abdullayeva Gulnara Asatovna',
+      loadName: 'Gulnara Asadovna',
     },
     'nasiba.maths': {
       password: 'maths2024b',
       name: 'Ibragimova Nasiba Ismailovna',
       role: 'dept_head',
-      title: 'Head of Maths — Grades 5B–10',
+      title: 'Head of Maths — Grades 5B–10 · Class Teacher 8A, 8B, 9A, 10A',
       avatar: 'NI',
       access: 'dept',
       dept: 'Maths',
-      // As subject teacher: Maths 5B,8A,8B,9A
-      teacherSubjects: [],
-      teacherClasses: [],
-      // As dept head: Maths dept 5B-10 (includes Yusupov's classes)
+      classes: ['8A','8B','9A','10A'],
+      teacherSubjects: ['Maths-Rus'],
+      teacherClasses: ['10-11','7A','7B','7C','8A','8B','8C','9A'],
       deptClasses: [],
       deptSubjects: [],
       deptTeachers: [],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments','messenger'],
+      panels: ['dashboard','academics','results','teachers','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Ibragimova Nasiba Ismailovna',
+      loadName: 'Nasiba Ismailovna',
     },
     // English Head: Principal Mr. Akash Sharma — uses akash.sharma (full access)
     // Science Head: Ms Bahretdinova Elsbeth
-    'elsbeth.science': {
-      password: 'sci2024',
-      name: 'Bahretdinova Elsbeth',
-      role: 'dept_head',
-      title: 'Head of Science',
-      avatar: 'BE',
-      access: 'dept',
-      dept: 'Science',
-      // As subject teacher: Science Gr3-6
-      teacherSubjects: [],
-      teacherClasses: [],
-      // As dept head: all Science classes
-      deptClasses: [],
-      deptSubjects: [],
-      deptTeachers: [],
-      panels: ['dashboard','academics','results','teachers','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-      teacherName: 'Bahretdinova Elsbeth',
-    },
     // Russian: Not yet appointed — no login created
 
     // ── CLASS TEACHERS ──
@@ -4004,22 +3997,9 @@ function renderIncidentLog() {
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Abduazizova Feruza Erkinovna',
-      teacherClasses: [],
-      teacherSubjects: []
-    },
-    'abdull.asatov': {
-      password: 'class3a4a',
-      name: 'Abdullayeva Gulnara Asatovna',
-      role: 'class_teacher',
-      title: 'Class Teacher — 3A & 4A',
-      avatar: 'GA',
-      access: 'class',
-      classes: [],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-      teacherName: 'Abdullayeva Gulnara Asatovna',
-      teacherClasses: [],
-      teacherSubjects: []
+      loadName: 'Feruza Erkinovna',
+      teacherClasses: ['5A','5B','5C','6A','6B','7A','7C'],
+      teacherSubjects: ['Literature','Russian']
     },
     'bobobe.olimov': {
       password: 'class5a5b',
@@ -4032,8 +4012,9 @@ function renderIncidentLog() {
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Bobobekova Barno Olimovna',
-      teacherClasses: [],
-      teacherSubjects: []
+      loadName: 'Barno Olimovna',
+      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A','5B','5C','6A','6B','7A','7B','7C'],
+      teacherSubjects: ['Art','TechDraw']
     },
     'djuray.isayev': {
       password: 'class1a2a',
@@ -4046,8 +4027,9 @@ function renderIncidentLog() {
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Djurayeva Oygul Isayevna',
-      teacherClasses: [],
-      teacherSubjects: []
+      loadName: 'Oygul Isaevna',
+      teacherClasses: ['2A','2B','2C','3A','3B','3C'],
+      teacherSubjects: ['Russian']
     },
     'egambe.zafar': {
       password: 'class1c2c',
@@ -4060,22 +4042,9 @@ function renderIncidentLog() {
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Egamberdiyev Zafar',
-      teacherClasses: [],
-      teacherSubjects: []
-    },
-    'ibragi.ismail': {
-      password: 'class8a9a',
-      name: 'Ibragimova Nasiba Ismailovna',
-      role: 'class_teacher',
-      title: 'Class Teacher — 8A, 8B, 9A, 10A',
-      avatar: 'NI',
-      access: 'class',
-      classes: [],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-      teacherName: 'Ibragimova Nasiba Ismailovna',
-      teacherClasses: [],
-      teacherSubjects: []
+      loadName: 'Zafar',
+      teacherClasses: ['2A','2B','2C','3A','3B','3C'],
+      teacherSubjects: ['English']
     },
     'isomat.sadrid': {
       password: 'class3b3c',
@@ -4088,22 +4057,9 @@ function renderIncidentLog() {
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Isomatov Xushbaxt Sadriddinovich',
-      teacherClasses: [],
-      teacherSubjects: []
-    },
-    'jamalo.alishe': {
-      password: 'class7b',
-      name: 'Jamalova Asalya Alisherovna',
-      role: 'class_teacher',
-      title: 'Class Teacher — 7B',
-      avatar: 'AJ',
-      access: 'class',
-      classes: [],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-      teacherName: 'Jamalova Asalya Alisherovna',
-      teacherClasses: [],
-      teacherSubjects: []
+      loadName: 'Khushbakht (5A only)',
+      teacherClasses: ['5A'],
+      teacherSubjects: ['PE']
     },
     'naimov.musino': {
       password: 'class4b4c',
@@ -4116,8 +4072,9 @@ function renderIncidentLog() {
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Naimova Zarrina Musinovna',
-      teacherClasses: [],
-      teacherSubjects: []
+      loadName: 'Zarrina Musinovna',
+      teacherClasses: ['1A','1B','1C','4A','4B','4C'],
+      teacherSubjects: ['Russian']
     },
     'normam.furkat': {
       password: 'class1b2b',
@@ -4130,22 +4087,9 @@ function renderIncidentLog() {
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Normamatova Sitora Furkatovna',
-      teacherClasses: [],
-      teacherSubjects: []
-    },
-    'raximo.xilola': {
-      password: 'class6c7c',
-      name: 'Raximova Xilola',
-      role: 'class_teacher',
-      title: 'Class Teacher — 6C & 7C',
-      avatar: 'XR',
-      access: 'class',
-      classes: [],
-      panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-      teacherName: 'Raximova Xilola',
-      teacherClasses: [],
-      teacherSubjects: []
+      loadName: 'Sitora Furkatovna',
+      teacherClasses: ['1A','1B','1C','2A','2C','4A'],
+      teacherSubjects: ['Maths-Rus']
     },
     'yusupo.davlat': {
       password: 'class6b',
@@ -4158,8 +4102,9 @@ function renderIncidentLog() {
       panels: ['dashboard','results','discipline','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
       teacherName: 'Yusupov Abdussator Davlatovich',
-      teacherClasses: [],
-      teacherSubjects: []
+      loadName: 'Abdulsattor Davlatovich',
+      teacherClasses: ['4B','4C','5A','5B','5C','6A','6B'],
+      teacherSubjects: ['Maths-Rus']
     },
 
     // ── SUBJECT TEACHERS ──
@@ -4189,19 +4134,6 @@ function renderIncidentLog() {
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
-    'halkou.hous': {
-      password: 'teacher2024',
-      name: 'Halkouj Houssam',
-      role: 'teacher',
-      title: 'Subject Teacher',
-      avatar: 'HH',
-      access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
-      teacherName: 'Halkouj Houssam',
-      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-    },
     'hella.manz': {
       password: 'teacher2024',
       name: 'Hella Manzoor Ahmad',
@@ -4209,22 +4141,10 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'HM',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
+      teacherSubjects: ['Maths-Eng'],
+      teacherClasses: ['5B','5C','6A','6B','7A','7B'],
       teacherName: 'Hella Manzoor Ahmad',
-      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-    },
-    'jamalo.asal': {
-      password: 'teacher2024',
-      name: 'Jamalova Asalya Alisherovna',
-      role: 'teacher',
-      title: 'Subject Teacher',
-      avatar: 'JA',
-      access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
-      teacherName: 'Jamalova Asalya Alisherovna',
+      loadName: 'Manzoor Ahmad',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
@@ -4235,22 +4155,10 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'MS',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
+      teacherSubjects: ['English'],
+      teacherClasses: ['4A','4B','4C','5A','5B','5C'],
       teacherName: 'Mishra Soniya',
-      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-    },
-    'neitng.nans': {
-      password: 'teacher2024',
-      name: 'Neitngale Nansi Thote',
-      role: 'teacher',
-      title: 'Subject Teacher',
-      avatar: 'NN',
-      access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
-      teacherName: 'Neitngale Nansi Thote',
+      loadName: 'Soniya',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
@@ -4261,9 +4169,10 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'RS',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
+      teacherSubjects: ['Literature','Russian'],
+      teacherClasses: ['10-11','7B','8A','8B','8C','9A','9B'],
       teacherName: 'Rakhimova Sabina Robertovna',
+      loadName: 'Sabina Robertovna',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
@@ -4274,22 +4183,10 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'RA',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
+      teacherSubjects: ['Biology'],
+      teacherClasses: ['7A','7B','7C','8B','9B'],
       teacherName: 'Raxmanova Aziza',
-      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-    },
-    'rizaba.rukh': {
-      password: 'teacher2024',
-      name: 'Rizabaeva Rukhsora Ravshanovna',
-      role: 'teacher',
-      title: 'Subject Teacher',
-      avatar: 'RR',
-      access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
-      teacherName: 'Rizabaeva Rukhsora Ravshanovna',
+      loadName: 'Aziza',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
@@ -4300,22 +4197,10 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'YA',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
+      teacherSubjects: ['Maths-Eng'],
+      teacherClasses: ['10-11','7C','8A','8B','8C','9A','9B'],
       teacherName: 'Yaqoob Adeel',
-      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
-      readonlyStats: true,
-    },
-    'mrfirdavs': {
-      password: 'teacher2024',
-      name: 'mr.Firdavs',
-      role: 'teacher',
-      title: 'Subject Teacher',
-      avatar: 'M',
-      access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
-      teacherName: 'mr.Firdavs',
+      loadName: 'Adeel',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
@@ -4326,9 +4211,10 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'M',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
+      teacherSubjects: ['PE'],
+      teacherClasses: ['6A','6B'],
       teacherName: 'ms.Karina',
+      loadName: 'Karina (6A,6B only)',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
@@ -4339,9 +4225,10 @@ function renderIncidentLog() {
       title: 'Subject Teacher',
       avatar: 'M',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
+      teacherSubjects: ['Uzbek'],
+      teacherClasses: ['10-11','6B','7A','7B','7C','8A','8B','8C','9A','9B'],
       teacherName: 'ms.Madina',
+      loadName: 'Madina',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
@@ -4358,16 +4245,264 @@ function renderIncidentLog() {
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
-    'msshahrizoda': {
-      password: 'teacher2024',
-      name: 'ms.Shahrizoda',
+    
+    'khutsi.teacher': {
+      password: 'redbridge2024',
+      name: 'Khutsi',
       role: 'teacher',
       title: 'Subject Teacher',
-      avatar: 'M',
+      avatar: 'K',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
-      teacherName: 'ms.Shahrizoda',
+      teacherSubjects: ['Activity','Art','Chess','English','Maths-Eng','PE','Science'],
+      teacherClasses: ['1A','1B'],
+      teacherName: 'Khutsi',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'alima.teacher': {
+      password: 'redbridge2024',
+      name: 'Alima',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'A',
+      access: 'subject',
+      teacherSubjects: ['Activity','Art','Chess','English','Maths-Eng','PE','Science'],
+      teacherClasses: ['1B','1C'],
+      teacherName: 'Alima',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'naseem.b': {
+      password: 'redbridge2024',
+      name: 'Naseem B.',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'NB',
+      access: 'subject',
+      teacherSubjects: ['English','IELTS'],
+      teacherClasses: ['10-11','8A','8B','8C','9A','9B'],
+      teacherName: 'Naseem B.',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'traxzee.teacher': {
+      password: 'redbridge2024',
+      name: 'Traxzee',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'T',
+      access: 'subject',
+      teacherSubjects: ['English'],
+      teacherClasses: ['6A','6B','7A','7B','7C','8C'],
+      teacherName: 'Traxzee',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'princess.d': {
+      password: 'redbridge2024',
+      name: 'Princess D.',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'PD',
+      access: 'subject',
+      teacherSubjects: ['Maths-Eng'],
+      teacherClasses: ['3A','3B','3C','4A','4B','4C','5A'],
+      teacherName: 'Princess D.',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'firuza.maths': {
+      password: 'redbridge2024',
+      name: 'Firuza (Maths)',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'FM',
+      access: 'subject',
+      teacherSubjects: ['Maths-Rus'],
+      teacherClasses: ['1A','1B','1C','2A','2B','2C'],
+      teacherName: 'Firuza (Maths)',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'ozoda.teacher': {
+      password: 'redbridge2024',
+      name: 'Ms Ozoda',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'MO',
+      access: 'subject',
+      teacherSubjects: ['Maths-Rus'],
+      teacherClasses: ['7A','7B','7C','8A','8B','8C','9A','9B'],
+      teacherName: 'Ms Ozoda',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'lola.teacher': {
+      password: 'redbridge2024',
+      name: 'Ms Lola',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'ML',
+      access: 'subject',
+      teacherSubjects: ['Maths-Rus'],
+      teacherClasses: ['5A','5B','5C','6A','6B'],
+      teacherName: 'Ms Lola',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'stephanie.teacher': {
+      password: 'redbridge2024',
+      name: 'Ms Stephanie',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'MS',
+      access: 'subject',
+      teacherSubjects: ['CC-Science','Science'],
+      teacherClasses: ['5B','5C','6A','6B','7A','7B','7C','8A','8B','8C','9A','9B'],
+      teacherName: 'Ms Stephanie',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'ahmed.teacher': {
+      password: 'redbridge2024',
+      name: 'Ahmed',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'A',
+      access: 'subject',
+      teacherSubjects: ['Science'],
+      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
+      teacherName: 'Ahmed',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'ameen.alam': {
+      password: 'redbridge2024',
+      name: 'Ameen Alam',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'AA',
+      access: 'subject',
+      teacherSubjects: ['Geography','History'],
+      teacherClasses: ['10-11','5A','5B','5C','6A','6B','7A','7B','7C','8A','8B','8C','9A','9B'],
+      teacherName: 'Ameen Alam',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'liyaqat.teacher': {
+      password: 'redbridge2024',
+      name: 'Liyaqat',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'L',
+      access: 'subject',
+      teacherSubjects: ['ICT','Maths-Eng'],
+      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A','5B','5C','6A','6B'],
+      teacherName: 'Liyaqat',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'lubov.teacher': {
+      password: 'redbridge2024',
+      name: 'Lubov',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'L',
+      access: 'subject',
+      teacherSubjects: ['Physics'],
+      teacherClasses: ['7A','7B','7C','8A','9A'],
+      teacherName: 'Lubov',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'sharifa.teacher': {
+      password: 'redbridge2024',
+      name: 'Ms Sharifa',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'MS',
+      access: 'subject',
+      teacherSubjects: ['Chemistry'],
+      teacherClasses: ['7A','7B','7C','8B','9B'],
+      teacherName: 'Ms Sharifa',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'nargiza.teacher': {
+      password: 'redbridge2024',
+      name: 'Ms Nargiza',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'MN',
+      access: 'subject',
+      teacherSubjects: ['Uzbek'],
+      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A','5B','5C','6A'],
+      teacherName: 'Ms Nargiza',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'khalid.ali': {
+      password: 'redbridge2024',
+      name: 'Khalid Ali',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'KA',
+      access: 'subject',
+      teacherSubjects: ['PE'],
+      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5B','5C','7A','7B','7C'],
+      teacherName: 'Khalid Ali',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'military.instructor': {
+      password: 'redbridge2024',
+      name: 'Military Training Instructor',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'MT',
+      access: 'subject',
+      teacherSubjects: ['PE'],
+      teacherClasses: ['10-11','8A','8B','8C','9A','9B'],
+      teacherName: 'Military Training Instructor',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'alexander.teacher': {
+      password: 'redbridge2024',
+      name: 'Alexander',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'A',
+      access: 'subject',
+      teacherSubjects: ['Chess','Law'],
+      teacherClasses: ['10-11','2A','2B','2C','3A','3B','3C','4A','4B','4C'],
+      teacherName: 'Alexander',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'jaklin.teacher': {
+      password: 'redbridge2024',
+      name: 'Jaklin',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'J',
+      access: 'subject',
+      teacherSubjects: ['Activity'],
+      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C'],
+      teacherName: 'Jaklin',
+      panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+    'beth.teacher': {
+      password: 'redbridge2024',
+      name: 'Beth',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'B',
+      access: 'subject',
+      teacherSubjects: ['Business','Economics'],
+      teacherClasses: ['10-11','8A','8B','8C','9A','9B'],
+      teacherName: 'Beth',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
@@ -4416,6 +4551,7 @@ function renderIncidentLog() {
         teacherSubjects: freshUser.teacherSubjects || [],
         readonlyStats:   freshUser.readonlyStats   || false,
         teacherName:     freshUser.teacherName     || null,
+        loadName:        freshUser.loadName        || null,
         v:               SESSION_VERSION,
       };
     } catch(e) {}
@@ -4468,6 +4604,7 @@ function renderIncidentLog() {
       teacherSubjects: user.teacherSubjects || [],
       readonlyStats:   user.readonlyStats   || false,
       teacherName:     user.teacherName     || null,
+      loadName:        user.loadName        || null,
       v:               SESSION_VERSION,
     };
 
@@ -4758,295 +4895,57 @@ function renderIncidentLog() {
   var _TLL = { green:'🟢', yellow:'🟡', red:'🔴', grey:'⚪' };
 
   function openStudentReport(info) {
-    var name  = info.name;
-    var cls   = info.cls;
-    var month = info.month || 'February';
+    var name = info.name;
+    var modal = document.getElementById('res-student-modal');
+    var nameEl = document.getElementById('res-student-name');
+    var bodyEl = document.getElementById('res-student-body');
+    if (!modal || !bodyEl) return;
 
-    // Find student in resultsData
-    var months   = resultsData[cls] || {};
-    var students = months[month] || months['February'] || months['January'] || [];
-    var student  = null;
-    for (var si=0; si<students.length; si++) {
-      if ((students[si].surname + ' ' + students[si].firstname) === name) { student = students[si]; break; }
-    }
-    if (!student) { showToast('Student data not found.'); return; }
+    nameEl.textContent = name;
+    bodyEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading…</div>';
+    modal.style.display = 'flex';
 
-    var otherMonth    = month === 'February' ? 'January' : 'February';
-    var otherStudents = months[otherMonth] || [];
-    var studentOther  = null;
-    for (var oi=0; oi<otherStudents.length; oi++) {
-      if ((otherStudents[oi].surname+' '+otherStudents[oi].firstname) === name) { studentOther = otherStudents[oi]; break; }
-    }
-
-    // ── HEADER ──
-    var initials = name.split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('');
-    (function(){var _e=document.getElementById('sr-avatar');if(_e)_e.textContent=initials;})();
-    (function(){var _e=document.getElementById('sr-name');if(_e)_e.textContent=name;})();
-    (function(){var _e=document.getElementById('sr-meta');if(_e)_e.textContent='Class '+cls+' · '+month+' 2026';})();
-
-    // ── DATA PREP ──
-    var tl       = student.traffic_light || {};
-    var scores   = student.scores        || {};
-    var subjects = Object.keys(tl);   // ALL assessed subjects
-
-    // Separate subjects into: has written score / teacher-assessed only
-    var writtenSubjs = subjects.filter(function(s){
-      var sc = scores[s];
-      return sc && sc.raw && sc.raw.endsWith('%') && sc.color !== 'grey';
-    });
-    var teacherSubjs = subjects.filter(function(s){ return writtenSubjs.indexOf(s) === -1; });
-
-    // Count traffic lights
-    var g=0, y=0, r=0;
-    subjects.forEach(function(s){
-      var c = tl[s];
-      if (c==='green') g++; else if (c==='yellow') y++; else if (c==='red') r++;
-    });
-    var total = g+y+r || 1;
-
-    // ── OVERALL PERFORMANCE RING ──
-    // Use average of actual written scores where available, else weighted estimate
-    var pct;
-    if (writtenSubjs.length >= 2) {
-      var sum = 0, cnt = 0;
-      writtenSubjs.forEach(function(s){
-        var n = parseInt(scores[s].raw);
-        if (!isNaN(n)) { sum += n; cnt++; }
-      });
-      pct = cnt ? Math.round(sum/cnt) : Math.round((g*90+y*60+r*25)/total);
-    } else {
-      // Weighted by traffic light: green=90, yellow=60, red=25
-      pct = Math.round((g*90 + y*60 + r*25) / total);
-    }
-
-    var scoreLabel = writtenSubjs.length >= 2 ? 'avg written score' : 'teacher assessment';
-    (function(){var _e=document.getElementById('sr-pct');if(_e)_e.textContent=pct + '%';})();
-    var scoreLabelEl = document.getElementById('sr-score-label');
-    if (scoreLabelEl) scoreLabelEl.textContent = scoreLabel;
-
-    var rat = pct>=80?['Excellent','#15803d','#dcfce7']:
-              pct>=60?['Satisfactory','#1e40af','#dbeafe']:
-              pct>=40?['Developing','#a16207','#fef9c3']:
-                      ['Needs Support','#b91c1c','#fee2e2'];
-    var badge = document.getElementById('sr-rating-badge');
-    if (badge) { badge.textContent = rat[0]; badge.style.color = rat[1]; badge.style.background = rat[2]; }
-    setTimeout(function(){
-      var ring = document.getElementById('sr-ring');
-      if (ring) { ring.style.strokeDashoffset = 289-(289*pct/100); ring.style.stroke = rat[1]; }
-    }, 100);
-    document.getElementById('sr-traffic-summary').innerHTML =
-      '<span style="color:#16a34a;font-weight:700;">🟢 '+g+'</span> &nbsp; '+
-      '<span style="color:#ca8a04;font-weight:700;">🟡 '+y+'</span> &nbsp; '+
-      '<span style="color:#dc2626;font-weight:700;">🔴 '+r+'</span>';
-
-    // ── SUBJECT PERFORMANCE ──
-    var subjEl = document.getElementById('sr-subjects');
-    subjEl.innerHTML = '';
-
-    // Section: Written test scores (if any)
-    if (writtenSubjs.length > 0) {
-      var hdr1 = document.createElement('div');
-      hdr1.style.cssText = 'font-size:10px;font-weight:700;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.1em;margin:4px 0 6px;';
-      hdr1.textContent   = '📝 Written Test Results';
-      subjEl.appendChild(hdr1);
-
-      writtenSubjs.forEach(function(subj) {
-        var sc  = scores[subj];
-        var clr = sc.color || tl[subj] || 'grey';
-        var pctVal = parseInt(sc.raw);
-        var bar = document.createElement('div');
-        bar.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#faf8f3;border-radius:8px;border-left:3px solid '+_TLC[clr]+';margin-bottom:5px;';
-        bar.innerHTML =
-          '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#3d3a2e;">'+subj+'</div></div>' +
-          '<div style="height:8px;width:80px;background:#ede7d3;border-radius:4px;overflow:hidden;flex-shrink:0;">' +
-            '<div style="width:'+pctVal+'%;height:100%;background:'+_TLC[clr]+';border-radius:4px;"></div></div>' +
-          '<div style="font-size:15px;font-weight:900;font-family:Playfair Display,serif;color:'+_TLC[clr]+';min-width:40px;text-align:right;">'+sc.raw+'</div>' +
-          '<div style="width:26px;height:26px;border-radius:6px;background:'+_TLB[clr]+';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+_TLL[clr]+'</div>';
-        subjEl.appendChild(bar);
-      });
-    }
-
-    // Section: Teacher-assessed subjects
-    if (teacherSubjs.length > 0) {
-      var hdr2 = document.createElement('div');
-      hdr2.style.cssText = 'font-size:10px;font-weight:700;color:#8a8a8a;text-transform:uppercase;letter-spacing:0.1em;margin:'+(writtenSubjs.length?'10px':'4px')+' 0 6px;';
-      hdr2.textContent   = '👩‍🏫 Teacher Assessment';
-      subjEl.appendChild(hdr2);
-
-      teacherSubjs.forEach(function(subj) {
-        var clr   = tl[subj] || 'grey';
-        var sc    = scores[subj];
-        var absent = sc && sc.raw === 'Absent';
-        var meaning = clr==='green'?'Excelling':clr==='yellow'?'Developing':clr==='red'?'Needs Support':'';
-        var bar = document.createElement('div');
-        bar.style.cssText = 'display:flex;align-items:center;gap:10px;padding:7px 12px;background:#faf8f3;border-radius:8px;border-left:3px solid '+(absent?'#e5e7eb':_TLC[clr])+';margin-bottom:4px;';
-        bar.innerHTML =
-          '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#3d3a2e;">'+subj+'</div>' +
-          '<div style="font-size:10.5px;color:'+(absent?'#9ca3af':_TLC[clr])+';font-weight:600;margin-top:1px;">'+(absent?'Student absent':meaning)+'</div></div>' +
-          '<div style="width:26px;height:26px;border-radius:6px;background:'+(absent?'#f3f4f6':_TLB[clr])+';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+(absent?'—':_TLL[clr])+'</div>';
-        subjEl.appendChild(bar);
-      });
-    }
-
-    // ── MONTH TREND ──
-    var trendEl = document.getElementById('sr-trend');
-    trendEl.innerHTML = '';
-    var tlOther = studentOther ? (studentOther.traffic_light||{}) : {};
-    var scOther = studentOther ? (studentOther.scores||{}) : {};
-
-    if (!studentOther) {
-      trendEl.innerHTML = '<div style="font-size:12px;color:#8a8a8a;text-align:center;padding:12px;">Only one month of data available.</div>';
-    } else {
-      subjects.forEach(function(subj) {
-        var cur  = tl[subj];
-        var prev = tlOther[subj];
-        if (!cur && !prev) return;
-        var curSc  = (scores[subj]||{}).raw;
-        var prevSc = (scOther[subj]||{}).raw;
-        var arrow  = (!cur||!prev)?'→':cur===prev?'→':(cur==='green'&&prev!=='green')||( cur!=='red'&&prev==='red')?'↑':(cur==='red'&&prev!=='red')||(cur!=='green'&&prev==='green')?'↓':'→';
-        var arrowCol = arrow==='↑'?'#16a34a':arrow==='↓'?'#dc2626':'#8a8a8a';
-
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:7px;font-size:12px;margin-bottom:5px;';
-        var prevScore = (prevSc && prevSc.endsWith('%')) ? '<span style="font-size:10px;font-family:DM Mono,monospace;color:'+(_TLC[prev]||'#8a8a8a')+';">'+prevSc+'</span>' : '';
-        var curScore  = (curSc  && curSc.endsWith('%'))  ? '<span style="font-size:10px;font-family:DM Mono,monospace;color:'+(_TLC[cur] ||'#8a8a8a')+';">'+curSc+'</span>'  : '';
-        row.innerHTML =
-          '<div style="flex:1;font-weight:600;color:#3d3a2e;font-size:12px;">'+subj+'</div>' +
-          '<div style="display:flex;align-items:center;gap:3px;">' +
-            '<div style="width:20px;height:20px;border-radius:4px;background:'+(_TLB[prev]||'#f3f4f6')+';display:flex;align-items:center;justify-content:center;font-size:10px;">'+(prev?_TLL[prev]||'⚪':'⚪')+'</div>' +
-            prevScore +
-          '</div>' +
-          '<div style="font-size:13px;font-weight:900;color:'+arrowCol+';width:16px;text-align:center;">'+arrow+'</div>' +
-          '<div style="display:flex;align-items:center;gap:3px;">' +
-            '<div style="width:20px;height:20px;border-radius:4px;background:'+(_TLB[cur]||'#f3f4f6')+';display:flex;align-items:center;justify-content:center;font-size:10px;">'+(cur?_TLL[cur]||'⚪':'⚪')+'</div>' +
-            curScore +
-          '</div>';
-        trendEl.appendChild(row);
-      });
-
-      // Month labels
-      var lblRow = document.createElement('div');
-      lblRow.style.cssText = 'display:flex;justify-content:flex-end;gap:7px;font-size:10px;color:#8a8a8a;margin-top:6px;padding-top:6px;border-top:1px solid #ede7d3;';
-      lblRow.innerHTML = '<span style="margin-right:auto;color:#8a8a8a;">← '+otherMonth+' → '+month+'</span>';
-      trendEl.appendChild(lblRow);
-    }
-
-    // ── DISCIPLINE ──
-    var discEl = document.getElementById('sr-discipline');
-    discEl.innerHTML = '';
-    var disc = student.discipline || {};
-    var discKeys = Object.keys(disc);
-    if (!discKeys.length) {
-      discEl.innerHTML = '<div style="font-size:12px;color:#8a8a8a;text-align:center;padding:16px;">No discipline records for this period.</div>';
-    } else {
-      discKeys.forEach(function(key) {
-        var clr = (disc[key]||{}).color || 'grey';
-        var icon = key==='Punctuality'?'⏰':key==='Behaviour'?'🤝':key==='Attendance'?'📋':key==='Homework'?'📝':key==='Parent Contact'?'👨‍👩‍👧':'•';
-        var meaning = clr==='green'?'Good':clr==='yellow'?'Needs attention':clr==='red'?'Concern':'—';
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 12px;background:#faf8f3;border-radius:8px;margin-bottom:5px;';
-        row.innerHTML =
-          '<div style="font-size:18px;width:28px;text-align:center;flex-shrink:0;">'+icon+'</div>' +
-          '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#3d3a2e;">'+key+'</div>' +
-          '<div style="font-size:10.5px;color:'+_TLC[clr]+';font-weight:600;">'+meaning+'</div></div>' +
-          '<div style="width:28px;height:28px;border-radius:7px;background:'+_TLB[clr]+';display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">'+_TLL[clr]+'</div>';
-        discEl.appendChild(row);
-      });
-    }
-
-    // ── SCORES SUMMARY (compact) ──
-    var scoresEl = document.getElementById('sr-scores');
-    scoresEl.innerHTML = '';
-
-    if (writtenSubjs.length === 0) {
-      scoresEl.innerHTML =
-        '<div style="padding:14px;background:#fef3c7;border-radius:10px;border:1.5px solid #fde68a;font-size:12.5px;color:#92400e;">' +
-        '<strong>ℹ️ No written test scores for '+cls+' in '+month+'</strong><br>' +
-        'All subject assessments for this class are based on teacher observation (traffic light system). ' +
-        'Written test scores are only available for subjects where a formal test was conducted.' +
-        '</div>';
-    } else {
-      writtenSubjs.forEach(function(subj) {
-        var sc  = scores[subj];
-        var clr = sc.color || 'grey';
-        var pill = document.createElement('div');
-        pill.style.cssText = 'padding:10px 14px;border-radius:10px;background:'+_TLB[clr]+';border:1.5px solid '+_TLC[clr]+'44;text-align:center;min-width:90px;';
-        var shortName = subj.replace('Cambridge Maths','Cam.Maths').replace('Russian Language','Russian').replace('GP (Hist-Geo)','GP');
-        pill.innerHTML =
-          '<div style="font-size:10px;font-weight:700;color:'+_TLC[clr]+';text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">'+shortName+'</div>' +
-          '<div style="font-size:22px;font-weight:900;font-family:Playfair Display,serif;color:'+_TLC[clr]+';">'+sc.raw+'</div>';
-        scoresEl.appendChild(pill);
-      });
-      var note = document.createElement('div');
-      note.style.cssText = 'width:100%;font-size:11px;color:#8a8a8a;margin-top:6px;font-style:italic;';
-      note.textContent = 'Only subjects with formal written tests have percentage scores. Other subjects use teacher traffic light assessment.';
-      scoresEl.appendChild(note);
-    }
-
-    // ── EXTRACURRICULAR ──
-    var extraEl = document.getElementById('sr-extra');
-
-
-    extraEl.innerHTML = '';
-    var extra   = student.extracurricular || {};
-    var hasExtra = false;
-    Object.entries(extra).forEach(function(e) {
-      if (!e[1]) return;
-      hasExtra = true;
-      var div = document.createElement('div');
-      div.style.cssText = 'padding:9px 12px;background:rgba(255,255,255,0.08);border-radius:8px;border:1px solid rgba(201,151,47,0.2);margin-bottom:6px;';
-      div.innerHTML =
-        '<div style="font-size:10px;color:rgba(201,151,47,0.7);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">'+e[0]+'</div>' +
-        '<div style="font-size:13px;color:#f5f0e8;font-weight:600;">'+e[1]+'</div>';
-      extraEl.appendChild(div);
-    });
-    if (!hasExtra) {
-      extraEl.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center;padding:14px;">No extracurricular activities recorded.</div>';
-    }
-
-    // ── HEALTH RECORDS ──
-    var healthEl = document.getElementById('sr-health');
-    if (healthEl) {
-      healthEl.innerHTML = '';
-      var healthData = (typeof getStudentHealth === 'function')
-        ? getStudentHealth(cls, student.surname, student.firstname) : null;
-      if (!healthData || !healthData.length) {
-        healthEl.innerHTML = '<div style="font-size:12px;color:#6b7280;text-align:center;padding:12px;">No medical records on file.</div>';
-      } else {
-        var COND_COLORS = {
-          'severe':  {bg:'#fee2e2',border:'#dc2626',text:'#b91c1c',label:'Severe'},
-          'high':    {bg:'#fef3c7',border:'#d97706',text:'#92400e',label:'High'},
-          'moderate':{bg:'#fef9c3',border:'#ca8a04',text:'#854d0e',label:'Moderate'},
-          'mild':    {bg:'#fff7ed',border:'#ea580c',text:'#9a3412',label:'Mild'},
-        };
-        healthData.forEach(function(rec) {
-          var col = COND_COLORS[rec.severity] || COND_COLORS.mild;
-          var icon = rec.test==='HGB'?'🩸':rec.test==='WBC'?'🦠':'📊';
-          var card = document.createElement('div');
-          card.style.cssText = 'padding:10px 12px;background:'+col.bg+';border-radius:8px;border-left:3px solid '+col.border+';margin-bottom:6px;';
-          card.innerHTML = '<div style="display:flex;align-items:center;gap:8px;">'
-            +'<span style="font-size:16px;">'+icon+'</span>'
-            +'<div style="flex:1;">'
-            +'<div style="font-size:12.5px;font-weight:700;color:'+col.text+';">'+rec.condition+'</div>'
-            +'<div style="font-size:11px;color:#6b7280;">'+rec.test+': <strong>'+rec.value+'</strong> (normal: '+rec.normal+')</div>'
-            +'</div>'
-            +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+col.border+';color:white;">'+col.label+'</span>'
-            +'</div>';
-          healthEl.appendChild(card);
+    fetch(_SB_URL + '/rest/v1/assessments?select=*', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var history = [];
+      (rows||[]).forEach(function(a) {
+        (a.students||[]).forEach(function(s) {
+          if (s.name === name) {
+            history.push({ subject: a.subject, name2: a.name, type: a.type, date: a.date, pct: s.pct, absent: s.absent });
+          }
         });
-        var note = document.createElement('div');
-        note.style.cssText = 'font-size:10px;color:#9ca3af;margin-top:6px;font-style:italic;';
-        note.textContent = 'Source: School Blood Test — Dr. D. Rustamova, 2026';
-        healthEl.appendChild(note);
+      });
+      history.sort(function(a,b){ return new Date(b.date) - new Date(a.date); });
+
+      if (!history.length) {
+        bodyEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No assessment records for this student yet.</div>';
+        return;
       }
-    }
 
-    // Show modal
-    var m = document.getElementById('student-report-modal');
-    m.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+      function pctColor(pct) {
+        if (pct === null || pct === undefined) return '#94a3b8';
+        return pct >= 70 ? '#15803d' : pct >= 50 ? '#a16207' : '#b91c1c';
+      }
+
+      var html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+      history.forEach(function(h) {
+        var pctText = h.absent ? 'Absent' : (h.pct !== null && h.pct !== undefined ? h.pct + '%' : '—');
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--rule-light,#f1f5f9);border-radius:9px;">' +
+          '<div><div style="font-size:12.5px;font-weight:700;color:var(--ink);">' + h.subject + ' — ' + h.name2 + '</div>' +
+          '<div style="font-size:11px;color:var(--muted);">' + h.date + ' · ' + (h.type||'') + '</div></div>' +
+          '<span style="font-weight:800;font-size:13px;color:' + pctColor(h.pct) + ';">' + pctText + '</span>' +
+        '</div>';
+      });
+      html += '</div>';
+      bodyEl.innerHTML = html;
+    })
+    .catch(function() {
+      bodyEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Could not load assessment history.</div>';
+    });
   }
-
 
   function closeStudentReport() {
     var m = document.getElementById('student-report-modal');
@@ -6011,23 +5910,32 @@ function saveDailyReport() {
     document.getElementById('dr-lesson-cards-wrap').style.display = '';
   }
 
+  function fetchClassStudents(cls) {
+    // Real student roster from Supabase, replacing the old dead resultsData source.
+    return fetch(_SB_URL + '/rest/v1/students?class=eq.' + encodeURIComponent(cls) + '&order=full_name_en.asc&select=*', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(rows) { return rows || []; })
+    .catch(function() { return []; });
+  }
+
   function drBuildGrid(cls, subject) {
-    var grid = document.getElementById('dr-grade-grid');
+    var grid = document.getElementById('dr-students-wrap');
     if (!grid) return;
     grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading…</div>';
 
-    // Get students from resultsData (has .surname and .firstname)
-    var classData = (resultsData && resultsData[cls]) || {};
-    var monthKeys = ['February','January','December','November','October'];
-    var students  = [];
-    for (var mi = 0; mi < monthKeys.length; mi++) {
-      if (classData[monthKeys[mi]] && classData[monthKeys[mi]].length) {
-        students = classData[monthKeys[mi]];
-        break;
-      }
-    }
+    fetchClassStudents(cls).then(function(students) {
+      drRenderGrid(cls, subject, students);
+    });
+  }
+
+  function drRenderGrid(cls, subject, students) {
+    var grid = document.getElementById('dr-students-wrap');
+    if (!grid) return;
+
     if (!students.length) {
-      grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No student data for Class ' + cls + '</div>';
+      grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No students in Class ' + cls + ' yet. Add students in Classes &amp; Students first.</div>';
       return;
     }
 
@@ -6113,9 +6021,7 @@ function saveDailyReport() {
     // Body rows
     var tbody = document.createElement('tbody');
     students.forEach(function(st, idx) {
-      var surname   = st.surname   || st.s || '';
-      var firstname = st.firstname || st.f || '';
-      var fullName  = (surname + ' ' + firstname).trim();
+      var fullName  = stuDisplayName(st);
       var bg        = idx % 2 === 0 ? 'white' : '#f8fafc';
 
       var tr = document.createElement('tr');
@@ -7104,46 +7010,66 @@ function saveDailyReport() {
     if (!u) return;
 
     var now  = new Date();
-    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
     var day  = days[now.getDay()];
 
-    // Get today's lessons from TEACHER_SCHEDULE
-    var lessons = [];
-    if (u.access === 'all' || u.role === 'principal' || u.role === 'founder' || u.role === 'admin') {
-      // Principal sees all lessons today
-      if (typeof TEACHER_SCHEDULE !== 'undefined') {
-        Object.keys(TEACHER_SCHEDULE).forEach(function(tname) {
-          (TEACHER_SCHEDULE[tname][day] || []).forEach(function(les) {
-            lessons.push({ time: les.time, class: les.class, subject: les.subject, teacher: tname.split(' ')[0], period: les.period });
-          });
-        });
-        lessons.sort(function(a,b){ return (a.period||0) - (b.period||0); });
-      }
-    } else if (u.teacherName && typeof TEACHER_SCHEDULE !== 'undefined') {
-      lessons = (TEACHER_SCHEDULE[u.teacherName] || {})[day] || [];
+    if (day === 'SATURDAY' || day === 'SUNDAY') {
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">🎉 Weekend — no classes today</div>';
+      return;
     }
 
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">Loading…</div>';
+
+    fetch(_SB_URL + '/rest/v1/timetable?day=eq.' + day + '&select=*', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      rows = rows || [];
+      var lessons;
+      var isAdmin = (u.access === 'all' || u.role === 'principal' || u.role === 'founder' || u.role === 'admin');
+      if (isAdmin) {
+        lessons = rows;
+      } else if (u.teacherName) {
+        var matchName = u.loadName || u.teacherName;
+        lessons = rows.filter(function(r) { return r.teacher_name === matchName; });
+      } else {
+        lessons = [];
+      }
+      lessons.sort(function(a,b) { return (a.period||'').localeCompare(b.period||''); });
+      dashRenderSchedule(lessons);
+    })
+    .catch(function() {
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">Could not load schedule.</div>';
+    });
+  }
+
+  function dashRenderSchedule(lessons) {
+    var el = document.getElementById('dash-schedule');
+    if (!el) return;
+
     if (!lessons.length) {
-      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">' + (day==='Saturday'||day==='Sunday' ? '🎉 Weekend — no classes today' : 'No lessons found for today') + '</div>';
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">No lessons found for today</div>';
       return;
     }
 
     var subjectColors = {
-      'ENGLISH':'#7C3AED','MATHS':'#3B82F6','CAMBRIDGE MATHS':'#3B82F6','SCIENCE':'#10B981',
-      'RUSSIAN LANGUAGE':'#EF4444','PHYSICS':'#0369A1','CHEMISTRY':'#D97706',
-      'BIOLOGY':'#059669','ICT':'#4F46E5','GP (HIST-GEO)':'#6B7280','ECONOMICS':'#0F766E'
+      'ENGLISH':'#7C3AED','MATHS-ENG':'#3B82F6','MATHS-RUS':'#3B82F6','CAMBRIDGE MATHS':'#3B82F6','SCIENCE':'#10B981',
+      'RUSSIAN':'#EF4444','LITERATURE':'#EF4444','PHYSICS':'#0369A1','CHEMISTRY':'#D97706',
+      'BIOLOGY':'#059669','ICT':'#4F46E5','HISTORY':'#6B7280','GEOGRAPHY':'#6B7280','ECONOMICS':'#0F766E'
     };
 
     var html = '';
     lessons.slice(0,6).forEach(function(les) {
       var col = subjectColors[(les.subject||'').toUpperCase()] || '#7C3AED';
+      var groupLabel = les.teacher_group ? (' · ' + les.teacher_group) : '';
       html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--rule);">' +
         '<div style="width:4px;height:40px;border-radius:4px;background:'+col+';flex-shrink:0;"></div>' +
         '<div style="flex:1;">' +
-          '<div style="font-size:12.5px;font-weight:700;color:var(--ink);">'+les.subject+' — Class '+les.class+'</div>' +
-          '<div style="font-size:11.5px;color:var(--muted);margin-top:2px;">P'+les.period+' · '+(les.time||'')+(les.teacher?' · '+les.teacher:'')+'</div>' +
+          '<div style="font-size:12.5px;font-weight:700;color:var(--ink);">'+les.subject+' — Class '+les.class+groupLabel+'</div>' +
+          '<div style="font-size:11.5px;color:var(--muted);margin-top:2px;">'+les.period+' · '+(les.time_slot||'')+(les.teacher_name?' · '+les.teacher_name:'')+'</div>' +
         '</div>' +
-        '<div style="font-size:11px;color:white;background:'+col+';padding:2px 8px;border-radius:6px;font-weight:700;">P'+les.period+'</div>' +
+        '<div style="font-size:11px;color:white;background:'+col+';padding:2px 8px;border-radius:6px;font-weight:700;">'+les.period+'</div>' +
       '</div>';
     });
     if (lessons.length > 6) html += '<div style="padding:10px 18px;font-size:12px;color:var(--primary);font-weight:700;cursor:pointer;" onclick="showPanel(' + "'timetable',null)" + '">+ '+(lessons.length-6)+' more lessons →</div>';
@@ -7719,11 +7645,20 @@ function saveDailyReport() {
     var sub  = document.getElementById('asm-students-sub');
     if (!cls || !subj || !wrap) return;
 
-    // Get students from resultsData
-    var months  = (resultsData && resultsData[cls]) || {};
-    var students = months['February'] || months['January'] || [];
+    wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div>';
+
+    fetchClassStudents(cls).then(function(students) {
+      asmRenderStudents(cls, subj, students);
+    });
+  }
+
+  function asmRenderStudents(cls, subj, students) {
+    var wrap = document.getElementById('asm-students-wrap');
+    var sub  = document.getElementById('asm-students-sub');
+    if (!wrap) return;
+
     if (!students.length) {
-      wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No student data for Class '+cls+'</div>';
+      wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No students in Class '+cls+' yet. Add students in Classes &amp; Students first.</div>';
       return;
     }
     if (sub) sub.textContent = 'Class ' + cls + ' · ' + subj + ' · ' + students.length + ' students';
@@ -7743,7 +7678,7 @@ function saveDailyReport() {
 
     var tbody = document.createElement('tbody');
     students.forEach(function(st, idx) {
-      var name = st.surname + ' ' + st.firstname;
+      var name = stuDisplayName(st);
       var bg   = idx%2===0 ? 'white' : '#f8fafc';
       var tr   = document.createElement('tr');
       tr.style.cssText = 'background:'+bg+';border-bottom:1px solid #f1f5f9;';
@@ -9411,11 +9346,149 @@ function saveDailyReport() {
   var _ttView = 'school';
 
   function ttInitPanel() {
-    var now  = new Date();
-    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var today = days[now.getDay()];
-    ttRenderTodayBar(today);
-    ttRender();
+    ttPopulateClasses();
+    ttRenderDayTabs();
+  }
+
+  var _ttSelectedDay = 'MONDAY';
+  var _ttCache = null; // full timetable, loaded once per panel visit
+
+  function ttPopulateClasses() {
+    var sel = document.getElementById('tt-class');
+    if (!sel || sel.options.length > 1) return;
+    var classes = (typeof ALL_CLASSES !== 'undefined') ? ALL_CLASSES : [];
+    classes.forEach(function(c) {
+      var opt = document.createElement('option'); opt.value = c; opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  }
+
+  function ttRenderDayTabs() {
+    var wrap = document.getElementById('tt-day-tabs');
+    if (!wrap) return;
+    var days = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'];
+    var labels = {MONDAY:'Mon',TUESDAY:'Tue',WEDNESDAY:'Wed',THURSDAY:'Thu',FRIDAY:'Fri'};
+    wrap.innerHTML = '';
+    days.forEach(function(d) {
+      var btn = document.createElement('button');
+      btn.textContent = labels[d];
+      btn.style.cssText = 'padding:8px 16px;border-radius:8px;border:1.5px solid var(--rule);font-size:12.5px;font-weight:700;cursor:pointer;background:' + (d===_ttSelectedDay?'var(--navy)':'white') + ';color:' + (d===_ttSelectedDay?'white':'var(--ink)') + ';';
+      btn.addEventListener('click', function() {
+        _ttSelectedDay = d;
+        ttRenderDayTabs();
+        ttRenderGrid();
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
+  function ttRenderGrid() {
+    var cls = (document.getElementById('tt-class')||{}).value;
+    var body = document.getElementById('tt-grid-body');
+    if (!body) return;
+    if (!cls) {
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">👆 Select a class to view its timetable</div>';
+      return;
+    }
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">Loading…</div>';
+
+    var loadPromise = _ttCache ? Promise.resolve(_ttCache) :
+      fetch(_SB_URL + '/rest/v1/timetable?select=*', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; });
+
+    loadPromise.then(function(all) {
+      _ttCache = all;
+      var periods = ['L1','L2','L3','L4','L5','L6','L7'];
+      var rows = all.filter(function(e) { return e.class === cls && e.day === _ttSelectedDay; });
+      var byPeriod = {};
+      rows.forEach(function(r) {
+        byPeriod[r.period] = byPeriod[r.period] || [];
+        byPeriod[r.period].push(r);
+      });
+
+      var html = '<div style="padding:8px;">';
+      periods.forEach(function(p) {
+        var entries = byPeriod[p] || [];
+        var timeSlot = entries.length ? entries[0].time_slot : '';
+        html += '<div style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--rule-light,#f1f5f9);">';
+        html += '<div style="width:50px;flex-shrink:0;"><div style="font-size:12px;font-weight:800;color:var(--navy);">'+p+'</div><div style="font-size:10px;color:var(--muted);">'+(timeSlot||'')+'</div></div>';
+        if (!entries.length) {
+          html += '<div onclick="ttOpenEdit(\''+cls+'\',\''+_ttSelectedDay+'\',\''+p+'\',null)" style="flex:1;padding:8px 12px;border-radius:8px;border:1.5px dashed var(--rule);cursor:pointer;color:var(--muted);font-size:12.5px;">+ Add lesson</div>';
+        } else {
+          entries.forEach(function(e) {
+            var groupLabel = e.teacher_group ? (' · ' + e.teacher_group) : '';
+            html += '<div onclick="ttOpenEdit(\''+cls+'\',\''+_ttSelectedDay+'\',\''+p+'\',\''+e.id+'\')" style="flex:1;padding:8px 12px;border-radius:8px;background:var(--cream,#f8fafc);cursor:pointer;">' +
+              '<div style="font-size:13px;font-weight:700;color:var(--ink);">'+(e.subject||'')+groupLabel+'</div>' +
+              '<div style="font-size:11.5px;color:var(--muted);">'+(e.teacher_name||'')+'</div>' +
+            '</div>';
+          });
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+      body.innerHTML = html;
+    });
+  }
+
+  function ttOpenEdit(cls, day, period, id) {
+    var entry = id && _ttCache ? _ttCache.find(function(e){ return String(e.id) === String(id); }) : null;
+    document.getElementById('tt-edit-id').value = id || '';
+    document.getElementById('tt-edit-day').value = day;
+    document.getElementById('tt-edit-period').value = period;
+    document.getElementById('tt-edit-class').value = cls;
+    document.getElementById('tt-edit-subject').value = entry ? entry.subject : '';
+    document.getElementById('tt-edit-teacher').value = entry ? entry.teacher_name : '';
+    document.getElementById('tt-edit-title').textContent = cls + ' · ' + period + ' · ' + day.charAt(0)+day.slice(1).toLowerCase();
+    document.getElementById('tt-edit-modal').style.display = 'flex';
+  }
+
+  function ttSaveLesson() {
+    var id = document.getElementById('tt-edit-id').value;
+    var day = document.getElementById('tt-edit-day').value;
+    var period = document.getElementById('tt-edit-period').value;
+    var cls = document.getElementById('tt-edit-class').value;
+    var subject = document.getElementById('tt-edit-subject').value.trim();
+    var teacher = document.getElementById('tt-edit-teacher').value.trim();
+
+    if (!subject) { showToast('Please enter a subject.'); return; }
+
+    var payload = { day: day, period: period, class: cls, subject: subject, teacher_name: teacher || null };
+    var req = id
+      ? fetch(_SB_URL + '/rest/v1/timetable?id=eq.' + id, {
+          method: 'PATCH',
+          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify(payload)
+        })
+      : fetch(_SB_URL + '/rest/v1/timetable', {
+          method: 'POST',
+          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify(payload)
+        });
+
+    req.then(function(r) {
+      if (!r.ok) throw new Error('Save failed');
+      showToast('✓ Lesson saved');
+      document.getElementById('tt-edit-modal').style.display = 'none';
+      _ttCache = null; // force reload
+      ttRenderGrid();
+    }).catch(function() {
+      showToast('Error saving lesson.');
+    });
+  }
+
+  function ttClearLesson() {
+    var id = document.getElementById('tt-edit-id').value;
+    if (!id) { document.getElementById('tt-edit-modal').style.display = 'none'; return; }
+    fetch(_SB_URL + '/rest/v1/timetable?id=eq.' + id, {
+      method: 'DELETE',
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY }
+    }).then(function() {
+      showToast('Lesson cleared');
+      document.getElementById('tt-edit-modal').style.display = 'none';
+      _ttCache = null;
+      ttRenderGrid();
+    });
   }
 
   function ttSetView(view) {
