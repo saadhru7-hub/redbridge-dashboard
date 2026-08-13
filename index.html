@@ -8479,7 +8479,7 @@ function saveDailyReport() {
   }
 
   function stuLoadAllStudents() {
-    fetch(_SB_URL + '/rest/v1/students?order=full_name.asc&select=*', {
+    fetch(_SB_URL + '/rest/v1/students?order=full_name_en.asc&select=*', {
       headers: {'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Accept':'application/json'}
     })
     .then(function(r){ return r.ok ? r.json() : []; })
