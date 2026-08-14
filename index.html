@@ -1111,22 +1111,22 @@
         <div style="font-size:9.5px;color:var(--blue,var(--navy));font-weight:600;margin-bottom:4px;">Humanities</div>
         <div id="class-count-8C" style="font-size:11px;color:var(--text-3);">0 students</div>
       </div>
-      <div id="class-tile-9A" onclick="stuSelectClass('9A')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 14px;cursor:pointer;text-align:center;transition:all 0.12s;">
-        <div style="font-size:16px;font-weight:700;color:var(--text-1);margin-bottom:2px;">9A</div>
-        <div style="font-size:9.5px;color:var(--blue,var(--navy));font-weight:600;margin-bottom:4px;">Physics &amp; Maths</div>
-        <div id="class-count-9A" style="font-size:11px;color:var(--text-3);">0 students</div>
+      <div id="class-tile-9-PhysMath" onclick="stuSelectClass('9-PhysMath')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 14px;cursor:pointer;text-align:center;transition:all 0.12s;">
+        <div style="font-size:16px;font-weight:700;color:var(--text-1);margin-bottom:2px;">9-PhysMath</div>
+        <div style="font-size:9.5px;color:var(--blue,var(--navy));font-weight:600;margin-bottom:4px;">Physics &amp; Maths (Gr 9-11)</div>
+        <div id="class-count-9-PhysMath" style="font-size:11px;color:var(--text-3);">0 students</div>
       </div>
-      <div id="class-tile-9B" onclick="stuSelectClass('9B')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 14px;cursor:pointer;text-align:center;transition:all 0.12s;">
-        <div style="font-size:16px;font-weight:700;color:var(--text-1);margin-bottom:2px;">9B</div>
-        <div style="font-size:9.5px;color:var(--blue,var(--navy));font-weight:600;margin-bottom:4px;">Chemistry &amp; Biology</div>
-        <div id="class-count-9B" style="font-size:11px;color:var(--text-3);">0 students</div>
+      <div id="class-tile-9-ChemBio" onclick="stuSelectClass('9-ChemBio')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 14px;cursor:pointer;text-align:center;transition:all 0.12s;">
+        <div style="font-size:16px;font-weight:700;color:var(--text-1);margin-bottom:2px;">9-ChemBio</div>
+        <div style="font-size:9.5px;color:var(--blue,var(--navy));font-weight:600;margin-bottom:4px;">Chemistry &amp; Biology (Gr 9-11)</div>
+        <div id="class-count-9-ChemBio" style="font-size:11px;color:var(--text-3);">0 students</div>
       </div>
-      <div id="class-tile-10-11" onclick="stuSelectClass('10-11')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 14px;cursor:pointer;text-align:center;transition:all 0.12s;">
-        <div style="font-size:16px;font-weight:700;color:var(--text-1);margin-bottom:2px;">10-11</div>
-        <div style="font-size:9.5px;color:var(--blue,var(--navy));font-weight:600;margin-bottom:4px;">Humanities (Combined)</div>
-        <div id="class-count-10-11" style="font-size:11px;color:var(--text-3);">0 students</div>
+      <div id="class-tile-Humanities-9-11" onclick="stuSelectClass('Humanities-9-11')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 14px;cursor:pointer;text-align:center;transition:all 0.12s;">
+        <div style="font-size:16px;font-weight:700;color:var(--text-1);margin-bottom:2px;">Humanities 9-11</div>
+        <div style="font-size:9.5px;color:var(--blue,var(--navy));font-weight:600;margin-bottom:4px;">Humanities (Gr 9-11)</div>
+        <div id="class-count-Humanities-9-11" style="font-size:11px;color:var(--text-3);">0 students</div>
       </div>
-      </div>
+            </div>
 
       <!-- Selected class roster -->
       <div class="card" id="class-roster-card" style="display:none;">
@@ -1526,9 +1526,9 @@ id="panel-timetable">
                       <option value="8A">8A — Physics &amp; Maths</option>
                       <option value="8B">8B — Chemistry &amp; Biology</option>
                       <option value="8C">8C — Humanities</option>
-                      <option value="9A">9A — Physics &amp; Maths</option>
-                      <option value="9B">9B — Chemistry &amp; Biology</option>
-                      <option value="10-11">10-11 — Humanities (Combined)</option>
+                      <option value="9-PhysMath">9-PhysMath — Physics &amp; Maths (Gr 9-11)</option>
+                      <option value="9-ChemBio">9-ChemBio — Chemistry &amp; Biology (Gr 9-11)</option>
+                      <option value="Humanities-9-11">Humanities 9-11</option>
                     </select>
                     <button onclick="drLoadStudents()" style="padding:9px 14px;border-radius:9px;border:none;background:var(--navy);color:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;" data-i18n="dr_load">Load ↓</button>
                   </div>
@@ -3893,7 +3893,7 @@ function renderIncidentLog() {
       panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments','messenger'],
       teacherName: 'Sharma Akash',
       loadName: 'Akash',
-      teacherClasses: ['10-11','7A','7B','7C'],
+      teacherClasses: ['Humanities-9-11','7A','7B','7C'],
       teacherSubjects: ['IELTS']
     },
 
@@ -3972,7 +3972,7 @@ function renderIncidentLog() {
       dept: 'Maths',
       classes: ['8A','8B','9A','10A'],
       teacherSubjects: ['Maths-Rus'],
-      teacherClasses: ['10-11','7A','7B','7C','8A','8B','8C','9A'],
+      teacherClasses: ['Humanities-9-11','7A','7B','7C','8A','8B','8C'],
       deptClasses: [],
       deptSubjects: [],
       deptTeachers: [],
@@ -4170,7 +4170,7 @@ function renderIncidentLog() {
       avatar: 'RS',
       access: 'subject',
       teacherSubjects: ['Literature','Russian'],
-      teacherClasses: ['10-11','7B','8A','8B','8C','9A','9B'],
+      teacherClasses: ['Humanities-9-11','7B','8A','8B','8C'],
       teacherName: 'Rakhimova Sabina Robertovna',
       loadName: 'Sabina Robertovna',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
@@ -4184,7 +4184,7 @@ function renderIncidentLog() {
       avatar: 'RA',
       access: 'subject',
       teacherSubjects: ['Biology'],
-      teacherClasses: ['7A','7B','7C','8B','9B'],
+      teacherClasses: ['7A','7B','7C','8B'],
       teacherName: 'Raxmanova Aziza',
       loadName: 'Aziza',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
@@ -4198,7 +4198,7 @@ function renderIncidentLog() {
       avatar: 'YA',
       access: 'subject',
       teacherSubjects: ['Maths-Eng'],
-      teacherClasses: ['10-11','7C','8A','8B','8C','9A','9B'],
+      teacherClasses: ['Humanities-9-11','7C','8A','8B','8C'],
       teacherName: 'Yaqoob Adeel',
       loadName: 'Adeel',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
@@ -4226,7 +4226,7 @@ function renderIncidentLog() {
       avatar: 'M',
       access: 'subject',
       teacherSubjects: ['Uzbek'],
-      teacherClasses: ['10-11','6B','7A','7B','7C','8A','8B','8C','9A','9B'],
+      teacherClasses: ['Humanities-9-11','6B','7A','7B','7C','8A','8B','8C'],
       teacherName: 'ms.Madina',
       loadName: 'Madina',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
@@ -4280,7 +4280,7 @@ function renderIncidentLog() {
       avatar: 'NB',
       access: 'subject',
       teacherSubjects: ['English','IELTS'],
-      teacherClasses: ['10-11','8A','8B','8C','9A','9B'],
+      teacherClasses: ['Humanities-9-11','8A','8B','8C'],
       teacherName: 'Naseem B.',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
@@ -4332,7 +4332,7 @@ function renderIncidentLog() {
       avatar: 'MO',
       access: 'subject',
       teacherSubjects: ['Maths-Rus'],
-      teacherClasses: ['7A','7B','7C','8A','8B','8C','9A','9B'],
+      teacherClasses: ['7A','7B','7C','8A','8B','8C'],
       teacherName: 'Ms Ozoda',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
@@ -4358,7 +4358,7 @@ function renderIncidentLog() {
       avatar: 'MS',
       access: 'subject',
       teacherSubjects: ['CC-Science','Science'],
-      teacherClasses: ['5B','5C','6A','6B','7A','7B','7C','8A','8B','8C','9A','9B'],
+      teacherClasses: ['5B','5C','6A','6B','7A','7B','7C','8A','8B','8C'],
       teacherName: 'Ms Stephanie',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
@@ -4384,7 +4384,7 @@ function renderIncidentLog() {
       avatar: 'AA',
       access: 'subject',
       teacherSubjects: ['Geography','History'],
-      teacherClasses: ['10-11','5A','5B','5C','6A','6B','7A','7B','7C','8A','8B','8C','9A','9B'],
+      teacherClasses: ['Humanities-9-11','5A','5B','5C','6A','6B','7A','7B','7C','8A','8B','8C'],
       teacherName: 'Ameen Alam',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
@@ -4410,7 +4410,7 @@ function renderIncidentLog() {
       avatar: 'L',
       access: 'subject',
       teacherSubjects: ['Physics'],
-      teacherClasses: ['7A','7B','7C','8A','9A'],
+      teacherClasses: ['7A','7B','7C','8A'],
       teacherName: 'Lubov',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
@@ -4423,7 +4423,7 @@ function renderIncidentLog() {
       avatar: 'MS',
       access: 'subject',
       teacherSubjects: ['Chemistry'],
-      teacherClasses: ['7A','7B','7C','8B','9B'],
+      teacherClasses: ['7A','7B','7C','8B'],
       teacherName: 'Ms Sharifa',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
@@ -4462,7 +4462,7 @@ function renderIncidentLog() {
       avatar: 'MT',
       access: 'subject',
       teacherSubjects: ['PE'],
-      teacherClasses: ['10-11','8A','8B','8C','9A','9B'],
+      teacherClasses: ['Humanities-9-11','8A','8B','8C'],
       teacherName: 'Military Training Instructor',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
@@ -4475,7 +4475,7 @@ function renderIncidentLog() {
       avatar: 'A',
       access: 'subject',
       teacherSubjects: ['Chess','Law'],
-      teacherClasses: ['10-11','2A','2B','2C','3A','3B','3C','4A','4B','4C'],
+      teacherClasses: ['Humanities-9-11','2A','2B','2C','3A','3B','3C','4A','4B','4C'],
       teacherName: 'Alexander',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
@@ -4501,7 +4501,7 @@ function renderIncidentLog() {
       avatar: 'B',
       access: 'subject',
       teacherSubjects: ['Business','Economics'],
-      teacherClasses: ['10-11','8A','8B','8C','9A','9B'],
+      teacherClasses: ['Humanities-9-11','8A','8B','8C'],
       teacherName: 'Beth',
       panels: ['dashboard','results','calendar','dailyreport','assessments','messenger'],
       readonlyStats: true,
@@ -5338,12 +5338,13 @@ function renderIncidentLog() {
   // ALL classes in school
   var ALL_CLASSES = ['1A','1B','1C','2A','2B','2C','3A','3B','3C',
     '4A','4B','4C','5A','5B','5C','6A','6B','7A','7B','7C',
-    '8A','8B','8C','9A','9B','10-11'];
+    '8A','8B','8C','9-PhysMath','9-ChemBio','Humanities-9-11'];
 
   var CLASS_FACULTY = {
     '8A': 'Physics & Maths', '8B': 'Chemistry & Biology', '8C': 'Humanities',
-    '9A': 'Physics & Maths', '9B': 'Chemistry & Biology',
-    '10-11': 'Humanities (Combined)'
+    '9-PhysMath': 'Physics & Maths (Gr 9-11 combined)',
+    '9-ChemBio': 'Chemistry & Biology (Gr 9-11 combined)',
+    'Humanities-9-11': 'Humanities (Gr 9-11 combined)'
   };
 
   // Class teacher map — who is teacher of which class
@@ -5882,8 +5883,8 @@ function saveDailyReport() {
 
     // Load today's existing topic/hw if already saved
     var todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-    var topicEl = document.getElementById('dr-topic-input');
-    var hwEl    = document.getElementById('dr-hw-input');
+    var topicEl = document.getElementById('dr-topic');
+    var hwEl    = document.getElementById('dr-homework');
     if (topicEl) topicEl.value = '';
     if (hwEl)    hwEl.value    = '';
     if (typeof dailyReports !== 'undefined') {
@@ -6207,7 +6208,7 @@ function saveDailyReport() {
       var html = '<div style="margin-bottom:10px;">' +
         '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:' + color + ';margin-bottom:5px;">' + label + '</div>' +
         '<div style="display:flex;gap:6px;" id="popup-sec-' + sec + '">';
-      [2,3,4,5].forEach(function(n) {
+      [1,2,3,4,5].forEach(function(n) {
         var mc = n>=4 ? '#16a34a' : n===3 ? '#ca8a04' : '#dc2626';
         var active = (parseInt(cur) === n);
         var bd = active ? mc : '#e2e8f0';
@@ -6300,8 +6301,8 @@ function saveDailyReport() {
         if (r.cls===p.gridCls && r.subject===p.gridSubj && r.date===p.gridDate) rep=r;
       });
     }
-    var topicNow = (document.getElementById('dr-topic-input')||{}).value || '';
-    var hwNow    = (document.getElementById('dr-hw-input')||{}).value    || '';
+    var topicNow = (document.getElementById('dr-topic')||{}).value || '';
+    var hwNow    = (document.getElementById('dr-homework')||{}).value    || '';
     if (!rep) {
       rep = {
         id: 'dr' + Date.now(), date: p.gridDate,
@@ -6322,6 +6323,13 @@ function saveDailyReport() {
     if (!found) rep.students.push(studentEntry);
 
     saveDailyReports();
+    // Sync to Supabase — saveDailyReports() only writes localStorage.
+    // This is the primary auto-save path (fires on every grade button click),
+    // so it's critical this actually reaches the cloud, not just the local browser.
+    if (typeof sbSaveDailyReport === 'function') {
+      sbSaveDailyReport(rep).then(function(){ updateCloudStatus('saved'); })
+        .catch(function(){ updateCloudStatus('error'); });
+    }
 
     // Refresh the grid cell immediately without closing popup
     drRefreshCell(p.gridCls, p.gridSubj, p.gridDate, p.gridName, studentEntry);
@@ -6353,8 +6361,8 @@ function saveDailyReport() {
     var marks  = popup._marks || {};
     var absent = (document.getElementById('grid-popup-absent')||{}).checked;
     var comment= (document.getElementById('grid-popup-comment')||{}).value || '';
-    var topicNow = (document.getElementById('dr-topic-input')||{}).value || '';
-    var hwNow    = (document.getElementById('dr-hw-input')||{}).value    || '';
+    var topicNow = (document.getElementById('dr-topic')||{}).value || '';
+    var hwNow    = (document.getElementById('dr-homework')||{}).value    || '';
     var studentEntry = {
       name: p.gridName,
       cw: absent?0:(marks.cw||0), hw: absent?0:(marks.hw||0),
@@ -6376,6 +6384,12 @@ function saveDailyReport() {
     rep.students.forEach(function(st,i){ if(st.name===p.gridName){rep.students[i]=studentEntry;found=true;} });
     if(!found) rep.students.push(studentEntry);
     saveDailyReports();
+    // Sync this report to Supabase — saveDailyReports() only writes localStorage,
+    // it does NOT push to the cloud, so we must do that explicitly here too.
+    if (typeof sbSaveDailyReport === 'function') {
+      sbSaveDailyReport(rep).then(function(){ updateCloudStatus('saved'); })
+        .catch(function(){ updateCloudStatus('error'); showToast('Saved locally — cloud sync failed.'); });
+    }
     drCloseMarkPopup();
     drBuildGrid(p.gridCls, p.gridSubj);
     showToast(p.gridName.split(' ')[0] + ' ✓');
@@ -6438,8 +6452,8 @@ function saveDailyReport() {
 
     // Save to Supabase
     if (typeof sbSaveDailyReport === 'function') {
-      var topicVal = (document.getElementById('dr-topic-input')||{}).value || '';
-      var hwVal    = (document.getElementById('dr-hw-input')||{}).value    || '';
+      var topicVal = (document.getElementById('dr-topic')||{}).value || '';
+      var hwVal    = (document.getElementById('dr-homework')||{}).value    || '';
       // Save topic/hw into the report object too
       rep.topic    = topicVal;
       rep.homework = hwVal;
