@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Redbridge Parent Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#7367F0; --blue-light:#EDECFD; --blue-deep:#5B4FD9;
+    --green:#28C76F; --green-light:#E9F9EF;
+    --amber:#FF9F43; --amber-light:#FFF3E8;
+    --red:#EA5455; --red-light:#FDEAEA;
+    --ink:#3D3B54; --text-2:#5D596C; --text-3:#8A8697; --text-4:#B4B0BF;
+    --bg:#F8F7FA; --surface:#FFFFFF; --border:#E7E7E9; --rule-light:#F1F0F4;
+    --shadow-1: 0 2px 10px rgba(76,72,110,0.06);
+    --shadow-2: 0 8px 30px rgba(76,72,110,0.12);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);}
+  h1,h2,h3{font-family:'Outfit',sans-serif;}
+  button{font-family:inherit;}
+  input{font-family:inherit;}
+
+  /* ── LOGIN ── */
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:linear-gradient(135deg,#7367F0 0%,#5B4FD9 100%);}
+  .login-card{background:var(--surface);border-radius:22px;padding:36px 30px;max-width:380px;width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;}
+  .login-crest{width:64px;height:64px;border-radius:16px;background:var(--blue-light);margin:0 auto 18px;
+    display:flex;align-items:center;justify-content:center;font-size:30px;}
+  .login-card h1{font-size:20px;font-weight:800;margin:0 0 4px;color:var(--ink);}
+  .login-card .sub{font-size:13px;color:var(--text-3);margin-bottom:26px;}
+  #code-input{width:100%;padding:16px;border-radius:12px;border:2px solid var(--border);
+    font-size:22px;font-weight:800;text-align:center;letter-spacing:4px;text-transform:uppercase;
+    outline:none;margin-bottom:14px;color:var(--ink);}
+  #code-input:focus{border-color:var(--blue);}
+  #login-btn{width:100%;padding:15px;border-radius:12px;border:none;background:var(--blue);
+    color:white;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;}
+  #login-btn:hover{background:var(--blue-deep);}
+  #login-error{color:var(--red);font-size:12.5px;font-weight:600;margin-top:12px;min-height:16px;}
+  .login-footer{font-size:11px;color:var(--text-4);margin-top:22px;}
+
+  /* ── APP SHELL ── */
+  #app{display:none;min-height:100vh;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;
+    display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+  .topbar-student{display:flex;align-items:center;gap:12px;}
+  .avatar-circle{width:44px;height:44px;border-radius:12px;background:var(--blue);color:white;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex-shrink:0;}
+  .topbar-student .name{font-size:15px;font-weight:800;color:var(--ink);}
+  .topbar-student .class{font-size:12px;color:var(--text-3);}
+  #logout-btn{background:none;border:1.5px solid var(--border);border-radius:9px;padding:8px 14px;
+    font-size:12.5px;font-weight:600;color:var(--text-2);cursor:pointer;}
+
+  .tabs{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;background:var(--surface);
+    border-bottom:1px solid var(--border);position:sticky;top:77px;z-index:9;}
+  .tab-btn{flex-shrink:0;padding:9px 16px;border-radius:20px;border:none;background:var(--bg);
+    color:var(--text-2);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;}
+  .tab-btn.active{background:var(--blue);color:white;}
+
+  .content{padding:18px 16px 40px;max-width:640px;margin:0 auto;}
+  .card{background:var(--surface);border-radius:16px;box-shadow:var(--shadow-1);margin-bottom:14px;overflow:hidden;}
+  .card-body{padding:16px 18px;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--text-3);}
+  .empty-state .icon{font-size:38px;margin-bottom:10px;}
+  .empty-state .msg{font-size:13.5px;font-weight:600;color:var(--text-2);}
+
+  .item-row{padding:14px 18px;border-bottom:1px solid var(--rule-light);}
+  .item-row:last-child{border-bottom:none;}
+  .item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .item-title{font-size:13.5px;font-weight:700;color:var(--ink);}
+  .item-date{font-size:11px;color:var(--text-4);}
+  .item-detail{font-size:12.5px;color:var(--text-2);line-height:1.5;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+
+  #messages-list{padding:14px 16px;display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto;}
+  .msg-bubble{max-width:80%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.4;}
+  .msg-parent{align-self:flex-end;background:var(--blue);color:white;border-bottom-right-radius:4px;}
+  .msg-teacher{align-self:flex-start;background:var(--bg);color:var(--ink);border-bottom-left-radius:4px;}
+  .msg-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--rule-light);}
+  #msg-input{flex:1;padding:11px 14px;border-radius:20px;border:1.5px solid var(--border);outline:none;font-size:13px;}
+  #msg-send{background:var(--blue);color:white;border:none;border-radius:20px;padding:0 20px;font-weight:700;font-size:13px;cursor:pointer;}
+
+  .loading{text-align:center;padding:40px;color:var(--text-3);font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- ══════════ LOGIN SCREEN ══════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-crest">🎓</div>
+    <h1>Redbridge Parent Portal</h1>
+    <div class="sub">Enter the access code given to you by the school</div>
+    <input id="code-input" type="text" placeholder="XXXX-XXXX" maxlength="12" autocomplete="off">
+    <button id="login-btn" onclick="doLogin()">View my child's information</button>
+    <div id="login-error"></div>
+    <div class="login-footer">Redbridge International School · Samarkand</div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-student">
+      <div class="avatar-circle" id="student-avatar">--</div>
+      <div>
+        <div class="name" id="student-name">Loading…</div>
+        <div class="class" id="student-class">—</div>
+      </div>
+    </div>
+    <button id="logout-btn" onclick="doLogout()">Log out</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="homework" onclick="switchTab('homework')">📝 Homework</button>
+    <button class="tab-btn" data-tab="marks" onclick="switchTab('marks')">📊 Marks</button>
+    <button class="tab-btn" data-tab="attendance" onclick="switchTab('attendance')">📅 Attendance</button>
+    <button class="tab-btn" data-tab="discipline" onclick="switchTab('discipline')">🛡 Discipline</button>
+    <button class="tab-btn" data-tab="messages" onclick="switchTab('messages')">💬 Message Teacher</button>
+  </div>
+
+  <div class="content">
+    <div id="tab-homework"></div>
+    <div id="tab-marks" style="display:none;"></div>
+    <div id="tab-attendance" style="display:none;"></div>
+    <div id="tab-discipline" style="display:none;"></div>
+    <div id="tab-messages" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+  var _SB_URL = 'https://rqbdfwdegblwzbdqjsdo.supabase.co';
+  var _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYmRmd2RlZ2Jsd3piZHFqc2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMjEzMzgsImV4cCI6MjA4OTc5NzMzOH0.GdfidDRBpdD1tZEam7_gjWaj5basR60FOjUOxvL6V2k';
+
+  var _student = null;
+
+  function sbHeaders(extra) {
+    var h = { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' };
+    if (extra) for (var k in extra) h[k] = extra[k];
+    return h;
+  }
+
+  // ── LOGIN ──
+  function doLogin() {
+    var code = document.getElementById('code-input').value.trim().toUpperCase();
+    var errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+    if (!code) { errEl.textContent = 'Please enter your access code.'; return; }
+
+    document.getElementById('login-btn').textContent = 'Checking…';
+
+    fetch(_SB_URL + '/rest/v1/students?access_code=eq.' + encodeURIComponent(code) + '&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      document.getElementById('login-btn').textContent = "View my child's information";
+      if (!rows || !rows.length) {
+        errEl.textContent = 'Code not recognized. Please check and try again.';
+        return;
+      }
+      _student = rows[0];
+      localStorage.setItem('parent_code', code);
+      showApp();
+    })
+    .catch(function() {
+      document.getElementById('login-btn').textContent = "View my child's information";
+      errEl.textContent = 'Connection error. Please try again.';
+    });
+  }
+
+  function doLogout() {
+    localStorage.removeItem('parent_code');
+    _student = null;
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('code-input').value = '';
+  }
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+
+    var initials = (_student.full_name_en || '').split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+    document.getElementById('student-avatar').textContent = initials || '--';
+    document.getElementById('student-name').textContent = _student.full_name_en || _student.full_name_ru;
+    document.getElementById('student-class').textContent = 'Class ' + _student.class;
+
+    loadHomework();
+  }
+
+  // ── TABS ──
+  function switchTab(tab) {
+    ['homework','marks','attendance','discipline','messages'].forEach(function(t) {
+      document.getElementById('tab-' + t).style.display = (t === tab) ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    if (tab === 'homework') loadHomework();
+    if (tab === 'marks') loadMarks();
+    if (tab === 'attendance') loadAttendance();
+    if (tab === 'discipline') loadDiscipline();
+    if (tab === 'messages') loadMessages();
+  }
+
+  function studentFullNames() {
+    return [_student.full_name_en, _student.full_name_ru].filter(Boolean);
+  }
+
+  // ── HOMEWORK / CLASSWORK ──
+  function loadHomework() {
+    var el = document.getElementById('tab-homework');
+    el.innerHTML = '<div class="loading">Loading…</div>';
+
+    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&limit=30&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      rows = (rows || []).filter(function(r) { return r.topic || r.homework; });
+      if (!rows.length) {
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📝</div><div class="msg">No homework or classwork recorded yet</div></div></div>';
+        return;
+      }
+      var html = '<div class="card">';
+      rows.forEach(function(r) {
+        html += '<div class="item-row">' +
+          '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div><div class="item-date">' + (r.date||'') + '</div></div>';
+        if (r.topic) html += '<div class="item-detail"><b>Classwork:</b> ' + r.topic + '</div>';
+        if (r.topic_file_url) html += '<div class="item-detail"><a href="' + r.topic_file_url + '" target="_blank" style="color:var(--blue);">📎 ' + (r.topic_file_name||'File') + '</a></div>';
+        if (r.homework) html += '<div class="item-detail" style="margin-top:4px;"><b>Homework:</b> ' + r.homework + '</div>';
+        if (r.homework_file_url) html += '<div class="item-detail"><a href="' + r.homework_file_url + '" target="_blank" style="color:var(--blue);">📎 ' + (r.homework_file_name||'File') + '</a></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">Could not load homework.</div></div></div>'; });
+  }
+
+  // ── MARKS ──
+  function loadMarks() {
+    var el = document.getElementById('tab-marks');
+    el.innerHTML = '<div class="loading">Loading…</div>';
+    var names = studentFullNames();
+
+    fetch(_SB_URL + '/rest/v1/assessments?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var mine = [];
+      (rows||[]).forEach(function(a) {
+        (a.students||[]).forEach(function(s) {
+          if (names.indexOf(s.name) !== -1) {
+            mine.push({ subject:a.subject, name:a.name, type:a.type, date:a.date, pct:s.pct, absent:s.absent });
+          }
+        });
+      });
+      if (!mine.length) {
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📊</div><div class="msg">No marks recorded yet</div></div></div>';
+        return;
+      }
+      var html = '<div class="card">';
+      mine.forEach(function(m) {
+        var pctText = m.absent ? 'Absent' : (m.pct !== null && m.pct !== undefined ? m.pct + '%' : '—');
+        var color = m.absent ? 'var(--text-4)' : (m.pct >= 70 ? 'var(--green)' : m.pct >= 50 ? 'var(--amber)' : 'var(--red)');
+        html += '<div class="item-row"><div class="item-top">' +
+          '<div><div class="item-title">' + m.subject + ' — ' + m.name + '</div><div class="item-date">' + m.date + ' · ' + (m.type||'') + '</div></div>' +
+          '<div style="font-weight:800;font-size:15px;color:' + color + ';">' + pctText + '</div>' +
+        '</div></div>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">Could not load marks.</div></div></div>'; });
+  }
+
+  // ── ATTENDANCE (derived from daily_reports students[].absent) ──
+  function loadAttendance() {
+    var el = document.getElementById('tab-attendance');
+    el.innerHTML = '<div class="loading">Loading…</div>';
+    var names = studentFullNames();
+
+    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&limit=60&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var records = [];
+      (rows||[]).forEach(function(r) {
+        (r.students||[]).forEach(function(s) {
+          if (names.indexOf(s.name) !== -1) {
+            records.push({ date:r.date, subject:r.subject, absent:s.absent });
+          }
+        });
+      });
+      if (!records.length) {
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📅</div><div class="msg">No attendance records yet</div></div></div>';
+        return;
+      }
+      var absentCount = records.filter(function(r){return r.absent;}).length;
+      var html = '<div class="card"><div class="card-body" style="text-align:center;border-bottom:1px solid var(--rule-light);">' +
+        '<div style="font-size:26px;font-weight:800;color:' + (absentCount>3?'var(--red)':'var(--green)') + ';">' + absentCount + '</div>' +
+        '<div style="font-size:12px;color:var(--text-3);">absences out of ' + records.length + ' recorded lessons</div></div>';
+      records.forEach(function(r) {
+        var badge = r.absent
+          ? '<span class="badge" style="background:var(--red-light);color:var(--red);">Absent</span>'
+          : '<span class="badge" style="background:var(--green-light);color:var(--green);">Present</span>';
+        html += '<div class="item-row"><div class="item-top"><div class="item-title">' + r.subject + '</div><div class="item-date">' + r.date + '</div></div>' + badge + '</div>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">Could not load attendance.</div></div></div>'; });
+  }
+
+  // ── DISCIPLINE ──
+  function loadDiscipline() {
+    var el = document.getElementById('tab-discipline');
+    el.innerHTML = '<div class="loading">Loading…</div>';
+    var names = studentFullNames();
+
+    fetch(_SB_URL + '/rest/v1/incidents?order=created_at.desc&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var mine = (rows||[]).filter(function(r) { return names.indexOf(r.student_name) !== -1; });
+      if (!mine.length) {
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">🛡</div><div class="msg">No discipline records — all clear!</div></div></div>';
+        return;
+      }
+      var html = '<div class="card">';
+      mine.forEach(function(r) {
+        html += '<div class="item-row"><div class="item-top"><div class="item-title">' + (r.type||'Incident') + '</div><div class="item-date">' + (r.created_at||'').slice(0,10) + '</div></div>' +
+          (r.stage ? '<div class="item-detail">Stage: ' + r.stage + '</div>' : '') +
+          (r.notes ? '<div class="item-detail">' + r.notes + '</div>' : '') +
+          '<div style="margin-top:6px;"><span class="badge" style="background:var(--amber-light);color:var(--amber);">' + (r.status||'logged') + '</span></div>' +
+        '</div>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">Could not load discipline records.</div></div></div>'; });
+  }
+
+  // ── MESSAGES ──
+  function loadMessages() {
+    var el = document.getElementById('tab-messages');
+    el.innerHTML = '<div class="card"><div id="messages-list"><div class="loading">Loading…</div></div>' +
+      '<div class="msg-input-row"><input id="msg-input" type="text" placeholder="Message your child&#39;s teacher…">' +
+      '<button id="msg-send" onclick="sendParentMessage()">Send</button></div></div>';
+
+    fetch(_SB_URL + '/rest/v1/parent_messages?student_id=eq.' + _student.id + '&order=created_at.asc&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var list = document.getElementById('messages-list');
+      if (!rows || !rows.length) {
+        list.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">No messages yet. Say hello to your child&#39;s teacher!</div></div>';
+        return;
+      }
+      list.innerHTML = rows.map(function(m) {
+        var cls = m.sender === 'parent' ? 'msg-parent' : 'msg-teacher';
+        return '<div class="msg-bubble ' + cls + '">' + m.message + '</div>';
+      }).join('');
+      list.scrollTop = list.scrollHeight;
+    });
+  }
+
+  function sendParentMessage() {
+    var input = document.getElementById('msg-input');
+    var text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    fetch(_SB_URL + '/rest/v1/parent_messages', {
+      method: 'POST',
+      headers: sbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
+      body: JSON.stringify({
+        student_id: _student.id,
+        sender: 'parent',
+        sender_name: _student.father_name_en || _student.mother_name_en || 'Parent',
+        message: text
+      })
+    }).then(function() { loadMessages(); });
+  }
+
+  // ── AUTO LOGIN if code already saved ──
+  window.addEventListener('load', function() {
+    var saved = localStorage.getItem('parent_code');
+    if (saved) {
+      document.getElementById('code-input').value = saved;
+      doLogin();
+    }
+  });
+</script>
+</body>
+</html>
