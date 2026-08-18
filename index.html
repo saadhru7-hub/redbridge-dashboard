@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Redbridge Dashboard</title>
 <meta name="application-name" content="Redbridge Dashboard">
@@ -551,7 +552,7 @@
     "name": "Redbridge International School",
     "short_name": "Redbridge",
     "description": "Staff Dashboard — Redbridge International School, Samarkand",
-    "start_url": ".",
+    "start_url": "/",
     "display": "standalone",
     "background_color": "#F8F7FA",
     "theme_color": "#7367F0",
@@ -1535,7 +1536,7 @@ id="panel-timetable">
                 </div>
                 <div>
                   <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_subject">Subject</div>
-                  <select id="dr-subject" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                  <select id="dr-subject" onchange="drLoadStudents();" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
                     <option value="" data-i18n="opt_select_subject">— Select subject —</option>
                     <option data-i18n="subj_english">English</option>
                     <option data-i18n="subj_maths">Maths</option>
@@ -6520,7 +6521,15 @@ function saveDailyReport() {
 
   function drRenderTodaySchedule() {}
 
-  function drLoadStudents() { /* replaced by grid */ }
+  function drLoadStudents() {
+    var cls = (document.getElementById('dr-class')||{}).value;
+    var subject = (document.getElementById('dr-subject')||{}).value;
+    if (!cls || !subject) {
+      showToast('Please select both a class and a subject.');
+      return;
+    }
+    drBuildGrid(cls, subject);
+  }
 
 
 
@@ -7195,6 +7204,105 @@ function saveDailyReport() {
       student: 'Student', class: 'Class', subject: 'Subject',
       date: 'Date', teacher: 'Teacher', score: 'Score',
       new_action: '＋ New Action', export_btn: '⬇ Export',
+    
+      msg_title: '💬 Messages',
+      inc_other: 'Other',
+      disc_student_name: 'Student Name',
+      dr_new_entry: 'New Lesson Entry',
+      inc_late: 'Late',
+      disc_notes: 'Notes',
+      inc_bullying: 'Bullying',
+      dr_no_reports: 'No reports submitted yet.',
+      stage_3: 'Stage 3 — Serious',
+      dr_save: '💾 Save Lesson Report',
+      dr_tab_view: '📋 View Reports',
+      asm_summative_plain: 'Summative',
+      subj_english: 'English',
+      asm_student_scores: 'Student Scores',
+      subj_chemistry: 'Chemistry',
+      subj_gp: 'GP (Hist-Geo)',
+      dr_load: 'Load ↓',
+      dr_topic_ph: 'e.g. Quadratic Equations — Chapter 5',
+      dr_submitted_reports: '📋 Submitted Reports',
+      subj_maths: 'Maths',
+      dr_export: '⬇ Export',
+      dr_date: 'Date',
+      asm_all_types: 'All Types',
+      period_1: 'Period 1',
+      subj_physics: 'Physics',
+      disc_class: 'Class',
+      disc_sub: 'Log and track student discipline incidents',
+      asm_tab_submit: '✍️ Submit Assessment',
+      dr_select_class_load: 'Select a class to load students',
+      dr_period: 'Lesson Period',
+      opt_all_classes: 'All Classes',
+      disc_full_name_ph: 'Full name',
+      period_6: 'Period 6',
+      period_2: 'Period 2',
+      asm_fill_details: 'Fill in details then enter scores',
+      period_4: 'Period 4',
+      stage_1: 'Stage 1 — Minor',
+      disc_all_clear: 'All clear for 2026–27',
+      disc_view_resolved: 'View Resolved',
+      period_5: 'Period 5',
+      dr_h_sub: 'Record marks and remarks for each lesson',
+      disc_title: 'Discipline Tracker',
+      dr_todays_lessons: '📅 Today\'s Lessons — Click to fill report',
+      dr_tab_submit: '✍️ Submit Report',
+      opt_select: '— Select —',
+      subj_cmaths: 'Cambridge Maths',
+      period_8: 'Period 8',
+      dr_fill_details: 'Fill in details for today\'s lesson',
+      msg_staff: 'Redbridge Staff',
+      inc_vandalism: 'Vandalism',
+      disc_incident_type: 'Incident Type',
+      disc_stage: 'Stage',
+      dr_remark_ph: 'General observation about the class today...',
+      disc_log_incident: '+ Log Incident',
+      subj_russian: 'Russian Language',
+      subj_biology: 'Biology',
+      inc_cheating: 'Cheating',
+      dr_attach_file: 'Attach file (image/PDF/Word)',
+      msg_channels: 'Channels',
+      msg_dms: 'Direct Messages',
+      opt_select_subject: '— Select subject —',
+      period_3: 'Period 3',
+      disc_open_cases: 'Open cases requiring action',
+      disc_no_active: 'No active incidents',
+      subj_econ: 'Economics',
+      dr_topic: 'Topic / Lesson Title',
+      dr_remark: 'Class Remark / Observations',
+      inc_phone: 'Phone use',
+      disc_notes_ph: 'Brief description of the incident…',
+      msg_send: 'Send',
+      dr_all_reports: 'All lesson reports',
+      disc_active: 'Active Incidents',
+      subj_ict: 'ICT',
+      dr_homework_ph: 'e.g. Exercise 5.3 — Q1 to Q10 (due Thursday)',
+      opt_all_subjects: 'All Subjects',
+      dr_select_above: '👆 Select a class above to load the student list',
+      asm_tab_view: '📊 View Results',
+      disc_cancel: 'Cancel',
+      stage_4: 'Stage 4 — Critical',
+      inc_disrespect: 'Disrespect',
+      period_7: 'Period 7',
+      opt_select_class: '— Select class —',
+      asm_records: 'Assessment Records',
+      msg_placeholder: 'Message…',
+      stage_2: 'Stage 2 — Moderate',
+      msg_all_staff: 'All staff',
+      asm_all: 'All assessments',
+      asm_formative_plain: 'Formative',
+      asm_sub: 'Record formative and summative assessment scores',
+      dr_student_marks: 'Student Marks',
+      disc_log_new: 'Log New Incident',
+      asm_select_both: 'Select class and subject to load students',
+      subj_science: 'Science',
+      disc_save: 'Save Incident',
+      dr_h_title: '📝 Daily Lesson Report',
+      subj_art: 'Art',
+      subj_pe: 'Physical Education',
+      inc_fighting: 'Fighting',
     },
 
     ru: {
@@ -7372,6 +7480,62 @@ function saveDailyReport() {
       student: "Oʻquvchi", class: 'Sinf', subject: 'Fan',
       date: 'Sana', teacher: "Oʻqituvchi", score: 'Ball',
       new_action: '＋ Yangi harakat', export_btn: '⬇ Eksport',
+    
+      // Daily Report
+      dr_h_title: 'Kunlik dars hisoboti', dr_h_sub: 'Har bir dars uchun baholar va izohlarni yozib boring',
+      dr_tab_submit: '✍️ Hisobot topshirish', dr_tab_view: '📋 Hisobotlarni koʻrish',
+      dr_new_entry: 'Yangi dars yozuvi', dr_fill_details: 'Bugungi dars maʼlumotlarini toʻldiring',
+      dr_todays_lessons: '📅 Bugungi darslar — toʻldirish uchun bosing',
+      dr_class: 'Sinf', dr_load: 'Yuklash ↓', dr_subject: 'Fan',
+      dr_date: 'Sana', dr_period: 'Dars vaqti',
+      dr_topic: 'Mavzu / dars nomi', dr_topic_ph: 'masalan. Kvadrat tenglamalar — 5-bob',
+      dr_remark: 'Sinf haqida izoh / kuzatuvlar', dr_remark_ph: 'Bugungi sinf haqida umumiy kuzatuv...',
+      dr_homework: 'Uy vazifasi', dr_homework_ph: 'masalan. 5.3-mashq — 1-10 (payshanbagacha)',
+      dr_save: '💾 Hisobotni saqlash', dr_student_marks: 'Oʻquvchi baholari',
+      dr_select_class_load: 'Oʻquvchilarni yuklash uchun sinfni tanlang',
+      dr_select_above: '👆 Oʻquvchilar roʻyxatini yuklash uchun yuqorida sinfni tanlang',
+      dr_submitted_reports: '📋 Topshirilgan hisobotlar', dr_all_reports: 'Barcha dars hisobotlari',
+      dr_export: '⬇ Yuklab olish', dr_no_reports: 'Hozircha hisobotlar topshirilmagan.',
+      opt_select_class: '— Sinfni tanlang —', opt_select_subject: '— Fanni tanlang —',
+      opt_all_classes: 'Barcha sinflar', opt_all_subjects: 'Barcha fanlar', opt_select: '— Tanlang —',
+      subj_english: 'Ingliz tili', subj_maths: 'Matematika', subj_cmaths: 'Cambridge matematika',
+      subj_science: 'Tabiiy fanlar', subj_physics: 'Fizika', subj_chemistry: 'Kimyo',
+      subj_biology: 'Biologiya', subj_russian: 'Rus tili', subj_gp: 'GP (Tarix-Geografiya)',
+      subj_econ: 'Iqtisodiyot', subj_pe: 'Jismoniy tarbiya', subj_art: 'Tasviriy sanʼat', subj_ict: 'AKT',
+      period_1: '1-dars', period_2: '2-dars', period_3: '3-dars', period_4: '4-dars',
+      period_5: '5-dars', period_6: '6-dars', period_7: '7-dars', period_8: '8-dars',
+
+      // Discipline
+      disc_title: 'Intizom nazorati', disc_sub: 'Oʻquvchilar intizomi holatlarini qayd etish va kuzatish',
+      disc_log_incident: '+ Holatni qayd etish', disc_view_resolved: 'Hal qilinganlarni koʻrish',
+      disc_log_new: 'Yangi holatni qayd etish', disc_student_name: 'Oʻquvchi ismi',
+      disc_full_name_ph: 'Toʻliq ism', disc_class: 'Sinf', disc_incident_type: 'Holat turi',
+      inc_fighting: 'Janjal', inc_bullying: 'Boʻlmagan xatti-harakat', inc_disrespect: 'Hurmatsizlik',
+      inc_cheating: 'Koʻchirish', inc_vandalism: 'Mulkni buzish', inc_late: 'Kechikish',
+      inc_phone: 'Telefondan foydalanish', inc_other: 'Boshqa',
+      disc_stage: 'Bosqich', stage_1: '1-bosqich — Kichik', stage_2: '2-bosqich — Oʻrtacha',
+      stage_3: '3-bosqich — Jiddiy', stage_4: '4-bosqich — Tanqidiy',
+      disc_notes: 'Izohlar', disc_notes_ph: 'Holat haqida qisqacha taʼrif…',
+      disc_save: 'Holatni saqlash', disc_cancel: 'Bekor qilish',
+      disc_active: 'Faol holatlar', disc_open_cases: 'Chora koʻrishni talab qiladigan ochiq holatlar',
+      disc_no_active: 'Faol holatlar yoʻq', disc_all_clear: '2026–27 yil uchun hammasi tinch',
+
+      // Assessments
+      asm_title: '📋 Baholash', asm_sub: 'Formativ va summativ baholarni qayd etish',
+      asm_tab_submit: '✍️ Baho topshirish', asm_tab_view: '📊 Natijalarni koʻrish',
+      asm_details: 'Baholash tafsilotlari', asm_fill_details: 'Tafsilotlarni toʻldiring, keyin baholarni kiriting',
+      asm_type: 'Baholash turi', asm_formative: '📝 Formativ', asm_summative: '📊 Summativ',
+      asm_name: 'Baholash nomi', asm_total: 'Maksimal ball',
+      asm_save: '✓ Baholashni saqlash', asm_student_scores: 'Oʻquvchi ballari',
+      asm_select_both: 'Oʻquvchilarni yuklash uchun sinf va fanni tanlang',
+      asm_records: 'Baholash yozuvlari', asm_all: 'Barcha baholashlar',
+      asm_all_types: 'Barcha turlar', asm_formative_plain: 'Formativ', asm_summative_plain: 'Summativ',
+
+      // Messenger
+      msg_title: '💬 Xabarlar', msg_staff: 'Redbridge xodimlari', msg_channels: 'Kanallar',
+      msg_dms: 'Shaxsiy xabarlar', msg_all_staff: 'Barcha xodimlar',
+      msg_placeholder: 'Xabar…', msg_send: 'Yuborish',
+      dr_attach_file: 'Fayl biriktirish (rasm/PDF/Word)',
     }
   };
 
