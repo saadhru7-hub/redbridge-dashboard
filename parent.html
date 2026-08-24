@@ -7,6 +7,8 @@
 <title>Redbridge Parent Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
   :root{
     --blue:#7367F0; --blue-light:#EDECFD; --blue-deep:#5B4FD9;
@@ -43,6 +45,11 @@
   #login-error{color:var(--red);font-size:12.5px;font-weight:600;margin-top:12px;min-height:16px;}
   .login-footer{font-size:11px;color:var(--text-4);margin-top:22px;}
 
+  .lang-switcher{display:flex;gap:4px;}
+  .lang-btn{padding:6px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);
+    color:var(--text-2);font-size:11.5px;font-weight:700;cursor:pointer;}
+  .lang-btn.active{background:var(--blue);color:white;border-color:var(--blue);}
+
   /* ── APP SHELL ── */
   #app{display:none;min-height:100vh;}
   .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;
@@ -58,8 +65,10 @@
   .tabs{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;background:var(--surface);
     border-bottom:1px solid var(--border);position:sticky;top:77px;z-index:9;}
   .tab-btn{flex-shrink:0;padding:9px 16px;border-radius:20px;border:none;background:var(--bg);
-    color:var(--text-2);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;}
+    color:var(--text-2);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;position:relative;}
   .tab-btn.active{background:var(--blue);color:white;}
+  .tab-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#EF4444;
+    margin-left:5px;vertical-align:2px;}
 
   .content{padding:18px 16px 40px;max-width:640px;margin:0 auto;}
   .card{background:var(--surface);border-radius:16px;box-shadow:var(--shadow-1);margin-bottom:14px;overflow:hidden;}
@@ -76,6 +85,10 @@
   .item-detail{font-size:12.5px;color:var(--text-2);line-height:1.5;}
   .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 
+  .score-pill{display:inline-flex;flex-direction:column;align-items:center;padding:6px 10px;border-radius:10px;min-width:50px;}
+  .score-pill .lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;opacity:.75;}
+  .score-pill .val{font-size:16px;font-weight:800;}
+
   #messages-list{padding:14px 16px;display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto;}
   .msg-bubble{max-width:80%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.4;}
   .msg-parent{align-self:flex-end;background:var(--blue);color:white;border-bottom-right-radius:4px;}
@@ -83,6 +96,12 @@
   .msg-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--rule-light);}
   #msg-input{flex:1;padding:11px 14px;border-radius:20px;border:1.5px solid var(--border);outline:none;font-size:13px;}
   #msg-send{background:var(--blue);color:white;border:none;border-radius:20px;padding:0 20px;font-weight:700;font-size:13px;cursor:pointer;}
+
+  .teacher-picker{display:flex;flex-direction:column;gap:8px;padding:14px 16px;}
+  .teacher-option{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+    border-radius:12px;border:1.5px solid var(--border);cursor:pointer;transition:all .15s;}
+  .teacher-option:hover{border-color:var(--blue);background:var(--blue-light);}
+  .teacher-option .subj{font-size:11px;color:var(--text-3);}
 
   .loading{text-align:center;padding:40px;color:var(--text-3);font-size:13px;}
 </style>
@@ -92,11 +111,16 @@
 <!-- ══════════ LOGIN SCREEN ══════════ -->
 <div id="login-screen">
   <div class="login-card">
+    <div class="lang-switcher" style="justify-content:center;margin-bottom:14px;">
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" data-lang="ru" onclick="setLang('ru')">РУ</button>
+      <button class="lang-btn" data-lang="uz" onclick="setLang('uz')">UZ</button>
+    </div>
     <div class="login-crest">🎓</div>
-    <h1>Redbridge Parent Portal</h1>
-    <div class="sub">Enter the access code given to you by the school</div>
+    <h1 data-i18n="login_title">Redbridge Parent Portal</h1>
+    <div class="sub" data-i18n="login_sub">Enter the access code given to you by the school</div>
     <input id="code-input" type="text" placeholder="XXXX-XXXX" maxlength="12" autocomplete="off">
-    <button id="login-btn" onclick="doLogin()">View my child's information</button>
+    <button id="login-btn" onclick="doLogin()" data-i18n="login_btn">View my child's information</button>
     <div id="login-error"></div>
     <div class="login-footer">Redbridge International School · Samarkand</div>
   </div>
@@ -112,27 +136,132 @@
         <div class="class" id="student-class">—</div>
       </div>
     </div>
-    <button id="logout-btn" onclick="doLogout()">Log out</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="lang-switcher">
+        <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" data-lang="ru" onclick="setLang('ru')">РУ</button>
+        <button class="lang-btn" data-lang="uz" onclick="setLang('uz')">UZ</button>
+      </div>
+      <button id="logout-btn" onclick="doLogout()" data-i18n="logout">Log out</button>
+    </div>
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="homework" onclick="switchTab('homework')">📝 Homework</button>
-    <button class="tab-btn" data-tab="marks" onclick="switchTab('marks')">📊 Marks</button>
-    <button class="tab-btn" data-tab="attendance" onclick="switchTab('attendance')">📅 Attendance</button>
-    <button class="tab-btn" data-tab="discipline" onclick="switchTab('discipline')">🛡 Discipline</button>
-    <button class="tab-btn" data-tab="messages" onclick="switchTab('messages')">💬 Message Teacher</button>
+    <button class="tab-btn active" data-tab="homework" onclick="switchTab('homework')">📝 <span data-i18n="tab_homework">Homework</span></button>
+    <button class="tab-btn" data-tab="scores" onclick="switchTab('scores')">📋 <span data-i18n="tab_scores">Daily Scores</span></button>
+    <button class="tab-btn" data-tab="marks" onclick="switchTab('marks')">📊 <span data-i18n="tab_marks">Marks</span></button>
+    <button class="tab-btn" data-tab="attendance" onclick="switchTab('attendance')">📅 <span data-i18n="tab_attendance">Attendance</span></button>
+    <button class="tab-btn" data-tab="discipline" onclick="switchTab('discipline')">🛡 <span data-i18n="tab_discipline">Discipline</span></button>
+    <button class="tab-btn" data-tab="progress" onclick="switchTab('progress')">📈 <span data-i18n="tab_progress">Progress</span></button>
+    <button class="tab-btn" data-tab="calendar" onclick="switchTab('calendar')">📅 <span data-i18n="tab_calendar">Calendar</span></button>
+    <button class="tab-btn" data-tab="messages" onclick="switchTab('messages')">💬 <span data-i18n="tab_messages">Message Teacher</span><span id="badge-messages" class="tab-dot" style="display:none;"></span></button>
   </div>
 
   <div class="content">
     <div id="tab-homework"></div>
+    <div id="tab-scores" style="display:none;"></div>
     <div id="tab-marks" style="display:none;"></div>
     <div id="tab-attendance" style="display:none;"></div>
     <div id="tab-discipline" style="display:none;"></div>
+    <div id="tab-progress" style="display:none;"></div>
+    <div id="tab-calendar" style="display:none;"></div>
     <div id="tab-messages" style="display:none;"></div>
   </div>
 </div>
 
 <script>
+  // ══ LANGUAGE SYSTEM ═══════════════════════════════════════════════════
+  var _lang = 'en';
+  var TRANSLATIONS = {
+    en: {
+      login_title: 'Redbridge Parent Portal', login_sub: 'Enter the access code given to you by the school',
+      login_btn: "View my child's information", logout: 'Log out',
+      tab_homework: 'Homework', tab_scores: 'Daily Scores', tab_marks: 'Marks', tab_attendance: 'Attendance',
+      tab_discipline: 'Discipline', tab_progress: 'Progress', tab_calendar: 'Calendar', tab_messages: 'Message Teacher',
+      code_not_found: 'Code not recognized. Please check and try again.',
+      code_empty: 'Please enter your access code.',
+      conn_error: 'Connection error. Please try again.',
+      checking: 'Checking…',
+      no_homework: 'No homework or classwork recorded yet',
+      classwork: 'Classwork', homework: 'Homework',
+      no_scores: 'No daily scores recorded yet',
+      cw_label: 'Classwork', hw_label: 'Homework', disc_label: 'Discipline', comment_label: 'Comment',
+      no_marks: 'No marks recorded yet', absent: 'Absent', present: 'Present',
+      no_attendance: 'No attendance records yet', absences_of: 'absences out of', lessons_recorded: 'recorded lessons',
+      no_discipline: 'No discipline records — all clear!',
+      marks_trend: 'Marks over time', attendance_trend: 'Attendance over time',
+      no_events: 'No upcoming events yet',
+      choose_teacher: 'Choose a teacher to message', back_to_teachers: '← Choose a different teacher',
+      no_messages: "No messages yet. Say hello!",
+      msg_placeholder: 'Type a message…', send: 'Send',
+      could_not_load: 'Could not load. Please try again.',
+    },
+    ru: {
+      login_title: 'Родительский портал Redbridge', login_sub: 'Введите код доступа, полученный от школы',
+      login_btn: 'Посмотреть информацию о ребёнке', logout: 'Выйти',
+      tab_homework: 'Домашнее задание', tab_scores: 'Ежедневные оценки', tab_marks: 'Оценки', tab_attendance: 'Посещаемость',
+      tab_discipline: 'Дисциплина', tab_progress: 'Динамика', tab_calendar: 'Календарь', tab_messages: 'Написать учителю',
+      code_not_found: 'Код не распознан. Проверьте и попробуйте снова.',
+      code_empty: 'Пожалуйста, введите код доступа.',
+      conn_error: 'Ошибка соединения. Попробуйте снова.',
+      checking: 'Проверка…',
+      no_homework: 'Домашние задания пока не записаны',
+      classwork: 'Классная работа', homework: 'Домашнее задание',
+      no_scores: 'Ежедневных оценок пока нет',
+      cw_label: 'Классная работа', hw_label: 'Домашняя работа', disc_label: 'Дисциплина', comment_label: 'Комментарий',
+      no_marks: 'Оценок пока нет', absent: 'Отсутствовал', present: 'Присутствовал',
+      no_attendance: 'Записей о посещаемости пока нет', absences_of: 'пропусков из', lessons_recorded: 'записанных уроков',
+      no_discipline: 'Нет замечаний по дисциплине — всё в порядке!',
+      marks_trend: 'Оценки по времени', attendance_trend: 'Посещаемость по времени',
+      no_events: 'Пока нет предстоящих событий',
+      choose_teacher: 'Выберите учителя для сообщения', back_to_teachers: '← Выбрать другого учителя',
+      no_messages: 'Сообщений пока нет. Поздоровайтесь!',
+      msg_placeholder: 'Введите сообщение…', send: 'Отправить',
+      could_not_load: 'Не удалось загрузить. Попробуйте снова.',
+    },
+    uz: {
+      login_title: 'Redbridge ota-onalar portali', login_sub: 'Maktab tomonidan berilgan kirish kodini kiriting',
+      login_btn: "Farzandim haqida maʼlumot koʻrish", logout: 'Chiqish',
+      tab_homework: 'Uy vazifasi', tab_scores: 'Kunlik baholar', tab_marks: 'Baholar', tab_attendance: 'Davomat',
+      tab_discipline: 'Intizom', tab_progress: 'Dinamika', tab_calendar: 'Kalendar', tab_messages: 'Oʻqituvchiga xabar',
+      code_not_found: 'Kod topilmadi. Tekshirib, qayta urinib koʻring.',
+      code_empty: 'Iltimos, kirish kodini kiriting.',
+      conn_error: 'Ulanish xatosi. Qayta urinib koʻring.',
+      checking: 'Tekshirilmoqda…',
+      no_homework: 'Hozircha uy vazifalari yozilmagan',
+      classwork: 'Sinf ishi', homework: 'Uy vazifasi',
+      no_scores: 'Hozircha kunlik baholar yoʻq',
+      cw_label: 'Sinf ishi', hw_label: 'Uy vazifasi', disc_label: 'Intizom', comment_label: 'Izoh',
+      no_marks: 'Hozircha baholar yoʻq', absent: 'Kelmagan', present: 'Kelgan',
+      no_attendance: 'Hozircha davomat yozuvlari yoʻq', absences_of: 'ta yoʻqlik, jami', lessons_recorded: 'ta darsdan',
+      no_discipline: 'Intizom holatlari yoʻq — hammasi joyida!',
+      marks_trend: 'Vaqt boʻyicha baholar', attendance_trend: 'Vaqt boʻyicha davomat',
+      no_events: 'Hozircha rejalashtirilgan tadbirlar yoʻq',
+      choose_teacher: 'Xabar yuborish uchun oʻqituvchini tanlang', back_to_teachers: '← Boshqa oʻqituvchini tanlash',
+      no_messages: 'Hozircha xabarlar yoʻq. Salom bering!',
+      msg_placeholder: 'Xabar yozing…', send: 'Yuborish',
+      could_not_load: 'Yuklab boʻlmadi. Qayta urinib koʻring.',
+    }
+  };
+
+  function t(key) {
+    var lang = TRANSLATIONS[_lang] || TRANSLATIONS.en;
+    return lang[key] || TRANSLATIONS.en[key] || key;
+  }
+
+  function setLang(lang) {
+    _lang = lang;
+    localStorage.setItem('parent_lang', lang);
+    document.querySelectorAll('.lang-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.lang === lang);
+    });
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    var activeTab = document.querySelector('.tab-btn.active');
+    if (activeTab && _student) switchTab(activeTab.dataset.tab);
+  }
+
   var _SB_URL = 'https://rqbdfwdegblwzbdqjsdo.supabase.co';
   var _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYmRmd2RlZ2Jsd3piZHFqc2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMjEzMzgsImV4cCI6MjA4OTc5NzMzOH0.GdfidDRBpdD1tZEam7_gjWaj5basR60FOjUOxvL6V2k';
 
@@ -149,18 +278,18 @@
     var code = document.getElementById('code-input').value.trim().toUpperCase();
     var errEl = document.getElementById('login-error');
     errEl.textContent = '';
-    if (!code) { errEl.textContent = 'Please enter your access code.'; return; }
+    if (!code) { errEl.textContent = t('code_empty'); return; }
 
-    document.getElementById('login-btn').textContent = 'Checking…';
+    document.getElementById('login-btn').textContent = t('checking');
 
     fetch(_SB_URL + '/rest/v1/students?access_code=eq.' + encodeURIComponent(code) + '&select=*', {
       headers: sbHeaders()
     })
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(rows) {
-      document.getElementById('login-btn').textContent = "View my child's information";
+      document.getElementById('login-btn').textContent = t('login_btn');
       if (!rows || !rows.length) {
-        errEl.textContent = 'Code not recognized. Please check and try again.';
+        errEl.textContent = t('code_not_found');
         return;
       }
       _student = rows[0];
@@ -168,8 +297,8 @@
       showApp();
     })
     .catch(function() {
-      document.getElementById('login-btn').textContent = "View my child's information";
-      errEl.textContent = 'Connection error. Please try again.';
+      document.getElementById('login-btn').textContent = t('login_btn');
+      errEl.textContent = t('conn_error');
     });
   }
 
@@ -191,28 +320,63 @@
     document.getElementById('student-class').textContent = 'Class ' + _student.class;
 
     loadHomework();
+    checkNotifications();
+    setInterval(checkNotifications, 60000);
+  }
+
+  // ── NOTIFICATIONS ──
+  function checkNotifications() {
+    if (!_student) return;
+    var lastSeenMsg = localStorage.getItem('lastSeen_messages_' + _student.id) || '1970-01-01';
+
+    fetch(_SB_URL + '/rest/v1/parent_messages?student_id=eq.' + _student.id + '&sender=eq.teacher&created_at=gt.' + encodeURIComponent(lastSeenMsg) + '&select=id', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var badge = document.getElementById('badge-messages');
+      if (badge) badge.style.display = (rows && rows.length) ? 'inline-block' : 'none';
+      updateTitleBadge();
+    });
+  }
+
+  function updateTitleBadge() {
+    var badge = document.getElementById('badge-messages');
+    var hasAny = badge && badge.style.display !== 'none';
+    document.title = (hasAny ? '🔴 ' : '') + 'Redbridge Parent Portal';
+  }
+
+  function markSeen(category) {
+    if (!_student) return;
+    localStorage.setItem('lastSeen_' + category + '_' + _student.id, new Date().toISOString());
+    var badge = document.getElementById('badge-' + category);
+    if (badge) badge.style.display = 'none';
+    updateTitleBadge();
   }
 
   // ── TABS ──
   function switchTab(tab) {
-    ['homework','marks','attendance','discipline','messages'].forEach(function(t) {
+    ['homework','scores','marks','attendance','discipline','progress','calendar','messages'].forEach(function(t) {
       document.getElementById('tab-' + t).style.display = (t === tab) ? 'block' : 'none';
     });
     document.querySelectorAll('.tab-btn').forEach(function(b) {
       b.classList.toggle('active', b.dataset.tab === tab);
     });
     if (tab === 'homework') loadHomework();
+    if (tab === 'scores') loadDailyScores();
     if (tab === 'marks') loadMarks();
     if (tab === 'attendance') loadAttendance();
     if (tab === 'discipline') loadDiscipline();
-    if (tab === 'messages') loadMessages();
+    if (tab === 'progress') loadProgress();
+    if (tab === 'calendar') loadCalendar();
+    if (tab === 'messages') { loadMessages(); markSeen('messages'); }
   }
 
   function studentFullNames() {
     return [_student.full_name_en, _student.full_name_ru].filter(Boolean);
   }
 
-  // ── HOMEWORK / CLASSWORK ──
+  // ── HOMEWORK / CLASSWORK (text) ──
   function loadHomework() {
     var el = document.getElementById('tab-homework');
     el.innerHTML = '<div class="loading">Loading…</div>';
@@ -224,26 +388,73 @@
     .then(function(rows) {
       rows = (rows || []).filter(function(r) { return r.topic || r.homework; });
       if (!rows.length) {
-        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📝</div><div class="msg">No homework or classwork recorded yet</div></div></div>';
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📝</div><div class="msg">' + t('no_homework') + '</div></div></div>';
         return;
       }
       var html = '<div class="card">';
       rows.forEach(function(r) {
         html += '<div class="item-row">' +
           '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div><div class="item-date">' + (r.date||'') + '</div></div>';
-        if (r.topic) html += '<div class="item-detail"><b>Classwork:</b> ' + r.topic + '</div>';
+        if (r.topic) html += '<div class="item-detail"><b>' + t('classwork') + ':</b> ' + r.topic + '</div>';
         if (r.topic_file_url) html += '<div class="item-detail"><a href="' + r.topic_file_url + '" target="_blank" style="color:var(--blue);">📎 ' + (r.topic_file_name||'File') + '</a></div>';
-        if (r.homework) html += '<div class="item-detail" style="margin-top:4px;"><b>Homework:</b> ' + r.homework + '</div>';
+        if (r.homework) html += '<div class="item-detail" style="margin-top:4px;"><b>' + t('homework') + ':</b> ' + r.homework + '</div>';
         if (r.homework_file_url) html += '<div class="item-detail"><a href="' + r.homework_file_url + '" target="_blank" style="color:var(--blue);">📎 ' + (r.homework_file_name||'File') + '</a></div>';
         html += '</div>';
       });
       html += '</div>';
       el.innerHTML = html;
     })
-    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">Could not load homework.</div></div></div>'; });
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
   }
 
-  // ── MARKS ──
+  // ── DAILY SCORES (the 1-5 CW/HW/Discipline marks + comment, per lesson) ──
+  function loadDailyScores() {
+    var el = document.getElementById('tab-scores');
+    el.innerHTML = '<div class="loading">Loading…</div>';
+    var names = studentFullNames();
+
+    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&limit=60&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var records = [];
+      (rows||[]).forEach(function(r) {
+        (r.students||[]).forEach(function(s) {
+          if (names.indexOf(s.name) === -1) return;
+          if (s.absent) return; // no scores to show on an absent day
+          if (s.cw === undefined && s.hw === undefined && s.disc === undefined && !s.comment) return;
+          records.push({ date:r.date, subject:r.subject, cw:s.cw, hw:s.hw, disc:s.disc, comment:s.comment });
+        });
+      });
+      if (!records.length) {
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📋</div><div class="msg">' + t('no_scores') + '</div></div></div>';
+        return;
+      }
+      function pillColor(v) {
+        if (v === undefined || v === null) return { bg:'#f1f5f9', fg:'#94a3b8' };
+        return v >= 4 ? { bg:'var(--green-light)', fg:'var(--green)' } : v === 3 ? { bg:'var(--amber-light)', fg:'var(--amber)' } : { bg:'var(--red-light)', fg:'var(--red)' };
+      }
+      var html = '<div class="card">';
+      records.forEach(function(r) {
+        var cwC = pillColor(r.cw), hwC = pillColor(r.hw), discC = pillColor(r.disc);
+        html += '<div class="item-row">' +
+          '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div><div class="item-date">' + (r.date||'') + '</div></div>' +
+          '<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">' +
+            '<div class="score-pill" style="background:' + cwC.bg + ';color:' + cwC.fg + ';"><span class="lbl">' + t('cw_label') + '</span><span class="val">' + (r.cw !== undefined && r.cw !== null ? r.cw : '—') + '</span></div>' +
+            '<div class="score-pill" style="background:' + hwC.bg + ';color:' + hwC.fg + ';"><span class="lbl">' + t('hw_label') + '</span><span class="val">' + (r.hw !== undefined && r.hw !== null ? r.hw : '—') + '</span></div>' +
+            '<div class="score-pill" style="background:' + discC.bg + ';color:' + discC.fg + ';"><span class="lbl">' + t('disc_label') + '</span><span class="val">' + (r.disc !== undefined && r.disc !== null ? r.disc : '—') + '</span></div>' +
+          '</div>' +
+          (r.comment ? '<div class="item-detail" style="margin-top:8px;"><b>' + t('comment_label') + ':</b> ' + r.comment + '</div>' : '') +
+        '</div>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
+  }
+
+  // ── MARKS (assessments, percentage-based) ──
   function loadMarks() {
     var el = document.getElementById('tab-marks');
     el.innerHTML = '<div class="loading">Loading…</div>';
@@ -263,12 +474,12 @@
         });
       });
       if (!mine.length) {
-        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📊</div><div class="msg">No marks recorded yet</div></div></div>';
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📊</div><div class="msg">' + t('no_marks') + '</div></div></div>';
         return;
       }
       var html = '<div class="card">';
       mine.forEach(function(m) {
-        var pctText = m.absent ? 'Absent' : (m.pct !== null && m.pct !== undefined ? m.pct + '%' : '—');
+        var pctText = m.absent ? t('absent') : (m.pct !== null && m.pct !== undefined ? m.pct + '%' : '—');
         var color = m.absent ? 'var(--text-4)' : (m.pct >= 70 ? 'var(--green)' : m.pct >= 50 ? 'var(--amber)' : 'var(--red)');
         html += '<div class="item-row"><div class="item-top">' +
           '<div><div class="item-title">' + m.subject + ' — ' + m.name + '</div><div class="item-date">' + m.date + ' · ' + (m.type||'') + '</div></div>' +
@@ -278,10 +489,10 @@
       html += '</div>';
       el.innerHTML = html;
     })
-    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">Could not load marks.</div></div></div>'; });
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
   }
 
-  // ── ATTENDANCE (derived from daily_reports students[].absent) ──
+  // ── ATTENDANCE ──
   function loadAttendance() {
     var el = document.getElementById('tab-attendance');
     el.innerHTML = '<div class="loading">Loading…</div>';
@@ -301,23 +512,23 @@
         });
       });
       if (!records.length) {
-        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📅</div><div class="msg">No attendance records yet</div></div></div>';
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📅</div><div class="msg">' + t('no_attendance') + '</div></div></div>';
         return;
       }
       var absentCount = records.filter(function(r){return r.absent;}).length;
       var html = '<div class="card"><div class="card-body" style="text-align:center;border-bottom:1px solid var(--rule-light);">' +
         '<div style="font-size:26px;font-weight:800;color:' + (absentCount>3?'var(--red)':'var(--green)') + ';">' + absentCount + '</div>' +
-        '<div style="font-size:12px;color:var(--text-3);">absences out of ' + records.length + ' recorded lessons</div></div>';
+        '<div style="font-size:12px;color:var(--text-3);">' + t('absences_of') + ' ' + records.length + ' ' + t('lessons_recorded') + '</div></div>';
       records.forEach(function(r) {
         var badge = r.absent
-          ? '<span class="badge" style="background:var(--red-light);color:var(--red);">Absent</span>'
-          : '<span class="badge" style="background:var(--green-light);color:var(--green);">Present</span>';
+          ? '<span class="badge" style="background:var(--red-light);color:var(--red);">' + t('absent') + '</span>'
+          : '<span class="badge" style="background:var(--green-light);color:var(--green);">' + t('present') + '</span>';
         html += '<div class="item-row"><div class="item-top"><div class="item-title">' + r.subject + '</div><div class="item-date">' + r.date + '</div></div>' + badge + '</div>';
       });
       html += '</div>';
       el.innerHTML = html;
     })
-    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">Could not load attendance.</div></div></div>'; });
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
   }
 
   // ── DISCIPLINE ──
@@ -333,12 +544,13 @@
     .then(function(rows) {
       var mine = (rows||[]).filter(function(r) { return names.indexOf(r.student_name) !== -1; });
       if (!mine.length) {
-        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">🛡</div><div class="msg">No discipline records — all clear!</div></div></div>';
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">🛡</div><div class="msg">' + t('no_discipline') + '</div></div></div>';
         return;
       }
       var html = '<div class="card">';
       mine.forEach(function(r) {
-        html += '<div class="item-row"><div class="item-top"><div class="item-title">' + (r.type||'Incident') + '</div><div class="item-date">' + (r.created_at||'').slice(0,10) + '</div></div>' +
+        html += '<div class="item-row"><div class="item-top"><div class="item-title">' + (r.type||'Incident') + (r.subject ? ' (' + r.subject + ')' : '') + '</div><div class="item-date">' + (r.created_at||'').slice(0,10) + '</div></div>' +
+          (r.class ? '<div class="item-detail">Class: ' + r.class + '</div>' : '') +
           (r.stage ? '<div class="item-detail">Stage: ' + r.stage + '</div>' : '') +
           (r.notes ? '<div class="item-detail">' + r.notes + '</div>' : '') +
           '<div style="margin-top:6px;"><span class="badge" style="background:var(--amber-light);color:var(--amber);">' + (r.status||'logged') + '</span></div>' +
@@ -347,29 +559,207 @@
       html += '</div>';
       el.innerHTML = html;
     })
-    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">Could not load discipline records.</div></div></div>'; });
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
   }
 
-  // ── MESSAGES ──
+  // ── PROGRESS (charts) ──
+  var _marksChart = null, _attChart = null;
+
+  function loadProgress() {
+    var el = document.getElementById('tab-progress');
+    el.innerHTML =
+      '<div class="card"><div class="card-body"><b style="font-size:13px;">' + t('marks_trend') + '</b>' +
+      '<div style="position:relative;height:220px;margin-top:10px;"><canvas id="marks-chart"></canvas></div></div></div>' +
+      '<div class="card"><div class="card-body"><b style="font-size:13px;">' + t('attendance_trend') + '</b>' +
+      '<div style="position:relative;height:180px;margin-top:10px;"><canvas id="att-chart"></canvas></div></div></div>';
+
+    var names = studentFullNames();
+
+    fetch(_SB_URL + '/rest/v1/assessments?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var bySubject = {};
+      (rows||[]).forEach(function(a) {
+        (a.students||[]).forEach(function(s) {
+          if (names.indexOf(s.name) === -1 || s.absent || s.pct === null || s.pct === undefined) return;
+          bySubject[a.subject] = bySubject[a.subject] || [];
+          bySubject[a.subject].push({ x: a.date, y: s.pct });
+        });
+      });
+      var subjects = Object.keys(bySubject);
+      var canvas = document.getElementById('marks-chart');
+      if (!subjects.length) {
+        if (canvas) canvas.parentElement.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('no_marks') + '</div></div>';
+        return;
+      }
+      var palette = ['#7367F0','#28C76F','#FF9F43','#EA5455','#00CFE8','#8B5CF6'];
+      var datasets = subjects.map(function(subj, i) {
+        return { label: subj, data: bySubject[subj], borderColor: palette[i % palette.length],
+          backgroundColor: palette[i % palette.length] + '22', tension: 0.3, pointRadius: 4 };
+      });
+      if (canvas && typeof Chart !== 'undefined') {
+        var ctx = canvas.getContext('2d');
+        if (_marksChart) _marksChart.destroy();
+        _marksChart = new Chart(ctx, {
+          type: 'line', data: { datasets: datasets },
+          options: { responsive: true, maintainAspectRatio: false,
+            scales: { x: { type: 'time', time: { unit: 'week' }, grid: { display:false } }, y: { min:0, max:100, ticks: { callback: function(v){return v+'%';} } } },
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+        });
+      }
+    });
+
+    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&limit=200&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var byDate = {};
+      (rows||[]).forEach(function(r) {
+        (r.students||[]).forEach(function(s) {
+          if (names.indexOf(s.name) === -1) return;
+          byDate[r.date] = byDate[r.date] || { total: 0, present: 0 };
+          byDate[r.date].total++;
+          if (!s.absent) byDate[r.date].present++;
+        });
+      });
+      var dates = Object.keys(byDate).sort();
+      var canvas2 = document.getElementById('att-chart');
+      if (!dates.length) {
+        if (canvas2) canvas2.parentElement.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('no_attendance') + '</div></div>';
+        return;
+      }
+      var points = dates.map(function(d) {
+        var v = byDate[d];
+        return { x: d, y: Math.round((v.present / v.total) * 100) };
+      });
+      if (canvas2 && typeof Chart !== 'undefined') {
+        var ctx2 = canvas2.getContext('2d');
+        if (_attChart) _attChart.destroy();
+        _attChart = new Chart(ctx2, {
+          type: 'bar',
+          data: { datasets: [{ label: t('tab_attendance'), data: points,
+            backgroundColor: points.map(function(p){ return p.y >= 90 ? '#28C76F' : p.y >= 75 ? '#FF9F43' : '#EA5455'; }) }] },
+          options: { responsive: true, maintainAspectRatio: false,
+            scales: { x: { type: 'time', time: { unit: 'day' }, grid: { display:false } }, y: { min:0, max:100, ticks: { callback: function(v){return v+'%';} } } },
+            plugins: { legend: { display: false } } }
+        });
+      }
+    });
+  }
+
+  // ── CALENDAR (live, no sample data) ──
+  function loadCalendar() {
+    var el = document.getElementById('tab-calendar');
+    el.innerHTML = '<div class="loading">Loading…</div>';
+
+    var today = new Date().toISOString().slice(0,10);
+    fetch(_SB_URL + '/rest/v1/calendar_events?date=gte.' + today + '&order=date.asc&select=*', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      rows = rows || [];
+      if (!rows.length) {
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📅</div><div class="msg">' + t('no_events') + '</div></div></div>';
+        return;
+      }
+      var html = '<div class="card">';
+      rows.forEach(function(ev) {
+        var d = new Date(ev.date + 'T12:00:00');
+        var dateStr = d.toLocaleDateString(_lang === 'ru' ? 'ru-RU' : _lang === 'uz' ? 'uz-UZ' : 'en-GB', { day:'numeric', month:'short', year:'numeric' });
+        html += '<div class="item-row">' +
+          '<div class="item-top"><div class="item-title">' + (ev.title||'') + '</div><div class="item-date">' + dateStr + '</div></div>' +
+          (ev.description ? '<div class="item-detail">' + ev.description + '</div>' : '') +
+        '</div>';
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
+  }
+
+  // ── MESSAGES (per-teacher threads) ──
+  var _selectedTeacher = null;
+
   function loadMessages() {
     var el = document.getElementById('tab-messages');
-    el.innerHTML = '<div class="card"><div id="messages-list"><div class="loading">Loading…</div></div>' +
-      '<div class="msg-input-row"><input id="msg-input" type="text" placeholder="Message your child&#39;s teacher…">' +
-      '<button id="msg-send" onclick="sendParentMessage()">Send</button></div></div>';
+    el.innerHTML = '<div class="loading">Loading…</div>';
 
-    fetch(_SB_URL + '/rest/v1/parent_messages?student_id=eq.' + _student.id + '&order=created_at.asc&select=*', {
+    fetch(_SB_URL + '/rest/v1/teacher_assignments?class=eq.' + encodeURIComponent(_student.class) + '&select=teacher_name,subject', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      var byTeacher = {};
+      (rows||[]).forEach(function(r) {
+        if (!byTeacher[r.teacher_name]) byTeacher[r.teacher_name] = [];
+        if (r.subject && byTeacher[r.teacher_name].indexOf(r.subject) === -1) byTeacher[r.teacher_name].push(r.subject);
+      });
+      var teachers = Object.keys(byTeacher).sort();
+
+      if (!teachers.length) {
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>';
+        return;
+      }
+
+      if (!_selectedTeacher) {
+        renderTeacherPicker(teachers, byTeacher);
+      } else {
+        renderThread(_selectedTeacher);
+      }
+    })
+    .catch(function() {
+      el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>';
+    });
+  }
+
+  function renderTeacherPicker(teachers, byTeacher) {
+    var el = document.getElementById('tab-messages');
+    var html = '<div class="card"><div class="card-body" style="padding-bottom:8px;"><b style="font-size:13px;">' + t('choose_teacher') + '</b></div>' +
+      '<div class="teacher-picker">';
+    teachers.forEach(function(tname) {
+      html += '<div class="teacher-option" data-teacher="' + tname.replace(/"/g,'&quot;') + '">' +
+        '<div><div style="font-weight:700;font-size:13px;">' + tname + '</div>' +
+        '<div class="subj">' + (byTeacher[tname]||[]).join(', ') + '</div></div>' +
+        '<span style="color:var(--blue);font-size:18px;">›</span></div>';
+    });
+    html += '</div></div>';
+    el.innerHTML = html;
+    el.querySelectorAll('.teacher-option').forEach(function(opt) {
+      opt.addEventListener('click', function() {
+        _selectedTeacher = opt.dataset.teacher;
+        loadMessages();
+      });
+    });
+  }
+
+  function renderThread(teacherName) {
+    var el = document.getElementById('tab-messages');
+    el.innerHTML = '<div style="margin-bottom:8px;"><a href="#" onclick="_selectedTeacher=null;loadMessages();return false;" style="font-size:12px;color:var(--blue);text-decoration:none;">' + t('back_to_teachers') + '</a></div>' +
+      '<div class="card">' +
+      '<div class="card-body" style="padding:12px 16px;border-bottom:1px solid var(--rule-light);"><b style="font-size:13px;">' + teacherName + '</b></div>' +
+      '<div id="messages-list"><div class="loading">Loading…</div></div>' +
+      '<div class="msg-input-row"><input id="msg-input" type="text" placeholder="' + t('msg_placeholder') + '">' +
+      '<button id="msg-send" onclick="sendParentMessage()">' + t('send') + '</button></div></div>';
+
+    fetch(_SB_URL + '/rest/v1/parent_messages?student_id=eq.' + _student.id + '&teacher_name=eq.' + encodeURIComponent(teacherName) + '&order=created_at.asc&select=*', {
       headers: sbHeaders()
     })
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(rows) {
       var list = document.getElementById('messages-list');
       if (!rows || !rows.length) {
-        list.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">No messages yet. Say hello to your child&#39;s teacher!</div></div>';
+        list.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('no_messages') + '</div></div>';
         return;
       }
       list.innerHTML = rows.map(function(m) {
         var cls = m.sender === 'parent' ? 'msg-parent' : 'msg-teacher';
-        return '<div class="msg-bubble ' + cls + '">' + m.message + '</div>';
+        var nameLabel = (m.sender === 'teacher' && m.sender_name)
+          ? '<div style="font-size:10.5px;font-weight:700;color:var(--blue);margin-bottom:3px;">' + m.sender_name + '</div>' : '';
+        return '<div class="msg-bubble ' + cls + '">' + nameLabel + m.message + '</div>';
       }).join('');
       list.scrollTop = list.scrollHeight;
     });
@@ -378,7 +768,7 @@
   function sendParentMessage() {
     var input = document.getElementById('msg-input');
     var text = input.value.trim();
-    if (!text) return;
+    if (!text || !_selectedTeacher) return;
     input.value = '';
 
     fetch(_SB_URL + '/rest/v1/parent_messages', {
@@ -386,15 +776,19 @@
       headers: sbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
       body: JSON.stringify({
         student_id: _student.id,
+        teacher_name: _selectedTeacher,
         sender: 'parent',
         sender_name: _student.father_name_en || _student.mother_name_en || 'Parent',
         message: text
       })
-    }).then(function() { loadMessages(); });
+    }).then(function() { renderThread(_selectedTeacher); });
   }
 
-  // ── AUTO LOGIN if code already saved ──
+  // ── AUTO LOGIN + LANGUAGE RESTORE ──
   window.addEventListener('load', function() {
+    var savedLang = localStorage.getItem('parent_lang') || 'en';
+    setLang(savedLang);
+
     var saved = localStorage.getItem('parent_code');
     if (saved) {
       document.getElementById('code-input').value = saved;
