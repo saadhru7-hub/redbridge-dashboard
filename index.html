@@ -2238,6 +2238,33 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   function renderSubjectCards() {
     const el = document.getElementById('subject-cards');
     if (!el) return;
+
+    // Curriculum card names don't always match the exact subject strings
+    // used in the real timetable/teacher assignment data (e.g. the card
+    // says "Cambridge Maths" but the real data says "Maths-Eng"/"Maths-Rus").
+    // This maps each card to every real-world name variant it should match.
+    const subjectAliases = {
+      'Cambridge Maths': ['Cambridge Maths', 'Maths-Eng', 'Maths-Rus'],
+      'GP (History–Geography)': ['GP (History–Geography)', 'History', 'Geography'],
+      'Russian Maths': ['Russian Maths', 'Maths-Rus'],
+      'Russian Language': ['Russian Language', 'Russian'],
+      'Russian Literature': ['Russian Literature', 'Literature'],
+    };
+    function getTeachersForSubject(name) {
+      var names = subjectAliases[name] || [name];
+      var merged = {};
+      names.forEach(function(n) {
+        var tmap = subjectTeacherMap[n] || {};
+        Object.keys(tmap).forEach(function(teacher) {
+          merged[teacher] = merged[teacher] || [];
+          tmap[teacher].forEach(function(cls) {
+            if (merged[teacher].indexOf(cls) === -1) merged[teacher].push(cls);
+          });
+        });
+      });
+      return merged;
+    }
+
     el.innerHTML = subjectsData.map(s => {
       return '<div style="background:' + s.bg + ';border-radius:14px;padding:16px 18px;border:1.5px solid ' + s.color + '33;transition:transform 0.2s;cursor:default;" ' +
         'onmouseenter="this.style.transform=\'translateY(-3px)\'" onmouseleave="this.style.transform=\'none\'">' +
@@ -2253,7 +2280,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
           '<span style="font-size:11px;background:white;border-radius:20px;padding:2px 9px;color:#555;font-weight:600;">' + s.weekly + '/wk</span>' +
         '</div>' +
         (function() {
-          var tmap = subjectTeacherMap[s.name] || {};
+          var tmap = getTeachersForSubject(s.name);
           var entries = Object.entries(tmap);
           if (!entries.length) return '';
           var rows = entries.map(function(e) {
