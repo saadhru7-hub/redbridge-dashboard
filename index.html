@@ -5864,7 +5864,7 @@ function saveDailyReport() {
     var cls     = (document.getElementById('dr-class')||{}).value;
     var subject = (document.getElementById('dr-subject')||{}).value;
     var dateEl  = document.getElementById('dr-date');
-    var date    = dateEl ? dateEl.value : new Date().toISOString().slice(0,10);
+    var date    = (dateEl && dateEl.value) ? dateEl.value : new Date().toISOString().slice(0,10);
     var period  = (document.getElementById('dr-period')||{}).value || '';
     var topic   = (document.getElementById('dr-topic')||{}).value || '';
     var remark  = (document.getElementById('dr-remark')||{}).value || '';
@@ -6850,13 +6850,18 @@ function saveDailyReport() {
   }
 
   function sbSaveDailyReport(rep) {
+    // period is a numeric column in the database — sending an empty
+    // string (which happens whenever a report is created via the marks
+    // grid, which doesn't go through the period dropdown at all) causes
+    // Postgres to reject the entire save outright, every single time.
+    var periodNum = parseInt(rep.period, 10);
     var payload = {
       teacher_name:        rep.teacher || '',
       teacher_username:    _currentUser ? (_currentUser.username||_currentUser.user||'') : '',
       class:               rep.cls,
       subject:             rep.subject,
       date:                rep.date,
-      period:              rep.period   || '',
+      period:              isNaN(periodNum) ? null : periodNum,
       topic:                rep.topic    || '',
       remark:              rep.remark   || '',
       homework:            rep.homework || '',
