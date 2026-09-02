@@ -525,6 +525,12 @@
     #class-tiles-grid { grid-template-columns: repeat(auto-fill,minmax(100px,1fr)) !important; }
   }
 
+  /* Daily Report form is mobile-first (single column by default);
+     widen to two columns side-by-side only on larger screens. */
+  @media (min-width: 900px) {
+    .dr-submit-grid { grid-template-columns: minmax(300px,1fr) minmax(400px,1.5fr); }
+  }
+
   @media (max-width: 480px) {
     div[style*="grid-template-columns:repeat(4,1fr)"],
     div[style*="grid-template-columns:repeat(5,1fr)"],
@@ -657,6 +663,9 @@
     </a>
     <a class="nav-item" data-panel="subjects" onclick="showPanel('subjects', this)">
       <span class="nav-icon">📐</span> Subjects
+    </a>
+    <a class="nav-item" data-panel="reportcard" onclick="showPanel('reportcard', this)">
+      <span class="nav-icon">📜</span> Report Cards
     </a>
     <a class="nav-item" data-panel="results" onclick="showPanel('results', this)">
       <span class="nav-icon">📊</span> Student Results
@@ -1320,6 +1329,51 @@
 
     </div>
 
+    <style>
+      @media print {
+        body * { visibility: hidden; }
+        #rc-printable, #rc-printable * { visibility: visible; }
+        #rc-printable { position: absolute; left: 0; top: 0; width: 100%; }
+        .no-print { display: none !important; }
+      }
+      #rc-printable { background: white; }
+    </style>
+
+    <div class="panel" id="panel-reportcard">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;" class="no-print">
+        <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;">📜 Report Cards</h2>
+        <div style="font-size:12.5px;color:var(--muted);">Generate a printable academic report for any student</div></div>
+      </div>
+
+      <div class="card no-print" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;padding:16px;">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Class</label>
+            <select id="rc-class" onchange="rcLoadStudents()"><option value="">— Select class —</option></select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Student</label>
+            <select id="rc-student" onchange="rcGenerate()"><option value="">— Select student —</option></select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Term</label>
+            <select id="rc-term" onchange="rcGenerate()">
+              <option value="all">Full Year So Far</option>
+              <option value="Q1">Quarter 1</option>
+              <option value="Q2">Quarter 2</option>
+              <option value="Q3">Quarter 3</option>
+              <option value="Q4">Quarter 4</option>
+            </select>
+          </div>
+          <button onclick="window.print()" class="btn btn-primary" id="rc-print-btn" style="display:none;">🖨 Print / Save as PDF</button>
+        </div>
+      </div>
+
+      <div id="rc-content">
+        <div class="card"><div style="padding:50px;text-align:center;color:var(--muted);">👆 Select a class and student to generate their report card</div></div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-subjects">
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
@@ -1552,7 +1606,7 @@ id="panel-timetable">
 
       <!-- TAB: SUBMIT REPORT -->
       <div id="dr-submit-section">
-        <div style="display:grid;grid-template-columns:minmax(300px,1fr) minmax(400px,1.5fr);gap:20px;align-items:start;flex-wrap:wrap;">
+        <div class="dr-submit-grid" style="display:grid;grid-template-columns:1fr;gap:20px;align-items:start;">
 
           <!-- Left: Form -->
           <div class="card">
@@ -1679,7 +1733,7 @@ id="panel-timetable">
               <div class="card-title" data-i18n="dr_student_marks">Student Marks</div>
               <div class="card-subtitle" id="dr-students-subtitle" data-i18n="dr_select_class_load">Select a class to load students</div>
             </div>
-            <div style="padding:0;max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch;" id="dr-students-wrap">
+            <div style="padding:0;max-height:60vh;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;" id="dr-students-wrap">
               <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">
                 <span data-i18n="dr_select_above">👆 Select a class above to load the student list</span>
               </div>
@@ -3422,6 +3476,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     _originalShowPanel(id, el);
     if (id === 'classes')    { renderClasses(); renderClassStudents(); }
     if (id === 'subjects')   { renderSubjectCards(); renderSubjectMatrix(); loadSubjectTeacherMap(); }
+    if (id === 'reportcard') { rcInit(); }
     if (id === 'results')    { initResultsPanel(); renderResults(); }
     if (id === 'discipline') { if(typeof loadIncidents==='function') loadIncidents(); renderIncidentLog(); if(typeof renderHealthSummary==='function') renderHealthSummary(); }
     if (id === 'teachers')   { renderPerfTable(); }
@@ -4137,7 +4192,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       deptClasses: [],
       deptSubjects: [],
       deptTeachers: [],
-      panels: ['dashboard','academics','results','teachers','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','academics','results','teachers','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Abdullayeva Gulnara Asatovna',
       loadName: 'Gulnara Asadovna',
@@ -4156,7 +4211,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       deptClasses: [],
       deptSubjects: [],
       deptTeachers: [],
-      panels: ['dashboard','academics','results','teachers','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','academics','results','teachers','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Ibragimova Nasiba Ismailovna',
       loadName: 'Nasiba Ismailovna',
@@ -4174,7 +4229,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'AF',
       access: 'class',
       classes: [],
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Abduazizova Feruza Erkinovna',
       loadName: 'Feruza Erkinovna',
@@ -4189,7 +4244,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'BO',
       access: 'class',
       classes: [],
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Bobobekova Barno Olimovna',
       loadName: 'Barno Olimovna',
@@ -4204,7 +4259,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'OD',
       access: 'class',
       classes: [],
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Djurayeva Oygul Isayevna',
       loadName: 'Oygul Isaevna',
@@ -4219,7 +4274,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'EZ',
       access: 'class',
       classes: [],
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Egamberdiyev Zafar',
       loadName: 'Zafar',
@@ -4234,7 +4289,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'XI',
       access: 'class',
       classes: [],
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Isomatov Xushbaxt Sadriddinovich',
       loadName: 'Khushbakht (5A only)',
@@ -4249,7 +4304,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'ZN',
       access: 'class',
       classes: [],
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Naimova Zarrina Musinovna',
       loadName: 'Zarrina Musinovna',
@@ -4264,7 +4319,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'SN',
       access: 'class',
       classes: [],
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Normamatova Sitora Furkatovna',
       loadName: 'Sitora Furkatovna',
@@ -4279,7 +4334,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'AY',
       access: 'class',
       classes: [],
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
       teacherName: 'Yusupov Abdussator Davlatovich',
       loadName: 'Abdulsattor Davlatovich',
@@ -4298,7 +4353,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: [],
       teacherClasses: [],
       teacherName: 'Banu Umera',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'bulgak.emin': {
@@ -4311,7 +4366,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: [],
       teacherClasses: [],
       teacherName: 'Bulgak Emine',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'hella.manz': {
@@ -4325,7 +4380,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherClasses: ['5B','5C','6A','6B','7A','7B'],
       teacherName: 'Hella Manzoor Ahmad',
       loadName: 'Manzoor Ahmad',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'mishra.soni': {
@@ -4339,7 +4394,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherClasses: ['4A','4B','4C','5A','5B','5C'],
       teacherName: 'Mishra Soniya',
       loadName: 'Soniya',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'rakhim.sabi': {
@@ -4353,7 +4408,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherClasses: ['Humanities-9-11','7B','8A','8B','8C'],
       teacherName: 'Rakhimova Sabina Robertovna',
       loadName: 'Sabina Robertovna',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'raxman.aziz': {
@@ -4367,7 +4422,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherClasses: ['7A','7B','7C','8B'],
       teacherName: 'Raxmanova Aziza',
       loadName: 'Aziza',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'yaqoob.adee': {
@@ -4381,7 +4436,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherClasses: ['Humanities-9-11','7C','8A','8B','8C'],
       teacherName: 'Yaqoob Adeel',
       loadName: 'Adeel',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'mskarina': {
@@ -4395,7 +4450,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherClasses: ['6A','6B'],
       teacherName: 'ms.Karina',
       loadName: 'Karina (6A,6B only)',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'msmadina': {
@@ -4409,7 +4464,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherClasses: ['Humanities-9-11','6B','7A','7B','7C','8A','8B','8C'],
       teacherName: 'ms.Madina',
       loadName: 'Madina',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'msnasiba': {
@@ -4422,7 +4477,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: [],
       teacherClasses: [],
       teacherName: 'ms.Nasiba',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     
@@ -4436,7 +4491,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Activity','Art','Chess','English','Maths-Eng','PE','Science'],
       teacherClasses: ['1A','1B'],
       teacherName: 'Khutsi',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'alima.teacher': {
@@ -4449,7 +4504,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Activity','Art','Chess','English','Maths-Eng','PE','Science'],
       teacherClasses: ['1B','1C'],
       teacherName: 'Alima',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'nasser.b': {
@@ -4462,7 +4517,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['English','IELTS'],
       teacherClasses: ['Humanities-9-11','8A','8B','8C'],
       teacherName: 'Nasser B.',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'traxzee.teacher': {
@@ -4475,7 +4530,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['English'],
       teacherClasses: ['6A','6B','7A','7B','7C','8C'],
       teacherName: 'Traxzee',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'princess.d': {
@@ -4488,7 +4543,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Maths-Eng'],
       teacherClasses: ['3A','3B','3C','4A','4B','4C','5A'],
       teacherName: 'Princess D.',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'firuza.maths': {
@@ -4501,7 +4556,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Maths-Rus'],
       teacherClasses: ['1A','1B','1C','2A','2B','2C'],
       teacherName: 'Firuza (Maths)',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'ozoda.teacher': {
@@ -4514,7 +4569,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Maths-Rus'],
       teacherClasses: ['7A','7B','7C','8A','8B','8C'],
       teacherName: 'Ms Ozoda',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'lola.teacher': {
@@ -4527,7 +4582,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Maths-Rus'],
       teacherClasses: ['5A','5B','5C','6A','6B'],
       teacherName: 'Ms Lola',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'stephanie.teacher': {
@@ -4540,7 +4595,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['CC-Science','Science'],
       teacherClasses: ['5B','5C','6A','6B','7A','7B','7C','8A','8B','8C'],
       teacherName: 'Ms Stephanie',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'ahmed.teacher': {
@@ -4553,7 +4608,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Science'],
       teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
       teacherName: 'Ahmed',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'ameen.alam': {
@@ -4566,7 +4621,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Geography','History'],
       teacherClasses: ['Humanities-9-11','5A','5B','5C','6A','6B','7A','7B','7C','8A','8B','8C'],
       teacherName: 'Ameen Alam',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'liyaqat.teacher': {
@@ -4579,7 +4634,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['ICT','Maths-Eng'],
       teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A','5B','5C','6A','6B'],
       teacherName: 'Liyaqat',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'lubov.teacher': {
@@ -4592,7 +4647,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Physics'],
       teacherClasses: ['7A','7B','7C','8A'],
       teacherName: 'Lubov',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'sharifa.teacher': {
@@ -4605,7 +4660,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Chemistry'],
       teacherClasses: ['7A','7B','7C','8B'],
       teacherName: 'Ms Sharifa',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'nargiza.teacher': {
@@ -4618,7 +4673,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Uzbek'],
       teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A','5B','5C','6A'],
       teacherName: 'Ms Nargiza',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'khalid.ali': {
@@ -4631,7 +4686,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['PE'],
       teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5B','5C','7A','7B','7C'],
       teacherName: 'Khalid Ali',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'military.instructor': {
@@ -4644,7 +4699,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['PE'],
       teacherClasses: ['Humanities-9-11','8A','8B','8C'],
       teacherName: 'Military Training Instructor',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'alexander.teacher': {
@@ -4657,7 +4712,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Chess','Law'],
       teacherClasses: ['Humanities-9-11','2A','2B','2C','3A','3B','3C','4A','4B','4C'],
       teacherName: 'Alexander',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'jaklin.teacher': {
@@ -4670,7 +4725,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Activity'],
       teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C'],
       teacherName: 'Jaklin',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
     'beth.teacher': {
@@ -4683,7 +4738,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['Business','Economics'],
       teacherClasses: ['Humanities-9-11','8A','8B','8C'],
       teacherName: 'Beth',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
   };
@@ -5814,23 +5869,31 @@ function saveDailyReport() {
     var topic   = (document.getElementById('dr-topic')||{}).value || '';
     var remark  = (document.getElementById('dr-remark')||{}).value || '';
     var homework= (document.getElementById('dr-homework')||{}).value || '';
-    var wrap    = document.getElementById('dr-students-wrap');
     if (!cls || !subject) { showToast('Please select a class and subject.'); return; }
-    var students = [];
-    if (wrap && wrap._students) {
-      wrap._students.forEach(function(st, i) {
-        var sid = 'st_' + i;
-        var name = st.s + ' ' + st.f;
-        var absent = (document.getElementById('absent_'+sid)||{}).checked;
-        students.push({ name:name, cw: getMark('cw',sid), hw: getMark('hw',sid),
-          disc: getMark('disc',sid), absent: absent,
-          comment: getRemark('cw',sid) || getRemark('hw',sid) || '' });
+
+    // Find any report already started for this class+subject+date (e.g. via
+    // the marks grid) so we UPDATE it rather than overwrite its students
+    // with an empty list. Previously this always created a fresh report
+    // with zero students, even when real marks already existed.
+    var rep = null;
+    if (typeof dailyReports !== 'undefined') {
+      dailyReports.forEach(function(r) {
+        if (r.cls === cls && r.subject === subject && r.date === date) rep = r;
       });
     }
-    var rep = { id:'dr'+Date.now(), date:date, cls:cls, subject:subject,
-      teacher: _currentUser ? _currentUser.name : '',
-      period:period, topic:topic, remark:remark, homework:homework, students:students,
-      topicFileUrl:'', topicFileName:'', homeworkFileUrl:'', homeworkFileName:'' };
+    if (!rep) {
+      rep = { id:'dr'+Date.now(), date:date, cls:cls, subject:subject,
+        teacher: _currentUser ? _currentUser.name : '',
+        period:period, topic:topic, remark:remark, homework:homework, students:[],
+        topicFileUrl:'', topicFileName:'', homeworkFileUrl:'', homeworkFileName:'' };
+      dailyReports.push(rep);
+    } else {
+      rep.period  = period;
+      rep.topic   = topic;
+      rep.remark  = remark;
+      rep.homework= homework;
+      // rep.students is left untouched — preserves any marks already entered via the grid
+    }
 
     showToast('Saving report…');
 
@@ -5852,7 +5915,6 @@ function saveDailyReport() {
     }
 
     Promise.all(uploadPromises).then(function() {
-      dailyReports.push(rep);
       saveDailyReports();
       if (typeof sbSaveDailyReport === 'function') {
         sbSaveDailyReportWithRetry(rep).then(function(){ updateCloudStatus('saved'); })
@@ -5939,10 +6001,16 @@ function saveDailyReport() {
 
       var delBtn = document.createElement('button');
       delBtn.textContent = 'Delete';
-      delBtn.style.cssText = 'padding:7px 16px;border-radius:8px;border:1.5px solid #fca5a5;background:white;color:#b91c1c;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;';
+      delBtn.style.cssText = 'padding:7px 16px;border-radius:8px;border:1.5px solid #fca5a5;background:white;color:#b91c1c;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;margin-right:8px;';
       var repId = rep.id;
       delBtn.addEventListener('click', function(){ drDeleteReport(repId); });
 
+      var editBtn = document.createElement('button');
+      editBtn.textContent = '✏ Edit';
+      editBtn.style.cssText = 'padding:7px 16px;border-radius:8px;border:1.5px solid var(--navy);background:white;color:var(--navy);font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;';
+      editBtn.addEventListener('click', function(){ drEditReport(rep); });
+
+      body.appendChild(editBtn);
       body.appendChild(delBtn);
 
       hdr.addEventListener('click', function(){ drToggleReport(id); });
@@ -5951,6 +6019,29 @@ function saveDailyReport() {
       wrapper.appendChild(body);
       list.appendChild(wrapper);
     });
+  }
+
+  // Loads an existing report back into the main "New Lesson Entry" form
+  // (and its student marks grid) so it can be corrected and re-saved,
+  // rather than only being deletable.
+  function drEditReport(rep) {
+    switchDailyTab('submit');
+    var clsEl = document.getElementById('dr-class');
+    var subjEl = document.getElementById('dr-subject');
+    var dateEl = document.getElementById('dr-date');
+    if (clsEl) clsEl.value = rep.cls;
+    if (subjEl) subjEl.value = rep.subject;
+    if (dateEl) dateEl.value = rep.date;
+    var periodEl = document.getElementById('dr-period');
+    if (periodEl && rep.period) periodEl.value = rep.period;
+    var topicEl = document.getElementById('dr-topic');
+    if (topicEl) topicEl.value = rep.topic || '';
+    var hwEl = document.getElementById('dr-homework');
+    if (hwEl) hwEl.value = rep.homework || '';
+    var remarkEl = document.getElementById('dr-remark');
+    if (remarkEl) remarkEl.value = rep.remark || '';
+    if (typeof drLoadStudents === 'function') drLoadStudents();
+    showToast('Loaded for editing — make changes and click Save Lesson Report');
   }
 
 
@@ -6381,7 +6472,7 @@ function saveDailyReport() {
 
     var popup = document.createElement('div');
     popup.id = 'dr-mark-popup';
-    popup.style.cssText = 'position:fixed;z-index:9500;background:white;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,0.28);padding:16px 18px 14px;width:290px;font-family:"DM Sans",sans-serif;font-size:13px;';
+    popup.style.cssText = 'position:fixed;z-index:9500;background:white;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,0.28);padding:16px 18px 14px;width:290px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:"DM Sans",sans-serif;font-size:13px;';
     popup._marks = { cw: existing.cw||0, hw: existing.hw||0, disc: existing.disc||0 };
 
     // Header
@@ -6432,9 +6523,13 @@ function saveDailyReport() {
 
     var pw = 290;
     var left = Math.max(8, Math.min(window.innerWidth - pw - 8, (window.innerWidth - pw)/2));
-    var top  = Math.max(8, (window.innerHeight - 500)/2);
-    popup.style.top  = top  + 'px';
     popup.style.left = left + 'px';
+    // Position vertically using the popup's REAL rendered height (now that
+    // it can scroll internally on small screens) rather than a guessed
+    // fixed value, which could place it wrong or push content off-screen.
+    var actualHeight = popup.offsetHeight;
+    var top = Math.max(8, (window.innerHeight - actualHeight)/2);
+    popup.style.top = top + 'px';
 
     setTimeout(function() { document.addEventListener('mousedown', _drOutsideClick); }, 10);
   }
@@ -6771,18 +6866,35 @@ function saveDailyReport() {
       homework_file_url:   rep.homeworkFileUrl || null,
       homework_file_name:  rep.homeworkFileName|| null
     };
-    // Try upsert with id so duplicate reports get updated not rejected
-    if (rep.id) payload.id = rep.id;
-    return fetch(_SB_URL + '/rest/v1/daily_reports', {
-      method:  'POST',
-      headers: {
-        'apikey':        _SB_KEY,
-        'Authorization': 'Bearer ' + _SB_KEY,
-        'Content-Type':  'application/json',
-        'Prefer':        'resolution=merge-duplicates,return=minimal'
-      },
-      body: JSON.stringify(payload)
-    }).then(function(r) {
+    // Robust save: first check whether a row already exists for this
+    // class+subject+date, then PATCH it if so, or POST a new one if not.
+    // This needs NO special database constraint to exist — unlike the
+    // on_conflict upsert this replaces, which silently failed on every
+    // single save if that constraint wasn't actually present in the
+    // database, exactly matching what teachers were reporting.
+    return fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(rep.cls) +
+        '&subject=eq.' + encodeURIComponent(rep.subject) + '&date=eq.' + encodeURIComponent(rep.date) + '&select=id', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(existing) {
+      if (existing && existing.length) {
+        // Update the existing row
+        return fetch(_SB_URL + '/rest/v1/daily_reports?id=eq.' + existing[0].id, {
+          method: 'PATCH',
+          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // Create a new row
+        return fetch(_SB_URL + '/rest/v1/daily_reports', {
+          method: 'POST',
+          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify(payload)
+        });
+      }
+    })
+    .then(function(r) {
       if (!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+': '+t); });
       return {};
     });
@@ -9309,34 +9421,7 @@ function saveDailyReport() {
   // Monthly Test:   #7c3aed (purple)
 
   var ACADEMIC_EVENTS = [
-    // ── ACADEMIC YEAR 2026–2027 ──
-    // Quarter 1: Sep 1 – Oct 31 2026
-    {id:'ae1',  title:'Academic Year Begins',         start:'2026-09-01', end:'2026-09-01', type:'quarter_start', color:'#1d4ed8'},
-    {id:'ae2',  title:'Q1 Quarter Start',              start:'2026-09-01', end:'2026-09-01', type:'quarter_start', color:'#1d4ed8'},
-    {id:'ae3',  title:'Q1 Monthly Test',               start:'2026-09-25', end:'2026-09-25', type:'exam',          color:'#7c3aed'},
-    {id:'ae4',  title:'Q1 Mid-Quarter Test',           start:'2026-10-09', end:'2026-10-09', type:'exam',          color:'#7c3aed'},
-    {id:'ae5',  title:'Q1 Quarter End',                start:'2026-10-31', end:'2026-10-31', type:'quarter_end',   color:'#991b1b'},
-    {id:'ae6',  title:'Autumn Break',                  start:'2026-11-01', end:'2026-11-07', type:'break',         color:'#f59e0b'},
-    // Quarter 2: Nov 8 – Jan 10 2027
-    {id:'ae7',  title:'Q2 Quarter Start',              start:'2026-11-08', end:'2026-11-08', type:'quarter_start', color:'#1d4ed8'},
-    {id:'ae8',  title:'Q2 Monthly Test',               start:'2026-12-04', end:'2026-12-04', type:'exam',          color:'#7c3aed'},
-    {id:'ae9',  title:'New Year Break',                start:'2026-12-28', end:'2027-01-03', type:'break',         color:'#f59e0b'},
-    {id:'ae10', title:'Q2 Quarter End',                start:'2027-01-10', end:'2027-01-10', type:'quarter_end',   color:'#991b1b'},
-    {id:'ae11', title:'Winter Break',                  start:'2027-01-11', end:'2027-01-17', type:'break',         color:'#f59e0b'},
-    // Quarter 3: Jan 18 – Mar 20 2027
-    {id:'ae12', title:'Q3 Quarter Start',              start:'2027-01-18', end:'2027-01-18', type:'quarter_start', color:'#1d4ed8'},
-    {id:'ae13', title:'Q3 Monthly Test',               start:'2027-02-12', end:'2027-02-12', type:'exam',          color:'#7c3aed'},
-    {id:'ae14', title:'Navruz Holiday',                start:'2027-03-21', end:'2027-03-21', type:'holiday',       color:'#dc2626'},
-    {id:'ae15', title:'Q3 Quarter End',                start:'2027-03-27', end:'2027-03-27', type:'quarter_end',   color:'#991b1b'},
-    {id:'ae16', title:'Spring Break',                  start:'2027-03-28', end:'2027-04-03', type:'break',         color:'#f59e0b'},
-    // Quarter 4: Apr 4 – May 30 2027
-    {id:'ae17', title:'Q4 Quarter Start',              start:'2027-04-04', end:'2027-04-04', type:'quarter_start', color:'#1d4ed8'},
-    {id:'ae18', title:'Q4 Monthly Test',               start:'2027-04-23', end:'2027-04-23', type:'exam',          color:'#7c3aed'},
-    {id:'ae19', title:'Victory Day',                   start:'2027-05-09', end:'2027-05-09', type:'holiday',       color:'#dc2626'},
-    {id:'ae20', title:'Final Exams Begin',             start:'2027-05-17', end:'2027-05-17', type:'exam',          color:'#7c3aed'},
-    {id:'ae21', title:'Final Exams End',               start:'2027-05-28', end:'2027-05-28', type:'exam',          color:'#7c3aed'},
-    {id:'ae22', title:'Q4 Quarter End / Year End',     start:'2027-05-30', end:'2027-05-30', type:'quarter_end',   color:'#991b1b'},
-    {id:'ae23', title:'Summer Break Begins',           start:'2027-06-01', end:'2027-08-31', type:'break',         color:'#f59e0b'},
+    // Cleared — add real 2026-27 dates via the Calendar panel's "+ New Event" button.
   ];
 
 
@@ -10058,6 +10143,160 @@ function saveDailyReport() {
         read: true
       })
     }).then(function() { pmOpenThread(_pmCurrentStudent); });
+  }
+
+
+  // ══ REPORT CARDS ═════════════════════════════════════════════════════
+  function rcInit() {
+    var sel = document.getElementById('rc-class');
+    if (!sel || sel.options.length > 1) return;
+    var classes = (typeof ALL_CLASSES !== 'undefined') ? ALL_CLASSES : [];
+    classes.forEach(function(c) {
+      var opt = document.createElement('option'); opt.value = c; opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  }
+
+  function rcLoadStudents() {
+    var cls = (document.getElementById('rc-class') || {}).value;
+    var sel = document.getElementById('rc-student');
+    sel.innerHTML = '<option value="">— Select student —</option>';
+    document.getElementById('rc-print-btn').style.display = 'none';
+    document.getElementById('rc-content').innerHTML = '<div class="card"><div style="padding:50px;text-align:center;color:var(--muted);">👆 Select a student to generate their report card</div></div>';
+    if (!cls) return;
+
+    fetch(_SB_URL + '/rest/v1/students?class=eq.' + encodeURIComponent(cls) + '&order=full_name_en.asc&select=*', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      (rows || []).forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = JSON.stringify({id:s.id, name:s.full_name_en, nameRu:s.full_name_ru, cls:s.class, dob:s.dob});
+        opt.textContent = s.full_name_en;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  function rcGenerate() {
+    var studentSel = document.getElementById('rc-student');
+    var val = studentSel.value;
+    var content = document.getElementById('rc-content');
+    if (!val) return;
+    var student = JSON.parse(val);
+    var term = (document.getElementById('rc-term') || {}).value || 'all';
+
+    content.innerHTML = '<div class="card"><div style="padding:50px;text-align:center;color:var(--muted);">Loading…</div></div>';
+
+    var termRanges = {
+      Q1: ['2026-09-01','2026-10-31'], Q2: ['2026-11-08','2027-01-10'],
+      Q3: ['2027-01-18','2027-03-27'], Q4: ['2027-04-04','2027-05-30']
+    };
+
+    Promise.all([
+      fetch(_SB_URL + '/rest/v1/assessments?class=eq.' + encodeURIComponent(student.cls) + '&select=*', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; }),
+      fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(student.cls) + '&select=*', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; })
+    ]).then(function(results) {
+      var assessments = results[0], dailyReports = results[1];
+      var names = [student.name, student.nameRu].filter(Boolean);
+
+      function inTerm(dateStr) {
+        if (term === 'all') return true;
+        var range = termRanges[term];
+        return range && dateStr >= range[0] && dateStr <= range[1];
+      }
+
+      // Per-subject average from assessments
+      var bySubject = {};
+      assessments.forEach(function(a) {
+        if (!inTerm(a.date)) return;
+        (a.students || []).forEach(function(s) {
+          if (names.indexOf(s.name) === -1 || s.absent || s.pct === null || s.pct === undefined) return;
+          bySubject[a.subject] = bySubject[a.subject] || [];
+          bySubject[a.subject].push(s.pct);
+        });
+      });
+      var subjectRows = Object.keys(bySubject).sort().map(function(subj) {
+        var arr = bySubject[subj];
+        var avg = Math.round(arr.reduce(function(a,b){return a+b;},0) / arr.length);
+        return { subject: subj, avg: avg, count: arr.length };
+      });
+
+      // Attendance
+      var totalLessons = 0, absences = 0;
+      dailyReports.forEach(function(r) {
+        if (!inTerm(r.date)) return;
+        (r.students || []).forEach(function(s) {
+          if (names.indexOf(s.name) === -1) return;
+          totalLessons++;
+          if (s.absent) absences++;
+        });
+      });
+      var attendancePct = totalLessons > 0 ? Math.round(((totalLessons - absences) / totalLessons) * 100) : null;
+
+      // Behaviour average (from daily_reports cw/hw/disc marks)
+      var discScores = [];
+      dailyReports.forEach(function(r) {
+        if (!inTerm(r.date)) return;
+        (r.students || []).forEach(function(s) {
+          if (names.indexOf(s.name) === -1 || s.disc === undefined || s.disc === null) return;
+          discScores.push(s.disc);
+        });
+      });
+      var discAvg = discScores.length ? (discScores.reduce(function(a,b){return a+b;},0) / discScores.length).toFixed(1) : null;
+
+      var termLabel = term === 'all' ? 'Full Academic Year 2026–2027 (to date)' : term.replace('Q','Quarter ');
+      var today = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
+
+      var html = '<div id="rc-printable">' +
+        '<div style="max-width:760px;margin:0 auto;background:white;padding:40px;font-family:\'DM Sans\',sans-serif;">' +
+          '<div style="text-align:center;border-bottom:3px solid var(--navy,#0f172a);padding-bottom:18px;margin-bottom:24px;">' +
+            '<div style="font-size:20px;font-weight:900;font-family:\'Outfit\',sans-serif;color:var(--navy,#0f172a);">Redbridge International School</div>' +
+            '<div style="font-size:12px;color:#64748b;">Samarkand, Uzbekistan</div>' +
+            '<div style="font-size:15px;font-weight:700;margin-top:10px;">Academic Report — ' + termLabel + '</div>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:22px;font-size:13px;">' +
+            '<div><b>Student:</b> ' + student.name + (student.nameRu ? ' (' + student.nameRu + ')' : '') + '</div>' +
+            '<div><b>Class:</b> ' + student.cls + '</div>' +
+          '</div>' +
+          '<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">' +
+            '<thead><tr style="background:#f1f5f9;">' +
+              '<th style="text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;border:1px solid #e2e8f0;">Subject</th>' +
+              '<th style="text-align:center;padding:8px 12px;font-size:11px;text-transform:uppercase;border:1px solid #e2e8f0;">Average</th>' +
+              '<th style="text-align:center;padding:8px 12px;font-size:11px;text-transform:uppercase;border:1px solid #e2e8f0;">Assessments</th>' +
+            '</tr></thead><tbody>' +
+            (subjectRows.length ? subjectRows.map(function(r) {
+              var color = r.avg >= 70 ? '#16a34a' : r.avg >= 50 ? '#ca8a04' : '#dc2626';
+              return '<tr><td style="padding:8px 12px;border:1px solid #e2e8f0;">' + r.subject + '</td>' +
+                '<td style="text-align:center;padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;color:' + color + ';">' + r.avg + '%</td>' +
+                '<td style="text-align:center;padding:8px 12px;border:1px solid #e2e8f0;color:#94a3b8;">' + r.count + '</td></tr>';
+            }).join('') : '<tr><td colspan="3" style="padding:16px;text-align:center;color:#94a3b8;border:1px solid #e2e8f0;">No assessment records for this period</td></tr>') +
+            '</tbody></table>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">' +
+            '<div style="background:#f8fafc;border-radius:10px;padding:14px 16px;">' +
+              '<div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;">Attendance</div>' +
+              '<div style="font-size:22px;font-weight:800;margin-top:4px;">' + (attendancePct !== null ? attendancePct + '%' : '—') + '</div>' +
+              '<div style="font-size:11px;color:#94a3b8;">' + (totalLessons ? (totalLessons - absences) + ' of ' + totalLessons + ' lessons present' : 'No records for this period') + '</div>' +
+            '</div>' +
+            '<div style="background:#f8fafc;border-radius:10px;padding:14px 16px;">' +
+              '<div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;">Classroom Behaviour</div>' +
+              '<div style="font-size:22px;font-weight:800;margin-top:4px;">' + (discAvg !== null ? discAvg + ' / 5' : '—') + '</div>' +
+              '<div style="font-size:11px;color:#94a3b8;">Average daily discipline score</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="margin-top:30px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;">' +
+            '<span>Generated ' + today + '</span><span>Redbridge International School — Confidential</span>' +
+          '</div>' +
+        '</div></div>';
+
+      content.innerHTML = html;
+      document.getElementById('rc-print-btn').style.display = '';
+    });
   }
 
 
