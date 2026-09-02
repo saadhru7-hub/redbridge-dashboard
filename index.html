@@ -6861,7 +6861,7 @@ function saveDailyReport() {
       class:               rep.cls,
       subject:             rep.subject,
       date:                rep.date,
-      period:              isNaN(periodNum) ? null : periodNum,
+      period:              isNaN(periodNum) ? 1 : periodNum,
       topic:                rep.topic    || '',
       remark:              rep.remark   || '',
       homework:            rep.homework || '',
