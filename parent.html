@@ -273,6 +273,21 @@
     return h;
   }
 
+  // Returns a URL that opens a file for VIEWING rather than downloading it.
+  // Images and PDFs render inline in the browser natively. Word/Excel/
+  // PowerPoint files can never be displayed inline by any browser, no
+  // matter what — those are routed through Google's document viewer,
+  // which renders them in-page without ever triggering a download.
+  function fileViewUrl(url, fileName) {
+    if (!url) return url;
+    var ext = (fileName || url).split('.').pop().toLowerCase().split('?')[0];
+    var officeFormats = ['doc','docx','ppt','pptx','xls','xlsx'];
+    if (officeFormats.indexOf(ext) !== -1) {
+      return 'https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true';
+    }
+    return url;
+  }
+
   // ── LOGIN ──
   function doLogin() {
     var code = document.getElementById('code-input').value.trim().toUpperCase();
@@ -396,9 +411,9 @@
         html += '<div class="item-row">' +
           '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div><div class="item-date">' + (r.date||'') + '</div></div>';
         if (r.topic) html += '<div class="item-detail"><b>' + t('classwork') + ':</b> ' + r.topic + '</div>';
-        if (r.topic_file_url) html += '<div class="item-detail"><a href="' + r.topic_file_url + '" target="_blank" style="color:var(--blue);">📎 ' + (r.topic_file_name||'File') + '</a></div>';
+        if (r.topic_file_url) html += '<div class="item-detail"><a href="' + fileViewUrl(r.topic_file_url, r.topic_file_name) + '" target="_blank" style="color:var(--blue);">📎 ' + (r.topic_file_name||'File') + '</a></div>';
         if (r.homework) html += '<div class="item-detail" style="margin-top:4px;"><b>' + t('homework') + ':</b> ' + r.homework + '</div>';
-        if (r.homework_file_url) html += '<div class="item-detail"><a href="' + r.homework_file_url + '" target="_blank" style="color:var(--blue);">📎 ' + (r.homework_file_name||'File') + '</a></div>';
+        if (r.homework_file_url) html += '<div class="item-detail"><a href="' + fileViewUrl(r.homework_file_url, r.homework_file_name) + '" target="_blank" style="color:var(--blue);">📎 ' + (r.homework_file_name||'File') + '</a></div>';
         html += '</div>';
       });
       html += '</div>';
@@ -765,6 +780,58 @@
     });
   }
 
+  // ══ PUSH NOTIFICATIONS ═══════════════════════════════════════════════
+  var _VAPID_PUBLIC_KEY = 'BLKTbVN_CHUQmYLJfdZzHW5PeBCupPS9xfvAe9FHHQQ510YXf-sjPL2xG7FILD0TU2HN965Z5RxtJ403r8yqRBk';
+
+  function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var rawData = window.atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  function enablePushNotifications(ownerType, ownerId) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return Promise.reject(new Error('Push notifications are not supported on this browser.'));
+    }
+    return navigator.serviceWorker.register('/sw.js')
+      .then(function(reg) { return reg.pushManager.getSubscription().then(function(existing) {
+        if (existing) return existing;
+        return Notification.requestPermission().then(function(permission) {
+          if (permission !== 'granted') throw new Error('Notification permission was not granted.');
+          return reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
+          });
+        });
+      }); })
+      .then(function(subscription) {
+        return fetch(_SB_URL + '/rest/v1/push_subscriptions', {
+          method: 'POST',
+          headers: sbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
+          body: JSON.stringify({ owner_type: ownerType, owner_id: String(ownerId), subscription: subscription.toJSON() })
+        });
+      });
+  }
+
+  function sendPushNotification(ownerType, ownerId, title, body, url) {
+    fetch('/.netlify/functions/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owner_type: ownerType, owner_id: String(ownerId), title: title, body: body, url: url })
+    }).catch(function(){}); // best-effort — a failed push shouldn't block the message itself
+  }
+
+  function handleEnablePush() {
+    var btn = document.getElementById('notif-btn');
+    btn.textContent = 'Enabling…';
+    enablePushNotifications('parent', _student.id)
+      .then(function() { btn.textContent = '🔔 Notifications On'; btn.disabled = true; })
+      .catch(function(e) { btn.textContent = '🔔 Enable Notifications'; alert(e.message); });
+  }
+
   function sendParentMessage() {
     var input = document.getElementById('msg-input');
     var text = input.value.trim();
@@ -781,7 +848,12 @@
         sender_name: _student.father_name_en || _student.mother_name_en || 'Parent',
         message: text
       })
-    }).then(function() { renderThread(_selectedTeacher); });
+    }).then(function() {
+      renderThread(_selectedTeacher);
+      sendPushNotification('staff', _selectedTeacher,
+        (_student.father_name_en || _student.mother_name_en || 'A parent') + ' sent a message',
+        text, '/index.html');
+    });
   }
 
   // ── AUTO LOGIN + LANGUAGE RESTORE ──
