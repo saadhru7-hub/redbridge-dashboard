@@ -528,7 +528,7 @@
   /* Daily Report form is mobile-first (single column by default);
      widen to two columns side-by-side only on larger screens. */
   @media (min-width: 900px) {
-    .dr-submit-grid { grid-template-columns: minmax(300px,1fr) minmax(400px,1.5fr); }
+    .dr-submit-grid { grid-template-columns: minmax(300px,1fr) minmax(400px,1.5fr) !important; }
   }
 
   @media (max-width: 480px) {
@@ -1672,7 +1672,7 @@ id="panel-timetable">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div>
                   <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_date">Date</div>
-                  <input id="dr-date" type="date" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                  <input id="dr-date" type="date" onchange="drShowExistingAttachments()" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
                 </div>
                 <div>
                   <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_period">Lesson Period</div>
@@ -5828,6 +5828,22 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     if (nameEl) nameEl.textContent = '✓ ' + file.name;
   }
 
+  // Returns a URL that opens a file for VIEWING rather than downloading it.
+  // Images and PDFs render inline in the browser natively once the file's
+  // real content-type is set (already handled at upload time). Word/Excel/
+  // PowerPoint files can NEVER be displayed inline by any browser, no
+  // matter what — so those are routed through Google's document viewer,
+  // which renders them in-page without ever triggering a download.
+  function fileViewUrl(url, fileName) {
+    if (!url) return url;
+    var ext = (fileName || url).split('.').pop().toLowerCase().split('?')[0];
+    var officeFormats = ['doc','docx','ppt','pptx','xls','xlsx'];
+    if (officeFormats.indexOf(ext) !== -1) {
+      return 'https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true';
+    }
+    return url; // images, PDFs — open directly, browsers render these natively
+  }
+
   function drUploadFile(file) {
     // Uploads to Supabase Storage bucket 'daily-report-files', returns {url, name}
     var ext = file.name.split('.').pop();
@@ -5921,6 +5937,7 @@ function saveDailyReport() {
           .catch(function(){ updateCloudStatus('error'); });
       }
       drClearFileInputs();
+      drShowExistingAttachments();
       showToast('Report saved for Class ' + cls + ' · ' + subject);
     });
   }
@@ -5981,7 +5998,7 @@ function saveDailyReport() {
         if (rep.topic_file_url || rep.topicFileUrl) {
           var tUrl = rep.topic_file_url || rep.topicFileUrl;
           var tName = rep.topic_file_name || rep.topicFileName || 'Classwork file';
-          lessonInfo += '<div style="margin-bottom:6px;"><a href="' + tUrl + '" target="_blank" style="color:var(--navy,var(--blue));font-weight:700;text-decoration:none;">📎 ' + tName + ' ↗</a></div>';
+          lessonInfo += '<div style="margin-bottom:6px;"><a href="' + fileViewUrl(tUrl, tName) + '" target="_blank" style="color:var(--navy,var(--blue));font-weight:700;text-decoration:none;">📎 ' + tName + ' ↗</a></div>';
         }
         if (rep.homework) {
           lessonInfo += '<div style="margin-bottom:6px;"><b>Homework:</b> ' + rep.homework + '</div>';
@@ -5989,7 +6006,7 @@ function saveDailyReport() {
         if (rep.homework_file_url || rep.homeworkFileUrl) {
           var hUrl = rep.homework_file_url || rep.homeworkFileUrl;
           var hName = rep.homework_file_name || rep.homeworkFileName || 'Homework file';
-          lessonInfo += '<div style="margin-bottom:6px;"><a href="' + hUrl + '" target="_blank" style="color:var(--navy,var(--blue));font-weight:700;text-decoration:none;">📎 ' + hName + ' ↗</a></div>';
+          lessonInfo += '<div style="margin-bottom:6px;"><a href="' + fileViewUrl(hUrl, hName) + '" target="_blank" style="color:var(--navy,var(--blue));font-weight:700;text-decoration:none;">📎 ' + hName + ' ↗</a></div>';
         }
         if (rep.remark) {
           lessonInfo += '<div><b>Remark:</b> ' + rep.remark + '</div>';
@@ -6210,6 +6227,12 @@ function saveDailyReport() {
     });
   }
 
+  function markColor(v) {
+    v = parseInt(v);
+    if (!v) return null;
+    return v >= 4 ? '#16a34a' : v === 3 ? '#ca8a04' : '#dc2626';
+  }
+
   function drRenderGrid(cls, subject, students) {
     var grid = document.getElementById('dr-students-wrap');
     if (!grid) return;
@@ -6245,13 +6268,7 @@ function saveDailyReport() {
       });
     }
 
-    function markColor(v) {
-      v = parseInt(v);
-      if (!v) return null;
-      return v >= 4 ? '#16a34a' : v === 3 ? '#ca8a04' : '#dc2626';
-    }
-
-    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var monthLabel = MONTHS[month];
 
     // Build table using DOM (avoids all quote issues)
@@ -6295,6 +6312,12 @@ function saveDailyReport() {
         tipHtml;
       hRow.appendChild(th);
     });
+    // Filler column — absorbs any leftover width so a row with only a
+    // few date columns still highlights across the whole visible row on
+    // hover, instead of leaving a dead strip of unhoverable blank space.
+    var thFiller = document.createElement('th');
+    thFiller.style.cssText = 'width:100%;background:var(--navy);';
+    hRow.appendChild(thFiller);
     thead.appendChild(hRow);
     table.appendChild(thead);
 
@@ -6305,7 +6328,7 @@ function saveDailyReport() {
       var bg        = idx % 2 === 0 ? 'white' : '#f8fafc';
 
       var tr = document.createElement('tr');
-      tr.style.cssText = 'background:' + bg + ';border-bottom:1.5px solid #94a3b8;transition:background 0.1s;';
+      tr.style.cssText = 'background:' + bg + ';border-bottom:1.5px solid #94a3b8;transition:background 0.1s;cursor:pointer;';
       tr.addEventListener('mouseenter', function(){ if(!this.dataset.selected) this.style.background='#dbeafe'; });
       tr.addEventListener('mouseleave', function(){ if(!this.dataset.selected) this.style.background=bg; });
 
@@ -6366,6 +6389,7 @@ function saveDailyReport() {
         var saved  = dataMap[key];
         var bord   = dt.isToday ? '2px solid var(--gold)' : '1.5px solid #94a3b8';
         var td     = document.createElement('td');
+        td.setAttribute('data-cell-key', key);
         td.style.cssText = 'padding:5px 6px;text-align:center;border-left:' + bord + ';vertical-align:middle;';
         // Find day-level report for topic/hw lookup
         var dayRep = null;
@@ -6388,7 +6412,7 @@ function saveDailyReport() {
           cell.addEventListener('mouseenter', function(){ this.style.opacity='0.75'; });
           cell.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
           (function(d, n, c, s) {
-            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s); });
+            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s, cell); });
           })(dt.dateStr, fullName, cls, subject);
 
         } else if (saved && (saved.cw || saved.hw || saved.disc)) {
@@ -6405,7 +6429,7 @@ function saveDailyReport() {
           cell.addEventListener('mouseenter', function(){ this.style.opacity='0.75'; });
           cell.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
           (function(d, n, c, s) {
-            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s); });
+            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s, cell); });
           })(dt.dateStr, fullName, cls, subject);
 
         } else if (dt.isToday) {
@@ -6418,7 +6442,7 @@ function saveDailyReport() {
           cell.addEventListener('mouseenter', function(){ this.style.background='#fef3c7'; });
           cell.addEventListener('mouseleave', function(){ this.style.background=''; });
           (function(d, n, c, s) {
-            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s); });
+            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s, cell); });
           })(dt.dateStr, fullName, cls, subject);
 
         } else {
@@ -6436,12 +6460,19 @@ function saveDailyReport() {
             plusPill.style.background='';plusPill.style.color='#475569';plusPill.style.borderColor='#475569';
           });
           (function(d, n, c, s) {
-            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s); });
+            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s, cell); });
           })(dt.dateStr, fullName, cls, subject);
         }
         td.appendChild(cell);
         tr.appendChild(td);
       });
+      // Filler cell — absorbs any leftover width so a row with only a
+      // few date columns still highlights across the whole visible row
+      // on hover, instead of leaving a dead strip of unhoverable blank
+      // space to the right.
+      var tdFiller = document.createElement('td');
+      tdFiller.style.cssText = 'width:100%;';
+      tr.appendChild(tdFiller);
       tbody.appendChild(tr);
     });
 
@@ -6451,7 +6482,7 @@ function saveDailyReport() {
   }
 
 
-  function drGridCellClick(dateStr, studentName, cls, subject) {
+  function drGridCellClick(dateStr, studentName, cls, subject, clickedEl) {
     drCloseMarkPopup();
     _drPopup.sec = 'grid';
     _drPopup.gridDate = dateStr; _drPopup.gridName = studentName;
@@ -6522,14 +6553,38 @@ function saveDailyReport() {
     });
 
     var pw = 290;
-    var left = Math.max(8, Math.min(window.innerWidth - pw - 8, (window.innerWidth - pw)/2));
+    var left, top;
+    if (clickedEl && clickedEl.getBoundingClientRect) {
+      // Anchor the popup right next to whichever cell/+ button was actually
+      // tapped, instead of always dropping it dead-center on the screen
+      // regardless of where the teacher was looking.
+      var rect = clickedEl.getBoundingClientRect();
+      left = Math.max(8, Math.min(window.innerWidth - pw - 8, rect.left));
+      // Prefer opening just below the clicked cell; if that would run off
+      // the bottom of the screen, open above it instead.
+      var estHeight = 320; // reasonable estimate before actual render
+      if (rect.bottom + estHeight + 8 <= window.innerHeight) {
+        top = rect.bottom + 6;
+      } else if (rect.top - estHeight - 8 >= 0) {
+        top = rect.top - estHeight - 6;
+      } else {
+        top = Math.max(8, (window.innerHeight - estHeight)/2);
+      }
+    } else {
+      left = Math.max(8, Math.min(window.innerWidth - pw - 8, (window.innerWidth - pw)/2));
+      top = Math.max(8, (window.innerHeight - 320)/2);
+    }
     popup.style.left = left + 'px';
-    // Position vertically using the popup's REAL rendered height (now that
-    // it can scroll internally on small screens) rather than a guessed
-    // fixed value, which could place it wrong or push content off-screen.
-    var actualHeight = popup.offsetHeight;
-    var top = Math.max(8, (window.innerHeight - actualHeight)/2);
     popup.style.top = top + 'px';
+    // Re-clamp vertically using the popup's REAL rendered height once known,
+    // in case our estimate above was off (e.g. long comment text).
+    setTimeout(function() {
+      var actualHeight = popup.offsetHeight;
+      var curTop = parseFloat(popup.style.top);
+      if (curTop + actualHeight > window.innerHeight - 8) {
+        popup.style.top = Math.max(8, window.innerHeight - actualHeight - 8) + 'px';
+      }
+    }, 0);
 
     setTimeout(function() { document.addEventListener('mousedown', _drOutsideClick); }, 10);
   }
@@ -6539,14 +6594,22 @@ function saveDailyReport() {
     var popup = document.getElementById('dr-mark-popup');
     if (!popup) return;
     if (!popup._marks) popup._marks = {};
-    popup._marks[sec] = val;
+
+    // Tap the already-selected grade again to deselect it (clear that
+    // mark), instead of only ever being able to change it to a
+    // different number — teachers had no way to remove a mark entirely.
+    var isDeselecting = (popup._marks[sec] === val);
+    if (isDeselecting) {
+      delete popup._marks[sec];
+    } else {
+      popup._marks[sec] = val;
+    }
 
     // Update button styles for this section
-    var mc = val >= 4 ? '#16a34a' : val === 3 ? '#ca8a04' : '#dc2626';
     var btns = popup.querySelectorAll('[data-sec="'+sec+'"]');
     btns.forEach(function(b) {
       var n = parseInt(b.dataset.grade);
-      var active = (n === val);
+      var active = (!isDeselecting && n === val);
       var bmc = n>=4?'#16a34a':n===3?'#ca8a04':'#dc2626';
       b.style.background   = active ? bmc : 'white';
       b.style.color        = active ? 'white' : bmc;
@@ -6635,14 +6698,37 @@ function saveDailyReport() {
   }
 
   function drRefreshCell(cls, subject, dateStr, studentName, entry) {
-    // Find and update just this cell without full grid rebuild
-    var marks = [entry.cw, entry.hw, entry.disc].map(Number).filter(Boolean);
-    if (!marks.length && !entry.absent) return;
-    var avg = marks.length ? marks.reduce(function(a,b){return a+b;},0)/marks.length : 0;
-    var mc  = avg>=4?'#16a34a':avg===3?'#ca8a04':'#dc2626';
+    // Find just this one cell and update it directly — no full rebuild,
+    // no re-fetching students, no scroll position getting reset. The
+    // previous version of this function claimed to do this but actually
+    // called drBuildGrid() every time, which is why the whole page felt
+    // like it was reloading and jumping back to the top after every mark.
+    var key = dateStr + '|' + studentName;
+    var td = document.querySelector('[data-cell-key="' + CSS.escape(key) + '"]');
+    if (!td) { drBuildGrid(cls, subject); return; } // cell not on screen — safe fallback
 
-    // Find the cell by scanning td elements — rebuild full grid to be safe
-    drBuildGrid(cls, subject);
+    td.innerHTML = '';
+    var cell = document.createElement('div');
+    cell.style.cssText = 'width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:13px;font-weight:900;';
+
+    if (entry.absent) {
+      cell.style.background = '#fee2e2';
+      cell.style.color = '#b91c1c';
+      cell.style.fontSize = '11px';
+      cell.style.cursor = 'pointer';
+      cell.textContent = 'Abs';
+    } else {
+      var marks = [entry.cw, entry.hw, entry.disc].map(Number).filter(Boolean);
+      var avg = marks.length ? marks.reduce(function(a,b){return a+b;},0) / marks.length : 0;
+      var cc = markColor(avg) || '#94a3b8';
+      cell.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:32px;height:28px;border-radius:7px;background:'+cc+';color:white;font-size:13px;font-weight:800;';
+      cell.textContent = avg%1===0 ? avg.toFixed(0) : avg.toFixed(1);
+      cell.title = 'CW:'+entry.cw+' HW:'+entry.hw+' Disc:'+entry.disc;
+    }
+    cell.addEventListener('mouseenter', function(){ this.style.opacity='0.75'; });
+    cell.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
+    cell.addEventListener('click', function() { drGridCellClick(dateStr, studentName, cls, subject, cell); });
+    td.appendChild(cell);
   }
 
   function drGridSaveCell() {
@@ -6821,6 +6907,43 @@ function saveDailyReport() {
       return;
     }
     drBuildGrid(cls, subject);
+    drShowExistingAttachments();
+  }
+
+  // Shows "already attached: filename" if the currently-selected
+  // class+subject+date already has an uploaded file — otherwise a
+  // teacher coming back to check on a report has no way to tell their
+  // earlier upload is still safely there, since the file input itself
+  // can't be pre-filled and always looks empty.
+  function drShowExistingAttachments() {
+    var cls = (document.getElementById('dr-class')||{}).value;
+    var subject = (document.getElementById('dr-subject')||{}).value;
+    var dateEl = document.getElementById('dr-date');
+    var date = dateEl ? dateEl.value : '';
+    if (!cls || !subject || !date || typeof dailyReports === 'undefined') return;
+
+    var rep = null;
+    dailyReports.forEach(function(r) {
+      if (r.cls === cls && r.subject === subject && r.date === date) rep = r;
+    });
+
+    var topicNameEl = document.getElementById('dr-topic-file-name');
+    var hwNameEl = document.getElementById('dr-homework-file-name');
+    var topicUrl = rep ? (rep.topic_file_url || rep.topicFileUrl) : '';
+    var topicName = rep ? (rep.topic_file_name || rep.topicFileName) : '';
+    var hwUrl = rep ? (rep.homework_file_url || rep.homeworkFileUrl) : '';
+    var hwName = rep ? (rep.homework_file_name || rep.homeworkFileName) : '';
+
+    if (topicNameEl) {
+      topicNameEl.innerHTML = (topicUrl && !_drPendingFiles.topic)
+        ? '✓ Already attached: <a href="' + fileViewUrl(topicUrl, topicName) + '" target="_blank" style="color:var(--navy,var(--blue));">' + (topicName||'file') + '</a>'
+        : '';
+    }
+    if (hwNameEl) {
+      hwNameEl.innerHTML = (hwUrl && !_drPendingFiles.homework)
+        ? '✓ Already attached: <a href="' + fileViewUrl(hwUrl, hwName) + '" target="_blank" style="color:var(--navy,var(--blue));">' + (hwName||'file') + '</a>'
+        : '';
+    }
   }
 
 
@@ -10131,6 +10254,59 @@ function saveDailyReport() {
     });
   }
 
+  // ══ PUSH NOTIFICATIONS ═══════════════════════════════════════════════
+  var _VAPID_PUBLIC_KEY = 'BLKTbVN_CHUQmYLJfdZzHW5PeBCupPS9xfvAe9FHHQQ510YXf-sjPL2xG7FILD0TU2HN965Z5RxtJ403r8yqRBk';
+
+  function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var rawData = window.atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  function enablePushNotifications(ownerType, ownerId) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return Promise.reject(new Error('Push notifications are not supported on this browser.'));
+    }
+    return navigator.serviceWorker.register('/sw.js')
+      .then(function(reg) { return reg.pushManager.getSubscription().then(function(existing) {
+        if (existing) return existing;
+        return Notification.requestPermission().then(function(permission) {
+          if (permission !== 'granted') throw new Error('Notification permission was not granted.');
+          return reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
+          });
+        });
+      }); })
+      .then(function(subscription) {
+        return fetch(_SB_URL + '/rest/v1/push_subscriptions', {
+          method: 'POST',
+          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify({ owner_type: ownerType, owner_id: String(ownerId), subscription: subscription.toJSON() })
+        });
+      });
+  }
+
+  function sendPushNotification(ownerType, ownerId, title, body, url) {
+    fetch('/.netlify/functions/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owner_type: ownerType, owner_id: String(ownerId), title: title, body: body, url: url })
+    }).catch(function(){});
+  }
+
+  function handleEnableStaffPush() {
+    var btn = document.getElementById('staff-notif-btn');
+    if (!btn || !_currentUser) return;
+    btn.textContent = 'Enabling…';
+    enablePushNotifications('staff', _currentUser.username || _currentUser.user)
+      .then(function() { btn.textContent = '🔔 Notifications On'; btn.disabled = true; })
+      .catch(function(e) { btn.textContent = '🔔 Enable Notifications'; showToast(e.message); });
+  }
+
   function pmSendReply() {
     var input = document.getElementById('pm-reply-input');
     var text = input.value.trim();
@@ -10147,7 +10323,12 @@ function saveDailyReport() {
         message: text,
         read: true
       })
-    }).then(function() { pmOpenThread(_pmCurrentStudent); });
+    }).then(function() {
+      pmOpenThread(_pmCurrentStudent);
+      sendPushNotification('parent', _pmCurrentStudent.id,
+        (_currentUser ? _currentUser.name : 'Your teacher') + ' sent a message',
+        text, '/parent.html');
+    });
   }
 
 
