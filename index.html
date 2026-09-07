@@ -1031,14 +1031,44 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
           <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;">Academic Monitoring</h2>
-          <div style="font-size:12.5px;color:var(--text-3);">Monitor performance across classes and subjects</div>
+          <div style="font-size:12.5px;color:var(--text-3);">Compare classes and subjects school-wide, spot trends</div>
         </div>
       </div>
-      <div class="card" style="text-align:center;padding:60px 20px;">
-        <div style="font-size:36px;margin-bottom:12px;">📊</div>
-        <div style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px;">No academic data yet</div>
-        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:16px;">Academic performance data will appear as teachers submit assessments and daily reports.</div>
-        <button onclick="showPanel('assessments',null)" class="btn btn-primary">Go to Assessments</button>
+
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header"><div class="card-title">📊 Performance by Class</div></div>
+        <div class="card-body" style="overflow-x:auto;">
+          <table id="acad-class-table" style="width:100%;min-width:600px;border-collapse:collapse;font-size:12.5px;">
+            <thead><tr style="background:var(--bg,#f8fafc);">
+              <th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);">Class</th>
+              <th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);">Assessments Avg</th>
+              <th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);">Classwork</th>
+              <th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);">Homework</th>
+              <th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);">Discipline</th>
+              <th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);">Attendance</th>
+            </tr></thead>
+            <tbody id="acad-class-tbody"><tr><td colspan="6" style="padding:30px;text-align:center;color:var(--muted);">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header"><div class="card-title">📚 Performance by Subject (school-wide)</div></div>
+        <div class="card-body" style="overflow-x:auto;">
+          <table id="acad-subject-table" style="width:100%;min-width:500px;border-collapse:collapse;font-size:12.5px;">
+            <thead><tr style="background:var(--bg,#f8fafc);">
+              <th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);">Subject</th>
+              <th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);">Average Score</th>
+              <th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);">Assessments Recorded</th>
+            </tr></thead>
+            <tbody id="acad-subject-tbody"><tr><td colspan="3" style="padding:30px;text-align:center;color:var(--muted);">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">📈 School-Wide Average Trend — last 30 days</div></div>
+        <div class="card-body"><div style="position:relative;height:220px;"><canvas id="acad-trend-chart"></canvas></div></div>
       </div>
     </div>
 
@@ -1661,6 +1691,8 @@ id="panel-timetable">
                     <option data-i18n="subj_russian">Russian Language</option>
                     <option data-i18n="subj_gp">GP (Hist-Geo)</option>
                     <option data-i18n="subj_econ">Economics</option>
+                    <option data-i18n="subj_business">Business</option>
+                    <option data-i18n="subj_ielts">IELTS</option>
                     <option data-i18n="subj_pe">Physical Education</option>
                     <option data-i18n="subj_art">Art</option>
                     <option data-i18n="subj_ict">ICT</option>
@@ -2285,9 +2317,21 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       desc:'Cambridge Economics — micro & macroeconomics, market structures, trade, development & policy.',
       grades:'9–10', type:'Humanities', weekly:'3 hrs'
     },
+  {
+      id: 'business', name:'Business', icon:'💼', track:'Enrichment',
+      color:'#0f766e', bg:'#ccfbf1',
+      desc:'Business Studies — enterprise, marketing, finance basics and real-world case analysis.',
+      grades:'9–10', type:'Humanities', weekly:'2 hrs'
+    },
+    {
+      id: 'ielts', name:'IELTS', icon:'🎓', track:'Enrichment',
+      color:'#9333ea', bg:'#f3e8ff',
+      desc:'IELTS exam preparation — Listening, Reading, Writing and Speaking skills for international certification.',
+      grades:'9–10', type:'Language', weekly:'2 hrs'
+    },
   ];
 
-  const trackBadge = { Cambridge: '#1e40af', Russian: '#991b1b' };
+  const trackBadge = { Cambridge: '#1e40af', Russian: '#991b1b', Enrichment: '#0f766e' };
 
   function renderSubjectCards() {
     const el = document.getElementById('subject-cards');
@@ -3477,6 +3521,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     if (id === 'classes')    { renderClasses(); renderClassStudents(); }
     if (id === 'subjects')   { renderSubjectCards(); renderSubjectMatrix(); loadSubjectTeacherMap(); }
     if (id === 'reportcard') { rcInit(); }
+    if (id === 'academics')  { acadInit(); }
     if (id === 'results')    { initResultsPanel(); renderResults(); }
     if (id === 'discipline') { if(typeof loadIncidents==='function') loadIncidents(); renderIncidentLog(); if(typeof renderHealthSummary==='function') renderHealthSummary(); }
     if (id === 'teachers')   { renderPerfTable(); }
@@ -5141,13 +5186,19 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     bodyEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading…</div>';
     modal.style.display = 'flex';
 
-    fetch(_SB_URL + '/rest/v1/assessments?select=*', {
-      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(rows) {
+    Promise.all([
+      fetch(_SB_URL + '/rest/v1/assessments?select=*', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; }),
+      fetch(_SB_URL + '/rest/v1/daily_reports?select=*&order=date.desc&limit=100', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; })
+    ]).then(function(results) {
+      var assessRows = results[0], dailyRows = results[1];
+
+      // ── Assessment history (unchanged) ──
       var history = [];
-      (rows||[]).forEach(function(a) {
+      (assessRows||[]).forEach(function(a) {
         (a.students||[]).forEach(function(s) {
           if (s.name === name) {
             history.push({ subject: a.subject, name2: a.name, type: a.type, date: a.date, pct: s.pct, absent: s.absent });
@@ -5156,30 +5207,87 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       });
       history.sort(function(a,b){ return new Date(b.date) - new Date(a.date); });
 
-      if (!history.length) {
-        bodyEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No assessment records for this student yet.</div>';
-        return;
-      }
-
       function pctColor(pct) {
         if (pct === null || pct === undefined) return '#94a3b8';
         return pct >= 70 ? '#15803d' : pct >= 50 ? '#a16207' : '#b91c1c';
       }
 
-      var html = '<div style="display:flex;flex-direction:column;gap:8px;">';
-      history.forEach(function(h) {
-        var pctText = h.absent ? 'Absent' : (h.pct !== null && h.pct !== undefined ? h.pct + '%' : '—');
-        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--rule-light,#f1f5f9);border-radius:9px;">' +
-          '<div><div style="font-size:12.5px;font-weight:700;color:var(--ink);">' + h.subject + ' — ' + h.name2 + '</div>' +
-          '<div style="font-size:11px;color:var(--muted);">' + h.date + ' · ' + (h.type||'') + '</div></div>' +
-          '<span style="font-weight:800;font-size:13px;color:' + pctColor(h.pct) + ';">' + pctText + '</span>' +
-        '</div>';
+      // ── Daily Report analytics: live averages that update with every
+      // new entry, shown regardless of whether assessments exist ──
+      var dailyEntries = [];
+      (dailyRows||[]).forEach(function(r) {
+        (r.students||[]).forEach(function(s) {
+          if (s.name === name && !s.absent) {
+            dailyEntries.push({ date: r.date, subject: r.subject, cw: s.cw, hw: s.hw, disc: s.disc, comment: s.comment });
+          }
+        });
       });
-      html += '</div>';
+
+      function avgOf(field) {
+        var vals = dailyEntries.map(function(e){ return e[field]; }).filter(function(v){ return v !== undefined && v !== null && v !== 0; });
+        if (!vals.length) return null;
+        return (vals.reduce(function(a,b){ return a+b; },0) / vals.length).toFixed(1);
+      }
+      var cwAvg = avgOf('cw'), hwAvg = avgOf('hw'), discAvg = avgOf('disc');
+
+      function scoreColor(avg) {
+        if (avg === null) return '#94a3b8';
+        var n = parseFloat(avg);
+        return n >= 4 ? '#15803d' : n >= 3 ? '#a16207' : '#b91c1c';
+      }
+
+      var html = '';
+
+      html += '<div style="margin-bottom:18px;">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Daily Report Averages — updates with every new entry (' + dailyEntries.length + ' recorded)</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">' +
+          '<div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;">' +
+            '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;">Classwork</div>' +
+            '<div style="font-size:22px;font-weight:800;color:' + scoreColor(cwAvg) + ';">' + (cwAvg||'—') + '</div></div>' +
+          '<div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;">' +
+            '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;">Homework</div>' +
+            '<div style="font-size:22px;font-weight:800;color:' + scoreColor(hwAvg) + ';">' + (hwAvg||'—') + '</div></div>' +
+          '<div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;">' +
+            '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;">Discipline</div>' +
+            '<div style="font-size:22px;font-weight:800;color:' + scoreColor(discAvg) + ';">' + (discAvg||'—') + '</div></div>' +
+        '</div></div>';
+
+      if (dailyEntries.length) {
+        html += '<div style="margin-bottom:20px;">' +
+          '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Recent Daily Entries</div>' +
+          '<div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;">';
+        dailyEntries.slice(0, 15).forEach(function(e) {
+          html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1px solid var(--rule-light,#f1f5f9);border-radius:8px;font-size:12px;">' +
+            '<div><b>' + e.subject + '</b> <span style="color:var(--muted);">' + e.date + '</span></div>' +
+            '<div style="display:flex;gap:8px;">' +
+              '<span style="color:' + scoreColor(e.cw) + ';font-weight:700;">CW:' + (e.cw||'—') + '</span>' +
+              '<span style="color:' + scoreColor(e.hw) + ';font-weight:700;">HW:' + (e.hw||'—') + '</span>' +
+              '<span style="color:' + scoreColor(e.disc) + ';font-weight:700;">Disc:' + (e.disc||'—') + '</span>' +
+            '</div></div>';
+        });
+        html += '</div></div>';
+      }
+
+      html += '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Assessment History</div>';
+      if (!history.length) {
+        html += '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12.5px;background:#f8fafc;border-radius:10px;">No assessment records for this student yet.</div>';
+      } else {
+        html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+        history.forEach(function(h) {
+          var pctText = h.absent ? 'Absent' : (h.pct !== null && h.pct !== undefined ? h.pct + '%' : '—');
+          html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--rule-light,#f1f5f9);border-radius:9px;">' +
+            '<div><div style="font-size:12.5px;font-weight:700;color:var(--ink);">' + h.subject + ' — ' + h.name2 + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);">' + h.date + ' · ' + (h.type||'') + '</div></div>' +
+            '<span style="font-weight:800;font-size:13px;color:' + pctColor(h.pct) + ';">' + pctText + '</span>' +
+          '</div>';
+        });
+        html += '</div>';
+      }
+
       bodyEl.innerHTML = html;
     })
     .catch(function() {
-      bodyEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Could not load assessment history.</div>';
+      bodyEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Could not load student history.</div>';
     });
   }
 
@@ -7824,6 +7932,8 @@ function saveDailyReport() {
       disc_open_cases: 'Open cases requiring action',
       disc_no_active: 'No active incidents',
       subj_econ: 'Economics',
+      subj_business: 'Business',
+      subj_ielts: 'IELTS',
       dr_topic: 'Topic / Lesson Title',
       dr_remark: 'Class Remark / Observations',
       inc_phone: 'Phone use',
@@ -7939,7 +8049,9 @@ function saveDailyReport() {
       subj_english: 'Английский', subj_maths: 'Математика', subj_cmaths: 'Кембриджская математика',
       subj_science: 'Естествознание', subj_physics: 'Физика', subj_chemistry: 'Химия',
       subj_biology: 'Биология', subj_russian: 'Русский язык', subj_gp: 'ОП (История-География)',
-      subj_econ: 'Экономика', subj_pe: 'Физкультура', subj_art: 'Искусство', subj_ict: 'ИКТ',
+      subj_econ: 'Экономика',
+      subj_business: 'Бизнес',
+      subj_ielts: 'IELTS', subj_pe: 'Физкультура', subj_art: 'Искусство', subj_ict: 'ИКТ',
       period_1: 'Урок 1', period_2: 'Урок 2', period_3: 'Урок 3', period_4: 'Урок 4',
       period_5: 'Урок 5', period_6: 'Урок 6', period_7: 'Урок 7', period_8: 'Урок 8',
 
@@ -8055,7 +8167,9 @@ function saveDailyReport() {
       subj_english: 'Ingliz tili', subj_maths: 'Matematika', subj_cmaths: 'Cambridge matematika',
       subj_science: 'Tabiiy fanlar', subj_physics: 'Fizika', subj_chemistry: 'Kimyo',
       subj_biology: 'Biologiya', subj_russian: 'Rus tili', subj_gp: 'GP (Tarix-Geografiya)',
-      subj_econ: 'Iqtisodiyot', subj_pe: 'Jismoniy tarbiya', subj_art: 'Tasviriy sanʼat', subj_ict: 'AKT',
+      subj_econ: 'Iqtisodiyot',
+      subj_business: 'Biznes',
+      subj_ielts: 'IELTS', subj_pe: 'Jismoniy tarbiya', subj_art: 'Tasviriy sanʼat', subj_ict: 'AKT',
       period_1: '1-dars', period_2: '2-dars', period_3: '3-dars', period_4: '4-dars',
       period_5: '5-dars', period_6: '6-dars', period_7: '7-dars', period_8: '8-dars',
 
@@ -10397,20 +10511,30 @@ function saveDailyReport() {
         return range && dateStr >= range[0] && dateStr <= range[1];
       }
 
-      // Per-subject average from assessments
-      var bySubject = {};
+      // Per-subject average, broken down by QUARTER — a proper report
+      // card shows progress across all 4 quarters side by side, not a
+      // single number for whichever period happens to be selected.
+      var quarters = ['Q1','Q2','Q3','Q4'];
+      var bySubjectQuarter = {}; // { subject: { Q1:[...], Q2:[...], ... } }
       assessments.forEach(function(a) {
-        if (!inTerm(a.date)) return;
+        var q = null;
+        for (var i=0;i<quarters.length;i++) {
+          var range = termRanges[quarters[i]];
+          if (a.date >= range[0] && a.date <= range[1]) { q = quarters[i]; break; }
+        }
+        if (!q) return; // outside any defined quarter — not included
         (a.students || []).forEach(function(s) {
           if (names.indexOf(s.name) === -1 || s.absent || s.pct === null || s.pct === undefined) return;
-          bySubject[a.subject] = bySubject[a.subject] || [];
-          bySubject[a.subject].push(s.pct);
+          bySubjectQuarter[a.subject] = bySubjectQuarter[a.subject] || {Q1:[],Q2:[],Q3:[],Q4:[]};
+          bySubjectQuarter[a.subject][q].push(s.pct);
         });
       });
-      var subjectRows = Object.keys(bySubject).sort().map(function(subj) {
-        var arr = bySubject[subj];
-        var avg = Math.round(arr.reduce(function(a,b){return a+b;},0) / arr.length);
-        return { subject: subj, avg: avg, count: arr.length };
+      function qAvg(arr) { return arr.length ? Math.round(arr.reduce(function(a,b){return a+b;},0) / arr.length) : null; }
+      var subjectRows = Object.keys(bySubjectQuarter).sort().map(function(subj) {
+        var qd = bySubjectQuarter[subj];
+        var qAvgs = { Q1: qAvg(qd.Q1), Q2: qAvg(qd.Q2), Q3: qAvg(qd.Q3), Q4: qAvg(qd.Q4) };
+        var allScores = qd.Q1.concat(qd.Q2, qd.Q3, qd.Q4);
+        return { subject: subj, quarters: qAvgs, overall: qAvg(allScores), count: allScores.length };
       });
 
       // Attendance
@@ -10425,18 +10549,23 @@ function saveDailyReport() {
       });
       var attendancePct = totalLessons > 0 ? Math.round(((totalLessons - absences) / totalLessons) * 100) : null;
 
-      // Behaviour average (from daily_reports cw/hw/disc marks)
-      var discScores = [];
+      // Daily performance averages (from daily_reports cw/hw/disc marks) —
+      // previously only discipline was captured here, silently dropping
+      // classwork and homework from the report entirely.
+      var cwScores = [], hwScores = [], discScores = [];
       dailyReports.forEach(function(r) {
         if (!inTerm(r.date)) return;
         (r.students || []).forEach(function(s) {
-          if (names.indexOf(s.name) === -1 || s.disc === undefined || s.disc === null) return;
-          discScores.push(s.disc);
+          if (names.indexOf(s.name) === -1) return;
+          if (s.cw !== undefined && s.cw !== null && s.cw !== 0) cwScores.push(s.cw);
+          if (s.hw !== undefined && s.hw !== null && s.hw !== 0) hwScores.push(s.hw);
+          if (s.disc !== undefined && s.disc !== null && s.disc !== 0) discScores.push(s.disc);
         });
       });
-      var discAvg = discScores.length ? (discScores.reduce(function(a,b){return a+b;},0) / discScores.length).toFixed(1) : null;
+      function avg(arr) { return arr.length ? (arr.reduce(function(a,b){return a+b;},0) / arr.length).toFixed(1) : null; }
+      var cwAvg = avg(cwScores), hwAvg = avg(hwScores), discAvg = avg(discScores);
 
-      var termLabel = term === 'all' ? 'Full Academic Year 2026–2027 (to date)' : term.replace('Q','Quarter ');
+      var termLabel = term === 'all' ? 'Full Academic Year 2026–2027 (to date)' : term.replace('Q','Quarter ') + ' — daily performance figures below';
       var today = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
 
       var html = '<div id="rc-printable">' +
@@ -10452,27 +10581,44 @@ function saveDailyReport() {
           '</div>' +
           '<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">' +
             '<thead><tr style="background:#f1f5f9;">' +
-              '<th style="text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;border:1px solid #e2e8f0;">Subject</th>' +
-              '<th style="text-align:center;padding:8px 12px;font-size:11px;text-transform:uppercase;border:1px solid #e2e8f0;">Average</th>' +
-              '<th style="text-align:center;padding:8px 12px;font-size:11px;text-transform:uppercase;border:1px solid #e2e8f0;">Assessments</th>' +
+              '<th style="text-align:left;padding:8px 10px;font-size:10.5px;text-transform:uppercase;border:1px solid #e2e8f0;">Subject</th>' +
+              '<th style="text-align:center;padding:8px 8px;font-size:10.5px;text-transform:uppercase;border:1px solid #e2e8f0;">Q1</th>' +
+              '<th style="text-align:center;padding:8px 8px;font-size:10.5px;text-transform:uppercase;border:1px solid #e2e8f0;">Q2</th>' +
+              '<th style="text-align:center;padding:8px 8px;font-size:10.5px;text-transform:uppercase;border:1px solid #e2e8f0;">Q3</th>' +
+              '<th style="text-align:center;padding:8px 8px;font-size:10.5px;text-transform:uppercase;border:1px solid #e2e8f0;">Q4</th>' +
+              '<th style="text-align:center;padding:8px 10px;font-size:10.5px;text-transform:uppercase;border:1px solid #e2e8f0;background:#EDECFD;">Overall</th>' +
             '</tr></thead><tbody>' +
             (subjectRows.length ? subjectRows.map(function(r) {
-              var color = r.avg >= 70 ? '#16a34a' : r.avg >= 50 ? '#ca8a04' : '#dc2626';
-              return '<tr><td style="padding:8px 12px;border:1px solid #e2e8f0;">' + r.subject + '</td>' +
-                '<td style="text-align:center;padding:8px 12px;border:1px solid #e2e8f0;font-weight:700;color:' + color + ';">' + r.avg + '%</td>' +
-                '<td style="text-align:center;padding:8px 12px;border:1px solid #e2e8f0;color:#94a3b8;">' + r.count + '</td></tr>';
-            }).join('') : '<tr><td colspan="3" style="padding:16px;text-align:center;color:#94a3b8;border:1px solid #e2e8f0;">No assessment records for this period</td></tr>') +
+              function qCell(val, isOverall) {
+                if (val === null) return '<td style="text-align:center;padding:8px 8px;border:1px solid #e2e8f0;color:#cbd5e1;' + (isOverall?'background:#F8F7FA;':'') + '">—</td>';
+                var color = val >= 70 ? '#16a34a' : val >= 50 ? '#ca8a04' : '#dc2626';
+                return '<td style="text-align:center;padding:8px 8px;border:1px solid #e2e8f0;font-weight:700;color:' + color + ';' + (isOverall?'background:#F8F7FA;':'') + '">' + val + '%</td>';
+              }
+              return '<tr><td style="padding:8px 10px;border:1px solid #e2e8f0;font-weight:600;">' + r.subject + '</td>' +
+                qCell(r.quarters.Q1) + qCell(r.quarters.Q2) + qCell(r.quarters.Q3) + qCell(r.quarters.Q4) + qCell(r.overall, true) +
+              '</tr>';
+            }).join('') : '<tr><td colspan="6" style="padding:16px;text-align:center;color:#94a3b8;border:1px solid #e2e8f0;">No assessment records yet</td></tr>') +
             '</tbody></table>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">' +
-            '<div style="background:#f8fafc;border-radius:10px;padding:14px 16px;">' +
-              '<div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;">Attendance</div>' +
-              '<div style="font-size:22px;font-weight:800;margin-top:4px;">' + (attendancePct !== null ? attendancePct + '%' : '—') + '</div>' +
-              '<div style="font-size:11px;color:#94a3b8;">' + (totalLessons ? (totalLessons - absences) + ' of ' + totalLessons + ' lessons present' : 'No records for this period') + '</div>' +
+          '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">' +
+            '<div style="background:#f8fafc;border-radius:10px;padding:14px 12px;text-align:center;">' +
+              '<div style="font-size:10.5px;text-transform:uppercase;color:#64748b;font-weight:700;">Attendance</div>' +
+              '<div style="font-size:20px;font-weight:800;margin-top:4px;">' + (attendancePct !== null ? attendancePct + '%' : '—') + '</div>' +
+              '<div style="font-size:10px;color:#94a3b8;">' + (totalLessons ? (totalLessons - absences) + ' of ' + totalLessons : 'No data') + '</div>' +
             '</div>' +
-            '<div style="background:#f8fafc;border-radius:10px;padding:14px 16px;">' +
-              '<div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;">Classroom Behaviour</div>' +
-              '<div style="font-size:22px;font-weight:800;margin-top:4px;">' + (discAvg !== null ? discAvg + ' / 5' : '—') + '</div>' +
-              '<div style="font-size:11px;color:#94a3b8;">Average daily discipline score</div>' +
+            '<div style="background:#f8fafc;border-radius:10px;padding:14px 12px;text-align:center;">' +
+              '<div style="font-size:10.5px;text-transform:uppercase;color:#64748b;font-weight:700;">Classwork</div>' +
+              '<div style="font-size:20px;font-weight:800;margin-top:4px;">' + (cwAvg !== null ? cwAvg + ' / 5' : '—') + '</div>' +
+              '<div style="font-size:10px;color:#94a3b8;">' + cwScores.length + ' recorded</div>' +
+            '</div>' +
+            '<div style="background:#f8fafc;border-radius:10px;padding:14px 12px;text-align:center;">' +
+              '<div style="font-size:10.5px;text-transform:uppercase;color:#64748b;font-weight:700;">Homework</div>' +
+              '<div style="font-size:20px;font-weight:800;margin-top:4px;">' + (hwAvg !== null ? hwAvg + ' / 5' : '—') + '</div>' +
+              '<div style="font-size:10px;color:#94a3b8;">' + hwScores.length + ' recorded</div>' +
+            '</div>' +
+            '<div style="background:#f8fafc;border-radius:10px;padding:14px 12px;text-align:center;">' +
+              '<div style="font-size:10.5px;text-transform:uppercase;color:#64748b;font-weight:700;">Discipline</div>' +
+              '<div style="font-size:20px;font-weight:800;margin-top:4px;">' + (discAvg !== null ? discAvg + ' / 5' : '—') + '</div>' +
+              '<div style="font-size:10px;color:#94a3b8;">' + discScores.length + ' recorded</div>' +
             '</div>' +
           '</div>' +
           '<div style="margin-top:30px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;">' +
@@ -10482,6 +10628,141 @@ function saveDailyReport() {
 
       content.innerHTML = html;
       document.getElementById('rc-print-btn').style.display = '';
+    });
+  }
+
+
+  // ══ ACADEMIC MONITORING: school-wide class/subject comparison ═════════
+  var _acadTrendChart = null;
+
+  function acadInit() {
+    var classTbody = document.getElementById('acad-class-tbody');
+    var subjTbody = document.getElementById('acad-subject-tbody');
+    classTbody.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--muted);">Loading…</td></tr>';
+    subjTbody.innerHTML = '<tr><td colspan="3" style="padding:30px;text-align:center;color:var(--muted);">Loading…</td></tr>';
+
+    function acadColor(pct, isPercent) {
+      if (pct === null) return '#94a3b8';
+      var threshold = isPercent ? [70,50] : [4,3];
+      return pct >= threshold[0] ? '#16a34a' : pct >= threshold[1] ? '#ca8a04' : '#dc2626';
+    }
+
+    Promise.all([
+      fetch(_SB_URL + '/rest/v1/assessments?select=class,subject,date,students&limit=3000', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; }),
+      fetch(_SB_URL + '/rest/v1/daily_reports?select=class,date,students&limit=3000', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; })
+    ]).then(function(results) {
+      var assessments = results[0] || [], dailyReports = results[1] || [];
+
+      // ── By class: assessment avg, cw/hw/disc avg, attendance ──
+      var byClass = {};
+      function ensureClass(cls) {
+        if (!byClass[cls]) byClass[cls] = { assessPcts:[], cw:[], hw:[], disc:[], lessonsTotal:0, lessonsPresent:0 };
+        return byClass[cls];
+      }
+      assessments.forEach(function(a) {
+        var c = ensureClass(a.class);
+        (a.students||[]).forEach(function(s) {
+          if (!s.absent && s.pct !== null && s.pct !== undefined) c.assessPcts.push(s.pct);
+        });
+      });
+      dailyReports.forEach(function(r) {
+        var c = ensureClass(r.class);
+        (r.students||[]).forEach(function(s) {
+          c.lessonsTotal++;
+          if (!s.absent) c.lessonsPresent++;
+          if (s.cw) c.cw.push(s.cw);
+          if (s.hw) c.hw.push(s.hw);
+          if (s.disc) c.disc.push(s.disc);
+        });
+      });
+      function avg(arr) { return arr.length ? arr.reduce(function(a,b){return a+b;},0)/arr.length : null; }
+
+      var classRows = Object.keys(byClass).sort(function(a,b){
+        return a.localeCompare(b, undefined, {numeric:true});
+      }).map(function(cls) {
+        var c = byClass[cls];
+        return {
+          cls: cls,
+          assessAvg: avg(c.assessPcts),
+          cwAvg: avg(c.cw), hwAvg: avg(c.hw), discAvg: avg(c.disc),
+          attendPct: c.lessonsTotal ? Math.round((c.lessonsPresent/c.lessonsTotal)*100) : null
+        };
+      });
+
+      if (!classRows.length) {
+        classTbody.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--muted);">No data recorded yet.</td></tr>';
+      } else {
+        classTbody.innerHTML = classRows.map(function(r) {
+          function cell(val, suffix, isPercent) {
+            if (val === null) return '<td style="padding:8px 10px;text-align:center;color:#cbd5e1;">—</td>';
+            var color = acadColor(val, isPercent);
+            return '<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+color+';">' + val.toFixed(1) + suffix + '</td>';
+          }
+          return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+            '<td style="padding:8px 12px;font-weight:700;">' + r.cls + '</td>' +
+            cell(r.assessAvg, '%', true) + cell(r.cwAvg, '', false) + cell(r.hwAvg, '', false) + cell(r.discAvg, '', false) +
+            (r.attendPct !== null ? '<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+acadColor(r.attendPct,true)+';">'+r.attendPct+'%</td>' : '<td style="padding:8px 10px;text-align:center;color:#cbd5e1;">—</td>') +
+          '</tr>';
+        }).join('');
+      }
+
+      // ── By subject (school-wide) ──
+      var bySubject = {};
+      assessments.forEach(function(a) {
+        bySubject[a.subject] = bySubject[a.subject] || [];
+        (a.students||[]).forEach(function(s) {
+          if (!s.absent && s.pct !== null && s.pct !== undefined) bySubject[a.subject].push(s.pct);
+        });
+      });
+      var subjectRows = Object.keys(bySubject).sort().map(function(subj) {
+        return { subj: subj, avg: avg(bySubject[subj]), count: bySubject[subj].length };
+      }).filter(function(r) { return r.count > 0; });
+
+      if (!subjectRows.length) {
+        subjTbody.innerHTML = '<tr><td colspan="3" style="padding:30px;text-align:center;color:var(--muted);">No assessments recorded yet.</td></tr>';
+      } else {
+        subjTbody.innerHTML = subjectRows.map(function(r) {
+          var color = acadColor(r.avg, true);
+          return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+            '<td style="padding:8px 12px;font-weight:700;">' + r.subj + '</td>' +
+            '<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+color+';">' + r.avg.toFixed(1) + '%</td>' +
+            '<td style="padding:8px 10px;text-align:center;color:var(--muted);">' + r.count + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      // ── School-wide trend chart (last 30 days) ──
+      var byDate = {};
+      var since = new Date(); since.setDate(since.getDate()-30);
+      var sinceStr = since.toISOString().slice(0,10);
+      assessments.forEach(function(a) {
+        if (a.date < sinceStr) return;
+        (a.students||[]).forEach(function(s) {
+          if (s.absent || s.pct === null || s.pct === undefined) return;
+          byDate[a.date] = byDate[a.date] || [];
+          byDate[a.date].push(s.pct);
+        });
+      });
+      var dates = Object.keys(byDate).sort();
+      var canvas = document.getElementById('acad-trend-chart');
+      if (!dates.length) {
+        if (canvas) canvas.parentElement.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No assessment data in the last 30 days.</div>';
+      } else if (canvas && typeof Chart !== 'undefined') {
+        var points = dates.map(function(d) { return { x:d, y: Math.round(avg(byDate[d])) }; });
+        var ctx = canvas.getContext('2d');
+        if (_acadTrendChart) _acadTrendChart.destroy();
+        _acadTrendChart = new Chart(ctx, {
+          type: 'line',
+          data: { datasets: [{ label:'School Avg %', data: points, borderColor:'#7367F0', backgroundColor:'#7367F022', tension:0.3, pointRadius:3 }] },
+          options: { responsive:true, maintainAspectRatio:false,
+            scales: { x:{type:'time',time:{unit:'week'},grid:{display:false}}, y:{min:0,max:100,ticks:{callback:function(v){return v+'%';}}} },
+            plugins: { legend:{display:false} } }
+        });
+      }
     });
   }
 
