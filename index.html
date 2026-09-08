@@ -136,7 +136,9 @@
     z-index: 100;
     overflow-y: auto; overflow-x: hidden;
     border-right: 1px solid var(--sidebar-border);
+    transition: transform 0.2s ease;
   }
+  .sidebar.collapsed { transform: translateX(-100%); }
   .sidebar::-webkit-scrollbar { width:3px; }
   .sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 
@@ -219,7 +221,9 @@
   .main {
     margin-left: var(--sidebar-w);
     min-height: 100vh; display: flex; flex-direction: column;
+    transition: margin-left 0.2s ease;
   }
+  .main.sidebar-collapsed { margin-left: 0; }
 
   .topbar {
     height: 54px; background: var(--surface);
@@ -723,6 +727,9 @@
       <div class="mobile-menu-btn" onclick="toggleMobileSidebar()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </div>
+      <div onclick="toggleSidebarCollapse()" title="Hide/show menu" style="cursor:pointer;padding:8px;border-radius:8px;margin-right:6px;color:var(--muted,#8A8697);display:flex;align-items:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </div>
       <div class="panel-icon" id="panel-icon">🏠</div>
       <div>
         <h1 id="panel-title">Dashboard</h1>
@@ -1053,6 +1060,13 @@
       </div>
 
       <div class="card" style="margin-bottom:18px;">
+        <div class="card-header"><div class="card-title">🎯 Subject Average by Class</div></div>
+        <div class="card-body" style="overflow-x:auto;">
+          <div id="acad-class-subject-wrap"><div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px;">
         <div class="card-header"><div class="card-title">📚 Performance by Subject (school-wide)</div></div>
         <div class="card-body" style="overflow-x:auto;">
           <table id="acad-subject-table" style="width:100%;min-width:500px;border-collapse:collapse;font-size:12.5px;">
@@ -1067,7 +1081,7 @@
       </div>
 
       <div class="card">
-        <div class="card-header"><div class="card-title">📈 School-Wide Average Trend — last 30 days</div></div>
+        <div class="card-header"><div class="card-title">📈 Daily Subject Average — last 30 days</div></div>
         <div class="card-body"><div style="position:relative;height:220px;"><canvas id="acad-trend-chart"></canvas></div></div>
       </div>
     </div>
@@ -1622,6 +1636,17 @@ id="panel-timetable">
 
     <div class="panel" id="panel-dailyreport">
 
+      <!-- Persistent unsynced-data warning — stays visible (does not
+           auto-dismiss) until every locally-saved report with real marks
+           has actually reached Supabase. Local save (localStorage) always
+           succeeds even when the network doesn't, so without this a failed
+           cloud sync could go unnoticed and the data would only ever exist
+           on this one device/browser. -->
+      <div id="dr-unsynced-banner" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:9px;background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <span id="dr-unsynced-banner-text"></span>
+        <button class="btn btn-outline" style="font-size:11.5px;padding:5px 10px;" onclick="drSyncPendingReports()">Retry Now</button>
+      </div>
+
       <!-- Header row -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
@@ -1636,10 +1661,10 @@ id="panel-timetable">
 
       <!-- TAB: SUBMIT REPORT -->
       <div id="dr-submit-section">
-        <div class="dr-submit-grid" style="display:grid;grid-template-columns:1fr;gap:20px;align-items:start;">
+        <div class="dr-submit-grid" id="dr-submit-grid" style="display:grid;grid-template-columns:1fr;gap:20px;align-items:start;">
 
           <!-- Left: Form -->
-          <div class="card">
+          <div class="card" id="dr-left-card">
             <div class="card-header" style="background:linear-gradient(135deg,var(--navy),#1a2448);">
               <div>
                 <div class="card-title" style="color:white;" data-i18n="dr_new_entry">New Lesson Entry</div>
@@ -1724,7 +1749,7 @@ id="panel-timetable">
               <!-- Topic covered -->
               <div>
                 <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_topic">Topic / Lesson Title</div>
-                <input id="dr-topic" type="text" placeholder="e.g. Quadratic Equations — Chapter 5" data-i18n-ph="dr_topic_ph" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                <textarea id="dr-topic" oninput="drAutoSaveTextFields()" placeholder="e.g. Quadratic Equations — Chapter 5" data-i18n-ph="dr_topic_ph" style="width:100%;height:70px;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);resize:none;"></textarea>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
                   <label style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:7px;border:1.5px dashed var(--rule);background:var(--bg,#f8fafc);cursor:pointer;font-size:11.5px;color:var(--muted);font-weight:600;">
                     📎 <span data-i18n="dr_attach_file">Attach file (image/PDF/Word)</span>
@@ -1737,13 +1762,13 @@ id="panel-timetable">
               <!-- General remark -->
               <div>
                 <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_remark">Class Remark / Observations</div>
-                <textarea id="dr-remark" placeholder="General observation about the class today..." data-i18n-ph="dr_remark_ph" style="width:100%;height:70px;border-radius:9px;border:1.5px solid var(--rule);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;resize:none;outline:none;background:var(--white);"></textarea>
+                <textarea id="dr-remark" oninput="drAutoSaveTextFields()" placeholder="General observation about the class today..." data-i18n-ph="dr_remark_ph" style="width:100%;height:70px;border-radius:9px;border:1.5px solid var(--rule);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;resize:none;outline:none;background:var(--white);"></textarea>
               </div>
 
               <!-- Homework assigned -->
               <div>
                 <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_homework">Homework Assigned</div>
-                <input id="dr-homework" type="text" placeholder="e.g. Exercise 5.3 — Q1 to Q10 (due Thursday)" data-i18n-ph="dr_homework_ph" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                <textarea id="dr-homework" oninput="drAutoSaveTextFields()" placeholder="e.g. Exercise 5.3 — Q1 to Q10 (due Thursday)" data-i18n-ph="dr_homework_ph" style="width:100%;height:70px;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);resize:none;"></textarea>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
                   <label style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:7px;border:1.5px dashed var(--rule);background:var(--bg,#f8fafc);cursor:pointer;font-size:11.5px;color:var(--muted);font-weight:600;">
                     📎 <span data-i18n="dr_attach_file">Attach file (image/PDF/Word)</span>
@@ -1753,16 +1778,19 @@ id="panel-timetable">
                 </div>
               </div>
 
-              <button onclick="saveDailyReport()" style="padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--navy),#1a2448);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 14px rgba(10,15,46,0.2);" onmouseenter="this.style.transform='translateY(-1px)'" onmouseleave="this.style.transform='translateY(0)'">
+              <button type="button" onclick="saveDailyReport()" style="padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--navy),#1a2448);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 14px rgba(10,15,46,0.2);" onmouseenter="this.style.transform='translateY(-1px)'" onmouseleave="this.style.transform='translateY(0)'">
                 <span data-i18n="dr_save">💾 Save Lesson Report</span>
               </button>
             </div>
           </div>
 
           <!-- Right: Student marks table -->
-          <div class="card">
+          <div class="card" id="dr-right-card" style="width:100%;">
             <div class="card-header">
-              <div class="card-title" data-i18n="dr_student_marks">Student Marks</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <button type="button" onclick="drShowLessonList()" id="dr-show-lessons-btn" style="display:none;background:none;border:1.5px solid var(--rule,#e2e8f0);border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer;">☰ Lessons</button>
+                <div class="card-title" data-i18n="dr_student_marks" onclick="drReturnToMarks()" style="cursor:pointer;">Student Marks</div>
+              </div>
               <div class="card-subtitle" id="dr-students-subtitle" data-i18n="dr_select_class_load">Select a class to load students</div>
             </div>
             <div style="padding:0;max-height:60vh;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;" id="dr-students-wrap">
@@ -1807,7 +1835,7 @@ id="panel-timetable">
           <h2 style="font-size:20px;font-weight:800;color:var(--text-1,var(--ink));margin-bottom:2px;">School Calendar</h2>
           <div style="font-size:12.5px;color:var(--text-3,var(--muted));">Academic Year 2026–2027</div>
         </div>
-        <button onclick="calOpenAddEvent(new Date().toISOString().slice(0,10))" class="btn btn-primary">+ New Event</button>
+        <button onclick="calOpenAddEvent(localDateStr())" class="btn btn-primary">+ New Event</button>
       </div>
 
       <!-- Legend -->
@@ -1847,6 +1875,10 @@ id="panel-timetable">
     </div>
 
     <div class="panel" id="panel-assessments">
+      <div id="asm-unsynced-banner" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:9px;background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <span id="asm-unsynced-banner-text"></span>
+        <button class="btn btn-outline" style="font-size:11.5px;padding:5px 10px;" onclick="asmSyncPendingAssessments()">Retry Now</button>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;"><span data-i18n="asm_title">📋 Assessments</span></h2><div style="font-size:12.5px;color:var(--muted);" data-i18n="asm_sub">Record formative and summative assessment scores</div></div>
         <div style="display:flex;gap:8px;"><button onclick="asmSwitchTab('submit')" id="asm-tab-submit" class="btn btn-primary"><span data-i18n="asm_tab_submit">✍️ Submit Assessment</span></button><button onclick="asmSwitchTab('view')" id="asm-tab-view" class="btn btn-outline"><span data-i18n="asm_tab_view">📊 View Results</span></button></div>
@@ -2012,6 +2044,29 @@ id="panel-timetable">
     } else {
       sb.classList.add('mobile-open');
       if (overlay) overlay.classList.add('active');
+    }
+  }
+
+  // Lets a teacher collapse the left menu entirely for more working
+  // width (e.g. the wide Daily Report grid) — same collapsible-sidebar
+  // pattern used on many sites. Choice is remembered across visits.
+  function toggleSidebarCollapse() {
+    var sb = document.querySelector('.sidebar');
+    var main = document.querySelector('.main');
+    if (!sb || !main) return;
+    var collapsed = sb.classList.toggle('collapsed');
+    main.classList.toggle('sidebar-collapsed', collapsed);
+    try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch(e) {}
+  }
+
+  function restoreSidebarCollapseState() {
+    var saved;
+    try { saved = localStorage.getItem('sidebarCollapsed'); } catch(e) { return; }
+    if (saved === '1') {
+      var sb = document.querySelector('.sidebar');
+      var main = document.querySelector('.main');
+      if (sb) sb.classList.add('collapsed');
+      if (main) main.classList.add('sidebar-collapsed');
     }
   }
 
@@ -3908,6 +3963,36 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   var TIMETABLE = {};
   var TEACHER_SCHEDULE = {};
 
+  // Populates TEACHER_SCHEDULE from the same Supabase `timetable` table the
+  // Timetable panel's class-editing grid already reads (ttRenderGrid). Until
+  // this existed, TEACHER_SCHEDULE was declared once as an empty object and
+  // never written to anywhere — so every reader of it (the "My Timetable"
+  // and "School" timetable views, and the Daily Report class-permission
+  // fallback) always saw nothing, regardless of what was actually saved.
+  // day is stored as 'MONDAY' etc. — normalized here to 'Monday' to match
+  // what the timetable-view renderers expect. period is stored as 'L1'..'L7'
+  // — normalized to a plain number (1..7) since the renderers compare it
+  // against numeric loop counters with ===, which a string would never match.
+  function loadGlobalTeacherSchedule() {
+    return fetch(_SB_URL + '/rest/v1/timetable?select=*', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    }).then(function(r) { return r.ok ? r.json() : []; })
+      .then(function(rows) {
+        var byTeacher = {};
+        (rows || []).forEach(function(r) {
+          if (!r.teacher_name || !r.day) return;
+          var dayName = r.day.charAt(0).toUpperCase() + r.day.slice(1).toLowerCase();
+          var periodNum = parseInt(String(r.period).replace(/[^0-9]/g, ''), 10);
+          if (isNaN(periodNum)) return;
+          byTeacher[r.teacher_name] = byTeacher[r.teacher_name] || {};
+          byTeacher[r.teacher_name][dayName] = byTeacher[r.teacher_name][dayName] || [];
+          byTeacher[r.teacher_name][dayName].push({ period: periodNum, class: r.class, subject: r.subject });
+        });
+        TEACHER_SCHEDULE = byTeacher;
+      })
+      .catch(function() { /* leave TEACHER_SCHEDULE as-is on failure */ });
+  }
+
   // Panel switching
 </script>
 
@@ -4690,7 +4775,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'L',
       access: 'subject',
       teacherSubjects: ['Physics'],
-      teacherClasses: ['7A','7B','7C','8A'],
+      teacherClasses: ['7A','7B','7C','8A','9-PhysMath'],
       teacherName: 'Lubov',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4901,6 +4986,20 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     var u = _currentUser;
     if (!u) return;
 
+    loadGlobalTeacherSchedule();
+    if (typeof sbSyncPendingWrites === 'function') sbSyncPendingWrites();
+    // Background safety net: retries any report/assessment/write that
+    // hasn't reached Supabase yet, independent of whether the relevant
+    // panel is even open — closes the gap where a save silently fails and
+    // nothing else would ever prompt a retry.
+    if ((typeof drSyncPendingReports === 'function' || typeof asmSyncPendingAssessments === 'function' || typeof sbSyncPendingWrites === 'function') && !window._drSyncInterval) {
+      window._drSyncInterval = setInterval(function() {
+        if (typeof drSyncPendingReports === 'function') drSyncPendingReports();
+        if (typeof asmSyncPendingAssessments === 'function') asmSyncPendingAssessments();
+        if (typeof sbSyncPendingWrites === 'function') sbSyncPendingWrites();
+      }, 45000);
+    }
+
     // Hide login, show app
     var loginScreen = document.getElementById('login-screen');
     if (loginScreen) loginScreen.style.display = 'none';
@@ -4908,6 +5007,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     var mn = document.querySelector('.main');
     if (sb) sb.style.display = '';
     if (mn) mn.style.display = '';
+    restoreSidebarCollapseState();
 
     // Update user info in sidebar footer
     var nameEl   = document.querySelector('.principal-info .name');
@@ -5679,6 +5779,19 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     try { localStorage.setItem('redbridge_daily', JSON.stringify(dailyReports)); } catch(e) {}
   }
 
+  // Local-date formatting for "today"/date defaults across the whole app.
+  // new Date().toISOString().slice(0,10) converts to UTC — Samarkand is
+  // UTC+5 with no daylight saving, so between roughly midnight and 5am
+  // local time that returns yesterday's date, silently defaulting every
+  // date field, filename, and query range in the app to the wrong day
+  // during those hours. Every date-default call site now goes through
+  // this instead. Declared at top level (not nested in another function)
+  // so it's a global, callable from inline HTML attribute handlers too.
+  function localDateStr(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
   // ALL classes in school
   var ALL_CLASSES = ['1A','1B','1C','2A','2B','2C','3A','3B','3C',
     '4A','4B','4C','5A','5B','5C','6A','6B','7A','7B','7C',
@@ -5752,11 +5865,479 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     return sched[today] || [];
   }
 
+    // ══ TODAY'S LESSONS (Daily Report entry point) ═════════════════════════
+  // Replaces the old TEACHER_SCHEDULE stub (which was always empty) with a
+  // real, live fetch from the timetable table — the exact same proven
+  // pattern already used successfully on the Dashboard's schedule widget.
+  function drBuildTodaySchedule() {
+    var el = document.getElementById('dr-today-schedule');
+    if (!el) return;
+    var u = _currentUser;
+    if (!u) return;
+
+    var now  = new Date();
+    var days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    var day  = days[now.getDay()];
+
+    if (day === 'SATURDAY' || day === 'SUNDAY') {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:12.5px;">🎉 Weekend — no lessons today</div>';
+      return;
+    }
+
+    el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:12.5px;">Loading…</div>';
+
+    fetch(_SB_URL + '/rest/v1/timetable?day=eq.' + day + '&select=*', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      rows = rows || [];
+      var lessons;
+      var isAdmin = (u.access === 'all' || u.role === 'principal' || u.role === 'founder' || u.role === 'admin');
+      if (isAdmin) {
+        lessons = rows;
+      } else {
+        var matchName = u.loadName || u.teacherName || u.name;
+        lessons = rows.filter(function(r) { return r.teacher_name === matchName; });
+        // Fallback: partial match (handles "Mr. Akash Sharma" vs "Akash" style differences)
+        if (!lessons.length && matchName) {
+          var nameParts = matchName.replace(/^(Mr\.|Ms\.|Mrs\.)\s*/,'').split(' ');
+          lessons = rows.filter(function(r) {
+            return nameParts.some(function(part) { return part.length > 2 && r.teacher_name && r.teacher_name.indexOf(part) !== -1; });
+          });
+        }
+      }
+      lessons.sort(function(a,b) { return (a.period||'').localeCompare(b.period||''); });
+
+      // If one of today's lessons is happening RIGHT NOW (based on the
+      // real clock and each period's actual start/end time), jump
+      // straight into marking it — no need to click through a list
+      // when the system already knows exactly which lesson this is.
+      var PERIOD_TIMES = {1:[490,540],2:[585,635],3:[640,690],4:[695,745],5:[825,875],6:[880,930],7:[935,985]};
+      // (times in minutes-since-midnight: 08:10=490+20=510 etc — matches the TIMES map used in Timetable)
+      var nowMinutes = new Date().getHours()*60 + new Date().getMinutes();
+      var currentLesson = null;
+      lessons.forEach(function(les) {
+        var num = parseInt((les.period||'').replace(/\D/g,''), 10);
+        var range = PERIOD_TIMES[num];
+        if (range && nowMinutes >= range[0] && nowMinutes <= range[1]) currentLesson = les;
+      });
+
+      drRenderTodaySchedule(lessons);
+      if (currentLesson && !document.getElementById('dr-left-card').dataset.autoOpened) {
+        document.getElementById('dr-left-card').dataset.autoOpened = '1'; // only auto-open once per visit
+        drSelectLesson(currentLesson.class, currentLesson.subject, currentLesson.period);
+      }
+    })
+    .catch(function() {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:12.5px;">Could not load today\'s lessons.</div>';
+    });
+  }
+
+  function drRenderTodaySchedule(lessons) {
+    var el = document.getElementById('dr-today-schedule');
+    if (!el) return;
+
+    if (!lessons.length) {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:12.5px;">No lessons found for today. You can still open the grade book manually below.</div>';
+      return;
+    }
+
+    var subjectColors = {
+      'ENGLISH':'#7C3AED','MATHS-ENG':'#3B82F6','MATHS-RUS':'#3B82F6','CAMBRIDGE MATHS':'#3B82F6','SCIENCE':'#10B981',
+      'RUSSIAN':'#EF4444','LITERATURE':'#EF4444','PHYSICS':'#0369A1','CHEMISTRY':'#D97706',
+      'BIOLOGY':'#059669','ICT':'#4F46E5','HISTORY':'#6B7280','GEOGRAPHY':'#6B7280','ECONOMICS':'#0F766E',
+      'IELTS':'#9333EA','BUSINESS':'#0F766E'
+    };
+
+    var html = '';
+    lessons.forEach(function(les) {
+      var col = subjectColors[(les.subject||'').toUpperCase()] || '#7C3AED';
+      html += '<div onclick="drSelectLesson(\'' + les.class.replace(/'/g,"\\'") + '\',\'' + les.subject.replace(/'/g,"\\'") + '\',\'' + les.period + '\')" ' +
+        'style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;cursor:pointer;border:1.5px solid var(--rule-light,#f1f5f9);margin-bottom:6px;transition:background 0.12s;" ' +
+        'onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'white\'">' +
+        '<div style="width:4px;height:36px;border-radius:4px;background:'+col+';flex-shrink:0;"></div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:12.5px;font-weight:700;color:var(--ink);">'+les.subject+' — Class '+les.class+'</div>' +
+          '<div style="font-size:11px;color:var(--muted);margin-top:1px;">'+les.period+(les.time_slot?' · '+les.time_slot:'')+'</div>' +
+        '</div>' +
+        '<div style="font-size:11px;color:white;background:'+col+';padding:3px 9px;border-radius:6px;font-weight:700;">'+les.period+'</div>' +
+      '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  // Clicking a lesson skips manual class/subject selection entirely —
+  // fills everything in from the real timetable and jumps straight into
+  // the grade book, exactly matching what's actually being taught right now.
+  function drSelectLesson(cls, subject, period) {
+    var clsEl = document.getElementById('dr-class');
+    var subjEl = document.getElementById('dr-subject');
+    var periodEl = document.getElementById('dr-period');
+    if (clsEl) clsEl.value = cls;
+    if (subjEl) subjEl.value = subject;
+    if (periodEl) periodEl.value = period.replace('L','');
+
+    // Once a lesson is picked, the lesson list has done its job — hide
+    // it and let the marking table use the FULL page width, matching
+    // a real gradebook rather than sharing half the screen with a list
+    // that's no longer needed.
+    var leftCard = document.getElementById('dr-left-card');
+    var submitGrid = document.getElementById('dr-submit-grid');
+    var showBtn = document.getElementById('dr-show-lessons-btn');
+    if (leftCard) leftCard.style.display = 'none';
+    if (submitGrid) submitGrid.style.setProperty('grid-template-columns', '1fr', 'important');
+    if (showBtn) showBtn.style.display = '';
+
+    drBuildGrid(cls, subject);
+    drShowExistingAttachments();
+    var grid = document.getElementById('dr-students-wrap');
+    if (grid && grid.scrollIntoView) grid.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  // Brings the lesson list (and topic/homework form) back, in case a
+  // teacher wants to switch to a different lesson or fill in the
+  // topic/homework text for the one they're on.
+  // Clicking "Student Marks" itself jumps straight back to the grid
+  // using whichever class/subject was last selected — no need to go
+  // back through Lessons and click the same one again.
+  function drReturnToMarks() {
+    var cls = (document.getElementById('dr-class')||{}).value;
+    var subject = (document.getElementById('dr-subject')||{}).value;
+    if (!cls || !subject) return; // nothing selected yet — nothing to return to
+    var leftCard = document.getElementById('dr-left-card');
+    var submitGrid = document.getElementById('dr-submit-grid');
+    if (leftCard) leftCard.style.display = 'none';
+    if (submitGrid) submitGrid.style.setProperty('grid-template-columns', '1fr', 'important');
+    drBuildGrid(cls, subject);
+  }
+
+  function drShowLessonList() {
+    var leftCard = document.getElementById('dr-left-card');
+    var submitGrid = document.getElementById('dr-submit-grid');
+    if (leftCard) leftCard.style.display = '';
+    if (submitGrid && window.innerWidth >= 900) submitGrid.style.gridTemplateColumns = 'minmax(300px,1fr) minmax(400px,1.5fr)';
+  }
+
+
+  // ══ INLINE MARKING TABLE (no popup — direct click-to-mark) ═════════════
+  // Used when a lesson is selected from Today's Lessons: shows only
+  // today's date, one row per student, with CW/HW/Disc entered directly
+  // in the row via small number buttons. No popup opens, no page jump —
+  // marking one student never disturbs the next.
+  function drRenderInlineTable(cls, subject, students) {
+    var grid = document.getElementById('dr-students-wrap');
+    if (!grid) return;
+
+    if (!students.length) {
+      grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No students in Class ' + cls + ' yet.</div>';
+      return;
+    }
+
+    var todayStr = localDateStr();
+    var existing = null;
+    if (typeof dailyReports !== 'undefined') {
+      dailyReports.forEach(function(r) {
+        if (r.cls === cls && r.subject === subject && r.date === todayStr) existing = r;
+      });
+    }
+    var existingByName = {};
+    if (existing) (existing.students||[]).forEach(function(s) { existingByName[s.name] = s; });
+
+    var wrap = document.createElement('div');
+    wrap.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 4px 14px;flex-wrap:wrap;gap:10px;">' +
+        '<div style="font-size:13.5px;font-weight:800;color:var(--ink);">' + subject + ' — Class ' + cls + ' <span style="color:var(--muted);font-weight:600;">· ' + todayStr + '</span></div>' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+          '<span id="dr-inline-save-status" style="font-size:11.5px;color:var(--muted);"></span>' +
+          '<button onclick="drSaveAllMarks(\'' + cls.replace(/'/g,"\\'") + '\',\'' + subject.replace(/'/g,"\\'") + '\')" id="dr-inline-save-btn" type="button" ' +
+            'style="background:var(--navy,#0f172a);color:white;border:none;border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:700;cursor:pointer;">💾 Save Now</button>' +
+          '<button onclick="drBackToLessons()" style="background:none;border:1.5px solid var(--rule,#e2e8f0);border-radius:8px;padding:8px 12px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer;">← Change Lesson</button>' +
+        '</div>' +
+      '</div>';
+
+    var table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
+    table.innerHTML =
+      '<thead><tr style="background:var(--navy,#0f172a);">' +
+        '<th style="padding:9px 12px;text-align:left;color:white;font-size:11px;font-weight:700;text-transform:uppercase;">Student</th>' +
+        '<th style="padding:9px 6px;text-align:center;color:white;font-size:11px;font-weight:700;text-transform:uppercase;">Classwork</th>' +
+        '<th style="padding:9px 6px;text-align:center;color:white;font-size:11px;font-weight:700;text-transform:uppercase;">Homework</th>' +
+        '<th style="padding:9px 6px;text-align:center;color:white;font-size:11px;font-weight:700;text-transform:uppercase;">Discipline</th>' +
+        '<th style="padding:9px 6px;text-align:center;color:white;font-size:11px;font-weight:700;text-transform:uppercase;">Absent</th>' +
+      '</tr></thead>';
+
+    var tbody = document.createElement('tbody');
+    students.forEach(function(st, idx) {
+      var fullName = stuDisplayName(st);
+      var saved = existingByName[fullName] || {};
+      var bg = idx % 2 === 0 ? 'white' : '#f8fafc';
+
+      var tr = document.createElement('tr');
+      tr.style.cssText = 'background:' + bg + ';border-bottom:1px solid #f1f5f9;';
+      tr.setAttribute('data-student-row', fullName);
+
+      var tdName = document.createElement('td');
+      tdName.style.cssText = 'padding:9px 12px;font-weight:600;';
+      tdName.textContent = fullName;
+      tr.appendChild(tdName);
+
+      ['cw','hw','disc'].forEach(function(sec) {
+        var td = document.createElement('td');
+        td.style.cssText = 'padding:6px 4px;text-align:center;';
+        var btnGroup = document.createElement('div');
+        btnGroup.style.cssText = 'display:inline-flex;gap:3px;';
+        for (var n=1; n<=5; n++) {
+          (function(n) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = n;
+            var active = saved[sec] === n;
+            var mc = n>=4?'#16a34a':n===3?'#ca8a04':'#dc2626';
+            btn.style.cssText = 'width:24px;height:24px;border-radius:6px;border:1.5px solid ' + (active?mc:'#e2e8f0') + ';' +
+              'background:' + (active?mc:'white') + ';color:' + (active?'white':mc) + ';font-size:11px;font-weight:800;cursor:pointer;padding:0;';
+            btn.setAttribute('data-mark-btn', sec + '_' + n);
+            btn.addEventListener('click', function() {
+              drInlineSetMark(fullName, sec, n, tr);
+            });
+            btnGroup.appendChild(btn);
+          })(n);
+        }
+        td.appendChild(btnGroup);
+        tr.appendChild(td);
+      });
+
+      var tdAbsent = document.createElement('td');
+      tdAbsent.style.cssText = 'padding:6px;text-align:center;';
+      var absentBox = document.createElement('input');
+      absentBox.type = 'checkbox';
+      absentBox.checked = !!saved.absent;
+      absentBox.style.cssText = 'width:16px;height:16px;cursor:pointer;';
+      absentBox.addEventListener('change', function() {
+        drInlineSetAbsent(fullName, absentBox.checked, tr);
+      });
+      tdAbsent.appendChild(absentBox);
+      tr.appendChild(tdAbsent);
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+
+    grid.innerHTML = '';
+    grid.appendChild(wrap);
+  }
+
+  // Sets one mark directly — updates the button styling in place only
+  // (no table rebuild, no scroll reset) and saves in the background.
+  function drInlineSetMark(studentName, sec, val, tr) {
+    var cls = document.getElementById('dr-class').value;
+    var subject = document.getElementById('dr-subject').value;
+    var today = localDateStr();
+
+    var rep = drGetOrCreateTodayReport(cls, subject, today);
+    var entry = drGetOrCreateStudentEntry(rep, studentName);
+
+    // Toggle off if tapping the same value again
+    var isDeselecting = (entry[sec] === val);
+    entry[sec] = isDeselecting ? 0 : val;
+
+    // Update just this row's buttons for this mark type — nothing else moves
+    var btns = tr.querySelectorAll('[data-mark-btn^="' + sec + '_"]');
+    btns.forEach(function(b) {
+      var n = parseInt(b.getAttribute('data-mark-btn').split('_')[1]);
+      var active = (!isDeselecting && n === val);
+      var mc = n>=4?'#16a34a':n===3?'#ca8a04':'#dc2626';
+      b.style.background = active ? mc : 'white';
+      b.style.color = active ? 'white' : mc;
+      b.style.borderColor = active ? mc : '#e2e8f0';
+    });
+
+    drAutoSaveInline(rep);
+  }
+
+  function drInlineSetAbsent(studentName, isAbsent, tr) {
+    var cls = document.getElementById('dr-class').value;
+    var subject = document.getElementById('dr-subject').value;
+    var today = localDateStr();
+    var rep = drGetOrCreateTodayReport(cls, subject, today);
+    var entry = drGetOrCreateStudentEntry(rep, studentName);
+    entry.absent = isAbsent;
+
+    drAutoSaveInline(rep);
+  }
+
+  function drGetOrCreateTodayReport(cls, subject, date) {
+    if (typeof dailyReports === 'undefined') window.dailyReports = [];
+    var rep = null;
+    dailyReports.forEach(function(r) { if (r.cls===cls && r.subject===subject && r.date===date) rep = r; });
+    if (!rep) {
+      var periodEl = document.getElementById('dr-period');
+      rep = { id:'dr'+Date.now(), date:date, cls:cls, subject:subject,
+        teacher: _currentUser ? _currentUser.name : '', period:(periodEl?periodEl.value:''), topic:'', remark:'', homework:'', students:[],
+        // False until an actual save to Supabase succeeds. Opening a class's
+        // grid (or clicking a cell) creates this object locally so roster
+        // entries can be pre-filled — but that alone must never make it show
+        // up in View Reports as if it had been submitted.
+        submitted: false };
+      dailyReports.push(rep);
+    }
+    return rep;
+  }
+
+  function drGetOrCreateStudentEntry(rep, studentName) {
+    var entry = null;
+    rep.students.forEach(function(s) { if (s.name === studentName) entry = s; });
+    if (!entry) {
+      entry = { name: studentName, cw:0, hw:0, disc:0, absent:false, comment:'' };
+      rep.students.push(entry);
+    }
+    return entry;
+  }
+
+  // Marks already auto-save on click; these text fields required an
+  // explicit "Save Lesson Report" click to reach the cloud at all — so
+  // typing a paragraph of notes and then navigating away without pressing
+  // that button lost it entirely. Routes through the exact same debounced
+  // save (drAutoSaveInline) marks already use, and correctly includes
+  // topic/remark/homework because it saves the whole `rep` object rather
+  // than a hand-built payload.
+  //
+  // Bug this fixes: if a teacher types Topic/Homework BEFORE the marks
+  // grid has ever been opened for that class/subject/date, the roster
+  // pre-population (drRenderGrid/drGridCellClick) never ran, so the report
+  // this creates would have zero students — a real, saved report with a
+  // topic and homework but nobody in it. Now this ensures the roster is
+  // loaded and pre-populated itself before saving, regardless of whether
+  // the grid was ever opened.
+  function drAutoSaveTextFields() {
+    var cls = drOpenGrid._cls, subj = drOpenGrid._subject;
+    if (!cls || !subj) return;
+    var rep = drGetOrCreateTodayReport(cls, subj, localDateStr());
+    rep.topic    = (document.getElementById('dr-topic')||{}).value    || '';
+    rep.remark   = (document.getElementById('dr-remark')||{}).value   || '';
+    rep.homework = (document.getElementById('dr-homework')||{}).value || '';
+
+    if (rep.students && rep.students.length) {
+      drAutoSaveInline(rep);
+    } else {
+      fetchClassStudents(cls).then(function(students) {
+        students.forEach(function(st) {
+          drGetOrCreateStudentEntry(rep, stuDisplayName(st));
+        });
+        drAutoSaveInline(rep);
+      });
+    }
+  }
+
+  function drBackToLessons() {
+    document.getElementById('dr-class').value = '';
+    document.getElementById('dr-subject').value = '';
+    document.getElementById('dr-students-wrap').innerHTML =
+      '<div style="padding:30px;text-align:center;color:var(--muted);">👆 Pick a lesson above, or select a class and subject to open the grade book.</div>';
+    drBuildTodaySchedule();
+  }
+
+
+// Auto-saves shortly after the teacher stops marking — debounced so
+  // rapid clicks (CW then HW then Disc for the same student) send just
+  // ONE save, not three. Shows a clear status so it's obvious when it's
+  // safely saved, without ever requiring a manual button press.
+  function drAutoSaveInline(rep) {
+    var status = document.getElementById('dr-inline-save-status');
+    if (status) { status.textContent = '● Saving…'; status.style.color = '#ca8a04'; }
+
+    clearTimeout(window._drInlineSaveTimer);
+    window._drInlineSaveTimer = setTimeout(function() {
+      saveDailyReports();
+      var savePromise = (typeof sbSaveDailyReportWithRetry === 'function')
+        ? sbSaveDailyReportWithRetry(rep) : Promise.resolve();
+
+      savePromise.then(function() {
+        rep.submitted = true;
+        saveDailyReports();
+        if (typeof drFilterReports === 'function') drFilterReports();
+        if (typeof drUpdateUnsyncedBanner === 'function') drUpdateUnsyncedBanner();
+        if (status) { status.textContent = '✓ Saved'; status.style.color = '#16a34a'; }
+      }).catch(function() {
+        if (typeof drUpdateUnsyncedBanner === 'function') drUpdateUnsyncedBanner();
+        if (status) { status.textContent = '⚠ Save failed — tap Save to retry'; status.style.color = '#dc2626'; }
+      });
+    }, 600);
+  }
+
+  // Manual save button stays available as a backup — e.g. to save
+  // immediately without waiting for the debounce, or to retry after
+  // a failed auto-save — but is no longer required for normal use.
+  function drSaveAllMarks(cls, subject) {
+    var today = localDateStr();
+    var rep = drGetOrCreateTodayReport(cls, subject, today);
+    clearTimeout(window._drInlineSaveTimer);
+    drAutoSaveInline(rep);
+  }
+
+  // True if a report has anything a teacher actually entered — a real mark,
+  // an absence, a comment, or topic/homework text. Distinguishes "genuinely
+  // has data that must reach the cloud" from a blank draft created just by
+  // opening a class's grid (which should never force-sync on its own).
+  function drReportHasContent(rep) {
+    if (rep.topic || rep.homework) return true;
+    return (rep.students || []).some(function(s) {
+      return (s.cw > 0) || (s.hw > 0) || (s.disc > 0) || s.absent || (s.comment && s.comment.trim());
+    });
+  }
+
+  // Local save (localStorage) always succeeds even when the network is
+  // down — that's what makes autosave feel instant. But it also means a
+  // failed cloud sync can leave real, entered data stuck on one device with
+  // nothing forcing it to ever reach Supabase, unless something actively
+  // watches for that and keeps retrying. This is that something.
+  function drUpdateUnsyncedBanner() {
+    var banner = document.getElementById('dr-unsynced-banner');
+    var text   = document.getElementById('dr-unsynced-banner-text');
+    if (!banner || !text || typeof dailyReports === 'undefined') return;
+    var pending = dailyReports.filter(function(r) { return !r.submitted && drReportHasContent(r); });
+    if (!pending.length) { banner.style.display = 'none'; return; }
+    banner.style.display = 'flex';
+    text.textContent = '⚠ ' + pending.length + ' report' + (pending.length !== 1 ? 's' : '') +
+      ' saved on this device but not yet confirmed in the cloud. Stay connected — retrying automatically.';
+  }
+
+  function drSyncPendingReports() {
+    if (typeof dailyReports === 'undefined' || typeof sbSaveDailyReportWithRetry !== 'function') return;
+    var pending = dailyReports.filter(function(r) { return !r.submitted && drReportHasContent(r); });
+    drUpdateUnsyncedBanner();
+    if (!pending.length) return;
+    var remaining = pending.length;
+    pending.forEach(function(rep) {
+      var payload = {
+        teacher: rep.teacher || (_currentUser ? _currentUser.name : ''),
+        cls: rep.cls, subject: rep.subject, date: rep.date, period: rep.period || '',
+        topic: rep.topic || '', remark: rep.remark || '', homework: rep.homework || '',
+        students: rep.students
+      };
+      sbSaveDailyReportWithRetry(payload)
+        .then(function() { rep.submitted = true; saveDailyReports(); })
+        .catch(function() { /* stays unsynced — banner reflects this once all attempts settle */ })
+        .then(function() {
+          remaining--;
+          if (remaining === 0) {
+            if (typeof drFilterReports === 'function') drFilterReports();
+            drUpdateUnsyncedBanner();
+          }
+        });
+    });
+  }
+
   function drInitPanel() {
     var now   = new Date();
     var days  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     var months= ['January','February','March','April','May','June','July','August','September','October','November','December'];
     var today = days[now.getDay()];
+
+    // Retry any report with real marks that never made it to the cloud —
+    // e.g. from a previous network failure the teacher didn't notice.
+    drSyncPendingReports();
 
     // Date badge
     var dd = document.getElementById('dr-date-display');
@@ -5768,11 +6349,11 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     // which could cause reports to save with no date at all.
     var dateInput = document.getElementById('dr-date');
     if (dateInput && !dateInput.value) {
-      dateInput.value = now.toISOString().slice(0,10);
+      dateInput.value = localDateStr(now);
     }
 
-    // Build lesson cards from timetable
-    drBuildLessonCards();
+    // Build lesson cards from timetable (real, live data)
+    drBuildTodaySchedule();
     drPopulateFilters(drGetAllowedClasses());
     drFilterReports(); // show localStorage data immediately
 
@@ -5811,7 +6392,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
           topic_file_url:   r.topic_file_url    || '',
           topic_file_name:  r.topic_file_name   || '',
           homework_file_url:  r.homework_file_url  || '',
-          homework_file_name: r.homework_file_name || ''
+          homework_file_name: r.homework_file_name || '',
+          submitted: true
         };
         if (!existingIds[rep.id]) {
           dailyReports.push(rep);
@@ -5988,7 +6570,7 @@ function saveDailyReport() {
     var cls     = (document.getElementById('dr-class')||{}).value;
     var subject = (document.getElementById('dr-subject')||{}).value;
     var dateEl  = document.getElementById('dr-date');
-    var date    = (dateEl && dateEl.value) ? dateEl.value : new Date().toISOString().slice(0,10);
+    var date    = (dateEl && dateEl.value) ? dateEl.value : localDateStr();
     var period  = (document.getElementById('dr-period')||{}).value || '';
     var topic   = (document.getElementById('dr-topic')||{}).value || '';
     var remark  = (document.getElementById('dr-remark')||{}).value || '';
@@ -6059,6 +6641,7 @@ function saveDailyReport() {
     var sub     = document.getElementById('dr-view-subtitle');
 
     var filtered = dailyReports.filter(function(r) {
+      if (!r.submitted) return false;
       if (!allowed.includes(r.cls)) return false;
       if (cls && r.cls !== cls) return false;
       if (subject && r.subject !== subject) return false;
@@ -6204,9 +6787,18 @@ function saveDailyReport() {
   }
 
   function drDeleteReport(repId) {
+    var rep = null;
+    dailyReports.forEach(function(r){ if (r.id === repId) rep = r; });
     dailyReports = dailyReports.filter(function(r){ return r.id !== repId; });
     saveDailyReports();
     drFilterReports();
+    if (rep && typeof sbDeleteDailyReport === 'function') {
+      sbDeleteDailyReport(rep).then(function(){ updateCloudStatus('saved'); })
+        .catch(function(){
+          updateCloudStatus('error');
+          showToast('Removed here, but the server copy could not be deleted — check your connection and try again.');
+        });
+    }
     showToast('Report deleted.');
   }
 
@@ -6345,12 +6937,36 @@ function saveDailyReport() {
     var grid = document.getElementById('dr-students-wrap');
     if (!grid) return;
 
+    // Cache the roster so drGridCellClick can backfill blank entries for
+    // whichever date is actually clicked (including past dates, when a
+    // teacher is catching up on a missed report) — not only "today".
+    drRenderGrid._roster  = students;
+    drRenderGrid._cls     = cls;
+    drRenderGrid._subject = subject;
+
     if (!students.length) {
       grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No students in Class ' + cls + ' yet. Add students in Classes &amp; Students first.</div>';
       return;
     }
 
-    // Build date columns: current month school days up to today
+    // Ensure every roster student has an entry in today's report as soon as
+    // the grid opens. Previously an entry was only created when a teacher
+    // clicked a mark/absent button for that student, so anyone who received
+    // no clicks was silently missing from the saved report entirely — even
+    // though they were visibly listed on screen. Pre-creating a blank entry
+    // (cw:0, hw:0, disc:0, absent:false) here means "no marks entered" is
+    // now saved as present-with-blank-marks, not dropped from the report.
+    (function drEnsureTodayRosterEntries() {
+      var todayDateStr = (function() {
+        var n = new Date();
+        return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
+      })();
+      var todayRep = drGetOrCreateTodayReport(cls, subject, todayDateStr);
+      students.forEach(function(st) {
+        drGetOrCreateStudentEntry(todayRep, stuDisplayName(st));
+      });
+    })();
+
     var now    = new Date();
     var year   = now.getFullYear();
     var month  = now.getMonth();
@@ -6365,7 +6981,6 @@ function saveDailyReport() {
       dates.push({ day: d, dateStr: ds, isToday: d === today });
     }
 
-    // Build dataMap from dailyReports: key = dateStr + '|' + fullName
     var dataMap = {};
     if (typeof dailyReports !== 'undefined') {
       dailyReports.forEach(function(rep) {
@@ -6376,114 +6991,121 @@ function saveDailyReport() {
       });
     }
 
-        var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var monthLabel = MONTHS[month];
 
-    // Build table using DOM (avoids all quote issues)
     var table = document.createElement('table');
-    table.style.cssText = 'border-collapse:collapse;font-size:13px;min-width:100%;border:2px solid #64748b;';
+    table.style.cssText = 'border-collapse:collapse;font-size:11px;min-width:100%;border:1px solid #94a3b8;';
 
-    // Header row
     var thead = document.createElement('thead');
-    var hRow  = document.createElement('tr');
-    hRow.style.cssText = 'background:var(--navy);position:sticky;top:0;z-index:10;';
 
+    // Row 1: Student (rowspan 2) + one date-number header per date, spanning 3 sub-columns each
+    var hRow1 = document.createElement('tr');
+    hRow1.style.cssText = 'background:var(--navy);';
     var th0 = document.createElement('th');
-    th0.style.cssText = 'padding:10px 14px;text-align:left;color:white;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;min-width:180px;position:sticky;left:0;background:var(--navy);z-index:11;';
+    th0.rowSpan = 2;
+    th0.style.cssText = 'padding:6px 8px;text-align:left;color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;min-width:150px;position:sticky;left:0;background:var(--navy);z-index:12;';
     th0.textContent = 'Student';
-    hRow.appendChild(th0);
+    hRow1.appendChild(th0);
 
     dates.forEach(function(dt) {
-      var th = document.createElement('th');
       var bg = dt.isToday ? 'var(--gold)' : 'transparent';
       var co = dt.isToday ? 'var(--navy)' : 'rgba(255,255,255,0.7)';
       var fw = dt.isToday ? '900' : '600';
-      th.style.cssText = 'padding:8px 6px;text-align:center;width:64px;min-width:64px;color:' + co + ';font-size:11px;font-weight:' + fw + ';background:' + bg + ';border-left:1px solid rgba(255,255,255,0.08);';
 
-      // Check if there's topic/hw recorded for this date
       var dayRep = null;
       if (typeof dailyReports !== 'undefined') {
-        dailyReports.forEach(function(r) {
-          if (r.cls===cls && r.subject===subject && r.date===dt.dateStr) dayRep = r;
-        });
+        dailyReports.forEach(function(r) { if (r.cls===cls && r.subject===subject && r.date===dt.dateStr) dayRep = r; });
       }
-      var hwTip  = dayRep && dayRep.homework ? '📝 ' + dayRep.homework : '';
-      var cwTip  = dayRep && dayRep.topic    ? '📚 ' + dayRep.topic    : '';
+      var hwTip = dayRep && dayRep.homework ? '📝 ' + dayRep.homework : '';
+      var cwTip = dayRep && dayRep.topic ? '📚 ' + dayRep.topic : '';
       var tipHtml = (cwTip || hwTip)
-        ? '<div title="' + (cwTip ? cwTip : '') + (cwTip && hwTip ? ' | ' : '') + (hwTip ? hwTip : '') + '" ' +
-          'style="font-size:9px;margin-top:2px;cursor:help;opacity:0.85;">' +
-          (cwTip ? '📚' : '') + (hwTip ? '📝' : '') + '</div>'
+        ? '<span title="' + (cwTip||'') + (cwTip&&hwTip?' | ':'') + (hwTip||'') + '" style="font-size:7px;cursor:help;">' + (cwTip?'📚':'') + (hwTip?'📝':'') + '</span>'
         : '';
 
-      th.innerHTML = '<div>' + monthLabel + '</div>' +
-        '<div style="font-size:15px;font-weight:900;">' + dt.day + '</div>' +
-        tipHtml;
-      hRow.appendChild(th);
+      // Three individual cells per date (not one colspan cell) — this
+      // guarantees the header has the EXACT same column structure as
+      // the body rows below it, so nothing can drift out of alignment.
+      // Only the middle cell shows the date; colspan combined with
+      // sticky positioning is a known source of pixel misalignment
+      // across browsers, which is exactly what caused marks to appear
+      // under the wrong CW/HW/D column.
+      for (var i = 0; i < 3; i++) {
+        var th = document.createElement('th');
+        var borderStyle = i===0 ? 'border-left:1.5px solid rgba(255,255,255,0.18);' : 'border-left:1px solid rgba(255,255,255,0.06);';
+        th.style.cssText = 'padding:2px 1px 1px;text-align:center;color:' + co + ';font-size:9px;font-weight:' + fw + ';background:' + bg + ';' + borderStyle + ';';
+        if (i === 1) {
+          th.innerHTML = '<div style="font-size:6.5px;opacity:0.8;line-height:1.1;">' + monthLabel + '</div>' +
+            '<div style="font-size:10.5px;font-weight:900;line-height:1.1;">' + dt.day + '</div>' + tipHtml;
+        }
+        hRow1.appendChild(th);
+      }
     });
-    // Filler column — absorbs any leftover width so a row with only a
-    // few date columns still highlights across the whole visible row on
-    // hover, instead of leaving a dead strip of unhoverable blank space.
-    var thFiller = document.createElement('th');
-    thFiller.style.cssText = 'width:100%;background:var(--navy);';
-    hRow.appendChild(thFiller);
-    thead.appendChild(hRow);
+    var thFiller1 = document.createElement('th');
+    thFiller1.rowSpan = 2;
+    thFiller1.style.cssText = 'width:100%;background:var(--navy);position:sticky;top:0;';
+    hRow1.appendChild(thFiller1);
+    thead.appendChild(hRow1);
+
+    // Row 2: CW / HW / D sub-headers under each date
+    var hRow2 = document.createElement('tr');
+    hRow2.style.cssText = 'background:#1a2444;';
+    dates.forEach(function(dt) {
+      ['CW','HW','D'].forEach(function(label, i) {
+        var sub = document.createElement('th');
+        sub.style.cssText = 'padding:1px 1px;text-align:center;color:rgba(255,255,255,0.5);font-size:7px;font-weight:700;' +
+          (i===0 ? 'border-left:1.5px solid rgba(255,255,255,0.18);' : 'border-left:1px solid rgba(255,255,255,0.06);') +
+          'background:#1a2444;';
+        sub.textContent = label;
+        hRow2.appendChild(sub);
+      });
+    });
+    thead.appendChild(hRow2);
     table.appendChild(thead);
 
-    // Body rows
     var tbody = document.createElement('tbody');
     students.forEach(function(st, idx) {
-      var fullName  = stuDisplayName(st);
-      var bg        = idx % 2 === 0 ? 'white' : '#f8fafc';
+      var fullName = stuDisplayName(st);
+      var bg = idx % 2 === 0 ? 'white' : '#f8fafc';
 
       var tr = document.createElement('tr');
-      tr.style.cssText = 'background:' + bg + ';border-bottom:1.5px solid #94a3b8;transition:background 0.1s;cursor:pointer;';
+      tr.style.cssText = 'background:' + bg + ';border-bottom:1px solid #cbd5e1;transition:background 0.1s;cursor:pointer;';
       tr.addEventListener('mouseenter', function(){ if(!this.dataset.selected) this.style.background='#dbeafe'; });
       tr.addEventListener('mouseleave', function(){ if(!this.dataset.selected) this.style.background=bg; });
 
-      // Name cell
-      // Calculate overall average from all recorded marks for this student
       var allMarks = [];
       if (typeof dailyReports !== 'undefined') {
         dailyReports.forEach(function(rep) {
           if (rep.cls !== cls || rep.subject !== subject) return;
-          (rep.students||[]).forEach(function(st) {
-            if (st.name === fullName && !st.absent) {
-              [st.cw, st.hw, st.disc].forEach(function(v) {
-                if (v && parseInt(v) > 0) allMarks.push(parseInt(v));
-              });
+          (rep.students||[]).forEach(function(s2) {
+            if (s2.name === fullName && !s2.absent) {
+              [s2.cw, s2.hw, s2.disc].forEach(function(v) { if (v && parseInt(v) > 0) allMarks.push(parseInt(v)); });
             }
           });
         });
       }
       var overallAvg = allMarks.length ? allMarks.reduce(function(a,b){return a+b;},0)/allMarks.length : null;
-      var avgColor   = overallAvg === null ? '#94a3b8' : overallAvg>=4 ? '#16a34a' : overallAvg===3 ? '#ca8a04' : '#dc2626';
-      var avgBadge = '';
-      if (overallAvg !== null) {
-        var avgText = overallAvg%1===0 ? overallAvg.toFixed(0) : overallAvg.toFixed(2);
-        avgBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:22px;border-radius:6px;background:' + avgColor + ';color:white;font-size:12px;font-weight:800;padding:0 7px;flex-shrink:0;">' + avgText + '</span>';
-      } else { avgBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:22px;border-radius:6px;background:#e2e8f0;color:#94a3b8;font-size:11px;font-weight:700;padding:0 7px;flex-shrink:0;">—</span>'; }
+      var avgColor = overallAvg === null ? '#94a3b8' : overallAvg>=4 ? '#16a34a' : overallAvg===3 ? '#ca8a04' : '#dc2626';
+      var avgBadge = overallAvg !== null
+        ? '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:15px;border-radius:4px;background:'+avgColor+';color:white;font-size:9px;font-weight:800;padding:0 3px;flex-shrink:0;">' + (overallAvg%1===0?overallAvg.toFixed(0):overallAvg.toFixed(2)) + '</span>'
+        : '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:15px;border-radius:4px;background:#e2e8f0;color:#94a3b8;font-size:9px;font-weight:700;padding:0 3px;flex-shrink:0;">—</span>';
+
       var tdName = document.createElement('td');
-      tdName.style.cssText = 'padding:8px 14px;white-space:nowrap;position:sticky;left:0;background:' + bg + ';z-index:5;cursor:pointer;border-right:2px solid #e2e8f0;';
+      tdName.style.cssText = 'padding:4px 8px;white-space:nowrap;position:sticky;left:0;background:' + bg + ';z-index:5;cursor:pointer;border-right:1.5px solid #cbd5e1;';
       tdName.innerHTML =
-        '<div style="display:flex;align-items:center;gap:8px;">' +
-          '<span style="font-size:11px;color:#94a3b8;font-weight:600;min-width:22px;flex-shrink:0;">' + (idx+1<10?'0'+(idx+1):idx+1) + '</span>' +
-          '<span style="font-size:13px;font-weight:600;color:#0f172a;margin-right:8px;">' + fullName + '</span>' +
+        '<div style="display:flex;align-items:center;gap:5px;">' +
+          '<span style="font-size:9px;color:#94a3b8;font-weight:600;min-width:15px;flex-shrink:0;">' + (idx+1<10?'0'+(idx+1):idx+1) + '</span>' +
+          '<span style="font-size:11px;font-weight:600;color:#0f172a;margin-right:4px;">' + fullName + '</span>' +
           avgBadge +
         '</div>';
-      // Click name → select/deselect whole row
       (function(capturedTr, capturedBg) {
         tdName.addEventListener('click', function() {
           var sel = capturedTr.dataset.selected === '1';
-          // Deselect all rows first
-          capturedTr.closest('tbody').querySelectorAll('tr').forEach(function(r) {
-            r.dataset.selected = '';
-            r.style.background = r._origBg || '';
-          });
+          capturedTr.closest('tbody').querySelectorAll('tr').forEach(function(r) { r.dataset.selected = ''; r.style.background = r._origBg || ''; });
           if (!sel) {
             capturedTr._origBg = capturedBg;
             capturedTr.dataset.selected = '1';
             capturedTr.style.background = '#eff6ff';
-            // Bold the name
             tdName.querySelector('span:nth-child(2)').style.color = '#1d4ed8';
             tdName.querySelector('span:nth-child(2)').style.fontWeight = '800';
           }
@@ -6491,93 +7113,45 @@ function saveDailyReport() {
       })(tr, bg);
       tr.appendChild(tdName);
 
-      // Date cells
       dates.forEach(function(dt) {
-        var key    = dt.dateStr + '|' + fullName;
-        var saved  = dataMap[key];
-        var bord   = dt.isToday ? '2px solid var(--gold)' : '1.5px solid #94a3b8';
-        var td     = document.createElement('td');
-        td.setAttribute('data-cell-key', key);
-        td.style.cssText = 'padding:5px 6px;text-align:center;border-left:' + bord + ';vertical-align:middle;';
-        // Find day-level report for topic/hw lookup
-        var dayRep = null;
-        if (typeof dailyReports !== 'undefined') {
-          dailyReports.forEach(function(r) {
-            if (r.cls===cls && r.subject===subject && r.date===dt.dateStr) dayRep = r;
-          });
-        }
+        var key = dt.dateStr + '|' + fullName;
+        var saved = dataMap[key];
 
-        var cell = document.createElement('div');
-        cell.style.cssText = 'width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:13px;font-weight:900;';
+        ['cw','hw','disc'].forEach(function(sec, i) {
+          var td = document.createElement('td');
+          td.setAttribute('data-cell-key', key + '|' + sec);
+          var borderStyle = dt.isToday ? '2px solid var(--gold)' : (i===0 ? '1.5px solid #cbd5e1' : '1px solid #eef2f7');
+          td.style.cssText = 'padding:3px 1px;text-align:center;border-left:' + borderStyle + ';vertical-align:middle;';
 
-        if (saved && saved.absent) {
-          // Absent cell - still clickable to edit
-          cell.style.background = '#fee2e2';
-          cell.style.color = '#b91c1c';
-          cell.style.fontSize = '11px';
-          cell.style.cursor = 'pointer';
-          cell.textContent = 'Abs';
-          cell.addEventListener('mouseenter', function(){ this.style.opacity='0.75'; });
-          cell.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
+          var val = saved ? saved[sec] : null;
+          var isAbsent = saved && saved.absent;
+          var cellDiv = document.createElement('div');
+
+          if (isAbsent) {
+            cellDiv.style.cssText = 'font-size:10px;font-weight:700;color:#b91c1c;text-align:center;cursor:pointer;';
+            cellDiv.textContent = i===0 ? 'A' : '';
+          } else if (val && parseInt(val) > 0) {
+            var cc = markColor(parseInt(val)) || '#64748b';
+            cellDiv.style.cssText = 'font-size:11px;font-weight:700;color:'+cc+';text-align:center;cursor:pointer;';
+            cellDiv.textContent = val;
+          } else if (dt.isToday) {
+            cellDiv.style.cssText = 'font-size:11px;font-weight:400;color:#ca8a04;text-align:center;cursor:pointer;';
+            cellDiv.textContent = '+';
+          } else {
+            cellDiv.style.cssText = 'font-size:10px;font-weight:400;color:#cbd5e1;text-align:center;cursor:pointer;';
+            cellDiv.textContent = '·';
+          }
+          cellDiv.addEventListener('mouseenter', function(){ this.style.opacity='0.7'; });
+          cellDiv.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
           (function(d, n, c, s) {
-            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s, cell); });
+            cellDiv.addEventListener('click', function() { drGridCellClick(d, n, c, s, cellDiv); });
           })(dt.dateStr, fullName, cls, subject);
 
-        } else if (saved && (saved.cw || saved.hw || saved.disc)) {
-          // Has marks - show average, clickable to edit
-          var marks = [saved.cw, saved.hw, saved.disc].map(Number).filter(Boolean);
-          var avg   = marks.reduce(function(a,b){return a+b;},0) / marks.length;
-          var cc    = markColor(avg) || '#94a3b8';
-          cell.style.cssText = 'text-align:center;cursor:pointer;padding:4px 3px;';
-          var pill = document.createElement('div');
-          pill.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:32px;height:28px;border-radius:7px;background:'+cc+';color:white;font-size:13px;font-weight:800;';
-          pill.textContent = avg%1===0?avg.toFixed(0):avg.toFixed(1);
-          pill.title = 'CW:'+saved.cw+' HW:'+saved.hw+' Disc:'+saved.disc;
-          cell.appendChild(pill);
-          cell.addEventListener('mouseenter', function(){ this.style.opacity='0.75'; });
-          cell.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
-          (function(d, n, c, s) {
-            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s, cell); });
-          })(dt.dateStr, fullName, cls, subject);
-
-        } else if (dt.isToday) {
-          // Today, no marks yet - gold dashed + button
-          cell.style.border = '2px dashed #ca8a04';
-          cell.style.color = '#ca8a04';
-          cell.style.cursor = 'pointer';
-          cell.style.fontSize = '20px';
-          cell.textContent = '+';
-          cell.addEventListener('mouseenter', function(){ this.style.background='#fef3c7'; });
-          cell.addEventListener('mouseleave', function(){ this.style.background=''; });
-          (function(d, n, c, s) {
-            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s, cell); });
-          })(dt.dateStr, fullName, cls, subject);
-
-        } else {
-          // Past day, no marks - subtle clickable to add/view
-          cell.style.cssText = 'text-align:center;padding:4px 3px;background:white;cursor:pointer;';
-          var plusPill = document.createElement('div');
-          plusPill.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:32px;height:28px;border-radius:7px;border:1.5px solid #475569;color:#475569;font-size:16px;font-weight:300;';
-          plusPill.textContent = '+';
-          cell.appendChild(plusPill);
-          cell.title = 'Click to add marks';
-          cell.addEventListener('mouseenter', function(){
-            plusPill.style.background='#0f172a';plusPill.style.color='white';plusPill.style.borderColor='#0f172a';
-          });
-          cell.addEventListener('mouseleave', function(){
-            plusPill.style.background='';plusPill.style.color='#475569';plusPill.style.borderColor='#475569';
-          });
-          (function(d, n, c, s) {
-            cell.addEventListener('click', function() { drGridCellClick(d, n, c, s, cell); });
-          })(dt.dateStr, fullName, cls, subject);
-        }
-        td.appendChild(cell);
-        tr.appendChild(td);
+          td.appendChild(cellDiv);
+          tr.appendChild(td);
+        });
       });
-      // Filler cell — absorbs any leftover width so a row with only a
-      // few date columns still highlights across the whole visible row
-      // on hover, instead of leaving a dead strip of unhoverable blank
-      // space to the right.
+
       var tdFiller = document.createElement('td');
       tdFiller.style.cssText = 'width:100%;';
       tr.appendChild(tdFiller);
@@ -6589,8 +7163,19 @@ function saveDailyReport() {
     grid.appendChild(table);
   }
 
-
   function drGridCellClick(dateStr, studentName, cls, subject, clickedEl) {
+    // Ensure every roster student (not just the one clicked) has an entry
+    // for this specific date before we touch anything. Covers backdated
+    // marking too: a teacher catching up on a missed day clicks cells under
+    // a past date column, and without this the same "only clicked students
+    // get saved" gap that hit today's reports would still hit that date.
+    if (drRenderGrid._roster && drRenderGrid._cls === cls && drRenderGrid._subject === subject) {
+      var backfillRep = drGetOrCreateTodayReport(cls, subject, dateStr);
+      drRenderGrid._roster.forEach(function(st) {
+        drGetOrCreateStudentEntry(backfillRep, stuDisplayName(st));
+      });
+    }
+
     drCloseMarkPopup();
     _drPopup.sec = 'grid';
     _drPopup.gridDate = dateStr; _drPopup.gridName = studentName;
@@ -6611,7 +7196,7 @@ function saveDailyReport() {
 
     var popup = document.createElement('div');
     popup.id = 'dr-mark-popup';
-    popup.style.cssText = 'position:fixed;z-index:9500;background:white;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,0.28);padding:16px 18px 14px;width:290px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:"DM Sans",sans-serif;font-size:13px;';
+    popup.style.cssText = 'position:fixed;z-index:9500;background:white;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.28);padding:12px 14px 10px;width:230px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:"DM Sans",sans-serif;font-size:12px;';
     popup._marks = { cw: existing.cw||0, hw: existing.hw||0, disc: existing.disc||0 };
 
     // Header
@@ -6633,7 +7218,7 @@ function saveDailyReport() {
         var bg = active ? mc : 'white';
         var co = active ? 'white' : mc;
         html += '<button data-sec="' + sec + '" data-grade="' + n + '" ' +
-          'style="flex:1;height:40px;border-radius:8px;border:2px solid ' + bd + ';background:' + bg + ';color:' + co + ';font-size:16px;font-weight:900;cursor:pointer;">' + n + '</button>';
+          'style="flex:1;height:32px;border-radius:7px;border:2px solid ' + bd + ';background:' + bg + ';color:' + co + ';font-size:13px;font-weight:900;cursor:pointer;">' + n + '</button>';
       });
       html += '</div></div>';
       return html;
@@ -6660,7 +7245,7 @@ function saveDailyReport() {
       drGridSetMark(btn.dataset.sec, parseInt(btn.dataset.grade), btn);
     });
 
-    var pw = 290;
+    var pw = 230;
     var left, top;
     if (clickedEl && clickedEl.getBoundingClientRect) {
       // Anchor the popup right next to whichever cell/+ button was actually
@@ -6806,37 +7391,36 @@ function saveDailyReport() {
   }
 
   function drRefreshCell(cls, subject, dateStr, studentName, entry) {
-    // Find just this one cell and update it directly — no full rebuild,
-    // no re-fetching students, no scroll position getting reset. The
-    // previous version of this function claimed to do this but actually
-    // called drBuildGrid() every time, which is why the whole page felt
-    // like it was reloading and jumping back to the top after every mark.
+    // Find and update the three separate CW/HW/D cells directly — no
+    // full rebuild, no re-fetching students, no scroll position reset.
     var key = dateStr + '|' + studentName;
-    var td = document.querySelector('[data-cell-key="' + CSS.escape(key) + '"]');
-    if (!td) { drBuildGrid(cls, subject); return; } // cell not on screen — safe fallback
+    var secs = ['cw','hw','disc'];
+    var anyMissing = false;
+    secs.forEach(function(sec) {
+      var td = document.querySelector('[data-cell-key="' + CSS.escape(key + '|' + sec) + '"]');
+      if (!td) { anyMissing = true; return; }
 
-    td.innerHTML = '';
-    var cell = document.createElement('div');
-    cell.style.cssText = 'width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:13px;font-weight:900;';
+      td.innerHTML = '';
+      var cellDiv = document.createElement('div');
+      var val = entry[sec];
 
-    if (entry.absent) {
-      cell.style.background = '#fee2e2';
-      cell.style.color = '#b91c1c';
-      cell.style.fontSize = '11px';
-      cell.style.cursor = 'pointer';
-      cell.textContent = 'Abs';
-    } else {
-      var marks = [entry.cw, entry.hw, entry.disc].map(Number).filter(Boolean);
-      var avg = marks.length ? marks.reduce(function(a,b){return a+b;},0) / marks.length : 0;
-      var cc = markColor(avg) || '#94a3b8';
-      cell.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:32px;height:28px;border-radius:7px;background:'+cc+';color:white;font-size:13px;font-weight:800;';
-      cell.textContent = avg%1===0 ? avg.toFixed(0) : avg.toFixed(1);
-      cell.title = 'CW:'+entry.cw+' HW:'+entry.hw+' Disc:'+entry.disc;
-    }
-    cell.addEventListener('mouseenter', function(){ this.style.opacity='0.75'; });
-    cell.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
-    cell.addEventListener('click', function() { drGridCellClick(dateStr, studentName, cls, subject, cell); });
-    td.appendChild(cell);
+      if (entry.absent) {
+        cellDiv.style.cssText = 'font-size:10px;font-weight:700;color:#b91c1c;text-align:center;cursor:pointer;';
+        cellDiv.textContent = sec === 'cw' ? 'A' : '';
+      } else if (val && parseInt(val) > 0) {
+        var cc = markColor(parseInt(val)) || '#64748b';
+        cellDiv.style.cssText = 'font-size:11px;font-weight:700;color:'+cc+';text-align:center;cursor:pointer;';
+        cellDiv.textContent = val;
+      } else {
+        cellDiv.style.cssText = 'font-size:11px;font-weight:400;color:#ca8a04;text-align:center;cursor:pointer;';
+        cellDiv.textContent = '+';
+      }
+      cellDiv.addEventListener('mouseenter', function(){ this.style.opacity='0.7'; });
+      cellDiv.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
+      cellDiv.addEventListener('click', function() { drGridCellClick(dateStr, studentName, cls, subject, cellDiv); });
+      td.appendChild(cellDiv);
+    });
+    if (anyMissing) drBuildGrid(cls, subject); // cells not on screen — safe fallback
   }
 
   function drGridSaveCell() {
@@ -6878,7 +7462,7 @@ function saveDailyReport() {
         .catch(function(){ updateCloudStatus('error'); showToast('Saved locally — cloud sync failed.'); });
     }
     drCloseMarkPopup();
-    drBuildGrid(p.gridCls, p.gridSubj);
+    drRefreshCell(p.gridCls, p.gridSubj, p.gridDate, p.gridName, studentEntry);
     showToast(p.gridName.split(' ')[0] + ' ✓');
   }
 
@@ -6939,22 +7523,28 @@ function saveDailyReport() {
 
     // Save to Supabase
     if (typeof sbSaveDailyReport === 'function') {
-      var topicVal = (document.getElementById('dr-topic')||{}).value || '';
-      var hwVal    = (document.getElementById('dr-homework')||{}).value    || '';
-      // Save topic/hw into the report object too
+      var topicVal  = (document.getElementById('dr-topic')||{}).value    || '';
+      var hwVal     = (document.getElementById('dr-homework')||{}).value || '';
+      var remarkVal = (document.getElementById('dr-remark')||{}).value   || '';
+      // Save topic/remark/hw into the report object too
       rep.topic    = topicVal;
+      rep.remark   = remarkVal;
       rep.homework = hwVal;
       var payload = {
         teacher: _currentUser ? _currentUser.name : '',
         cls: cls, subject: subj, date: dateStr,
-        period: drOpenGrid._period || '', topic: topicVal, remark: '', homework: hwVal,
+        period: drOpenGrid._period || '', topic: topicVal, remark: remarkVal, homework: hwVal,
         students: rep.students
       };
       sbSaveDailyReport(payload).then(function() {
+        rep.submitted = true;
+        saveDailyReports();
+        if (typeof drUpdateUnsyncedBanner === 'function') drUpdateUnsyncedBanner();
         showToast('✓ Report submitted to Supabase for Class ' + cls);
         updateCloudStatus('saved');
       }).catch(function(e) {
         console.error('Daily report Supabase error:', e);
+        if (typeof drUpdateUnsyncedBanner === 'function') drUpdateUnsyncedBanner();
         showToast('Saved locally. Sync failed: ' + (e.message||'check console'));
         updateCloudStatus('error');
       });
@@ -6987,7 +7577,7 @@ function saveDailyReport() {
 
   function drExportReports() {
     var allowed = drGetAllowedClasses();
-    var data = dailyReports.filter(function(r){ return allowed.includes(r.cls); });
+    var data = dailyReports.filter(function(r){ return r.submitted && allowed.includes(r.cls); });
     if (!data.length) { showToast('No reports to export.'); return; }
     var csv = 'Date,Class,Subject,Teacher,Student,CW,HW,Disc,Absent,Comment\n';
     data.forEach(function(rep) {
@@ -7000,21 +7590,23 @@ function saveDailyReport() {
     var blob = new Blob([csv], {type:'text/csv'});
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'daily_reports_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.download = 'daily_reports_' + localDateStr() + '.csv';
     a.click();
     showToast('Reports exported ✓');
   }
 
-  function drRenderTodaySchedule() {}
-
-  function drLoadStudents() {
+    function drLoadStudents() {
     var cls = (document.getElementById('dr-class')||{}).value;
     var subject = (document.getElementById('dr-subject')||{}).value;
     if (!cls || !subject) {
       showToast('Please select both a class and a subject.');
       return;
     }
-    drBuildGrid(cls, subject);
+    var grid = document.getElementById('dr-students-wrap');
+    if (grid) grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading…</div>';
+    fetchClassStudents(cls).then(function(students) {
+      drRenderInlineTable(cls, subject, students);
+    });
     drShowExistingAttachments();
   }
 
@@ -7080,6 +7672,23 @@ function saveDailyReport() {
     });
   }
 
+  // Deletes a report row server-side. Local report objects carry a
+  // client-generated id ('dr'+Date.now()) that has never matched the
+  // database's own row id — POST/PATCH saves never captured it back — so
+  // matching by class+subject+date (the same triple sbSaveDailyReport
+  // already uses to find "the" row for a class/subject/date) is the only
+  // reliable way to identify the right row to remove.
+  function sbDeleteDailyReport(rep) {
+    return fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(rep.cls) +
+        '&subject=eq.' + encodeURIComponent(rep.subject) + '&date=eq.' + encodeURIComponent(rep.date), {
+      method: 'DELETE',
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Prefer': 'return=minimal' }
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+': '+t); });
+      return {};
+    });
+  }
+
   function sbSaveDailyReport(rep) {
     // period is a numeric column in the database — sending an empty
     // string (which happens whenever a report is created via the marks
@@ -7102,35 +7711,21 @@ function saveDailyReport() {
       homework_file_url:   rep.homeworkFileUrl || null,
       homework_file_name:  rep.homeworkFileName|| null
     };
-    // Robust save: first check whether a row already exists for this
-    // class+subject+date, then PATCH it if so, or POST a new one if not.
-    // This needs NO special database constraint to exist — unlike the
-    // on_conflict upsert this replaces, which silently failed on every
-    // single save if that constraint wasn't actually present in the
-    // database, exactly matching what teachers were reporting.
-    return fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(rep.cls) +
-        '&subject=eq.' + encodeURIComponent(rep.subject) + '&date=eq.' + encodeURIComponent(rep.date) + '&select=id', {
-      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-    })
-    .then(function(r) { return r.ok ? r.json() : []; })
-    .then(function(existing) {
-      if (existing && existing.length) {
-        // Update the existing row
-        return fetch(_SB_URL + '/rest/v1/daily_reports?id=eq.' + existing[0].id, {
-          method: 'PATCH',
-          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-          body: JSON.stringify(payload)
-        });
-      } else {
-        // Create a new row
-        return fetch(_SB_URL + '/rest/v1/daily_reports', {
-          method: 'POST',
-          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-          body: JSON.stringify(payload)
-        });
-      }
-    })
-    .then(function(r) {
+    // True atomic upsert — the (class,subject,date) unique constraint now
+    // exists (added directly in Supabase, along with a one-time merge of
+    // duplicate rows this same bug had already created live). Previously
+    // this did a SELECT to check for an existing row, then decided POST vs
+    // PATCH — but that check-then-act sequence isn't atomic over a network:
+    // two saves close together (e.g. a burst of quick marks) could both see
+    // "no row yet" and both insert, silently splitting one day's marks
+    // across multiple rows. on_conflict+merge-duplicates makes Postgres
+    // itself resolve this in one atomic statement, so the race is no
+    // longer possible regardless of timing.
+    return fetch(_SB_URL + '/rest/v1/daily_reports?on_conflict=class,subject,date', {
+      method: 'POST',
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(payload)
+    }).then(function(r) {
       if (!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+': '+t); });
       return {};
     });
@@ -7152,8 +7747,73 @@ function saveDailyReport() {
     return sbFetch('daily_reports', 'GET', null, p);
   }
 
+  // ══ GENERIC WRITE-SAFETY QUEUE ═══════════════════════════════════════════
+  // sbFetch itself has no retry. Until now, every feature that wrote to
+  // Supabase handled a failure differently — some just showed a toast and
+  // silently dropped the data (Incidents, Observations, Actions, Calendar,
+  // Messages), some had no protection at all. This is the one shared
+  // mechanism all of them route through now: every write is persisted to
+  // localStorage BEFORE the network attempt (so a crash mid-request can't
+  // lose it), retried automatically (on relevant panel open, and every 45s
+  // in the background via applyUserSession), and stays visible in a
+  // site-wide banner — fixed on screen regardless of which panel is open —
+  // until Supabase actually confirms it, not just until the local UI looks
+  // like it saved.
+  function sbLoadPendingWrites() {
+    try { var d = localStorage.getItem('redbridge_pending_writes'); return d ? JSON.parse(d) : []; }
+    catch(e) { return []; }
+  }
+  function sbSavePendingWrites(arr) {
+    try { localStorage.setItem('redbridge_pending_writes', JSON.stringify(arr)); } catch(e) {}
+  }
+  function sbUpdateGlobalSyncBanner() {
+    var pending = sbLoadPendingWrites();
+    var banner = document.getElementById('global-sync-banner');
+    if (!pending.length) {
+      if (banner) banner.style.display = 'none';
+      return;
+    }
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'global-sync-banner';
+      banner.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;max-width:340px;padding:12px 16px;border-radius:10px;background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;font-size:12.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.18);display:flex;flex-direction:column;gap:8px;font-family:inherit;';
+      document.body.appendChild(banner);
+    }
+    banner.style.display = 'flex';
+    banner.innerHTML = '<div>⚠ ' + pending.length + ' item' + (pending.length !== 1 ? 's' : '') +
+      ' saved on this device but not yet confirmed in the cloud. Stay connected — retrying automatically.</div>' +
+      '<button onclick="sbSyncPendingWrites()" style="align-self:flex-start;padding:5px 12px;border-radius:7px;border:1.5px solid #991b1b;background:white;color:#991b1b;font-size:11.5px;font-weight:700;cursor:pointer;">Retry Now</button>';
+  }
+  function sbQueueWrite(table, method, body, params) {
+    var key = table + ':' + (method || 'POST') + ':' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    var pending = sbLoadPendingWrites();
+    pending.push({ key: key, table: table, method: method, body: body, params: params || null });
+    sbSavePendingWrites(pending);
+    sbUpdateGlobalSyncBanner();
+
+    return sbFetch(table, method, body, params).then(function(res) {
+      sbSavePendingWrites(sbLoadPendingWrites().filter(function(p) { return p.key !== key; }));
+      sbUpdateGlobalSyncBanner();
+      return res;
+    }).catch(function(err) {
+      sbUpdateGlobalSyncBanner();
+      throw err; // caller's own .catch still runs for its own UI feedback
+    });
+  }
+  function sbSyncPendingWrites() {
+    var pending = sbLoadPendingWrites();
+    sbUpdateGlobalSyncBanner();
+    if (!pending.length) return;
+    pending.forEach(function(item) {
+      sbFetch(item.table, item.method, item.body, item.params).then(function() {
+        sbSavePendingWrites(sbLoadPendingWrites().filter(function(p) { return p.key !== item.key; }));
+        sbUpdateGlobalSyncBanner();
+      }).catch(function() { /* stays queued — retried next interval */ });
+    });
+  }
+
   function sbSaveObservation(obs) {
-    return sbFetch('observations', 'POST', {
+    return sbQueueWrite('observations', 'POST', {
       observer: obs.observer || (_currentUser ? _currentUser.name : ''),
       teacher: obs.teacher, class: obs.cls, subject: obs.subject,
       date: obs.date, scores: obs.scores, total: obs.total,
@@ -7164,10 +7824,11 @@ function saveDailyReport() {
   function sbLoadObservations() { return sbFetch('observations', 'GET', null, 'order=created_at.desc&limit=100'); }
 
   function sbSaveAction(a) {
-    return sbFetch('actions', 'POST', {
+    return sbQueueWrite('actions', 'POST', {
       created_by: _currentUser ? _currentUser.name : '',
-      type: a.type, description: a.description || '', assignee: a.assignee || '',
-      due: a.due || '', status: a.status || 'open'
+      type: a.type, description: a.description || '', assigned_to: a.assignee || '',
+      due_date: a.due || null, priority: a.priority || 'normal',
+      done: !!(a.status === 'done' || a.status === 'resolved' || a.done)
     });
   }
 
@@ -7195,8 +7856,8 @@ function saveDailyReport() {
 
   // ══ SUPABASE — INCIDENTS ═══════════════════════════════════════════════
   function sbSaveIncident(inc) {
-    return sbFetch('incidents', 'POST', {
-      student_name: inc.student, class: inc.class, subject: inc.subject || '', type: inc.type,
+    return sbQueueWrite('incidents', 'POST', {
+      student: inc.student, class: inc.class, subject: inc.subject || '', type: inc.type,
       stage: inc.stage || 1, date: inc.date, status: inc.status || 'open',
       notes: inc.notes || '', resolution: inc.resolution || '',
       resolved_at: inc.resolvedAt || '',
@@ -7206,7 +7867,7 @@ function saveDailyReport() {
   }
 
   function sbUpdateIncident(inc) {
-    return sbFetch('incidents', 'PATCH', {
+    return sbQueueWrite('incidents', 'PATCH', {
       status:      inc.status,
       resolution:  inc.resolution  || '',
       resolved_at: inc.resolvedAt  || '',
@@ -7220,7 +7881,7 @@ function saveDailyReport() {
 
   // ══ SUPABASE — DISC OBSERVATIONS ════════════════════════════════════════
   function sbSaveDiscObs(obs) {
-    return sbFetch('disc_observations', 'POST', {
+    return sbQueueWrite('disc_observations', 'POST', {
       id: obs.id, category: obs.category,
       content: obs.text || obs.content || '',
       related: obs.related || '', date: obs.date || ''
@@ -7257,7 +7918,7 @@ function saveDailyReport() {
       if (!rows) return;
       var mapped = rows.map(function(r) {
         return {
-          id: r.id, student: r.student_name, class: r.class, subject: r.subject || '', type: r.type,
+          id: r.id, student: r.student, class: r.class, subject: r.subject || '', type: r.type,
           stage: r.stage || 1, date: r.date, status: r.status || 'open',
           notes: r.notes || '', resolution: r.resolution || '',
           resolvedAt: r.resolved_at || '', timestamp: r.created_at,
@@ -7510,14 +8171,14 @@ function saveDailyReport() {
 
   function dashLoadTrends() {
     var today = new Date();
-    var todayStr = today.toISOString().slice(0,10);
+    var todayStr = localDateStr(today);
     var yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
-    var yesterdayStr = yesterday.toISOString().slice(0,10);
+    var yesterdayStr = localDateStr(yesterday);
     var since14 = new Date(today); since14.setDate(since14.getDate()-14);
     var since30 = new Date(today); since30.setDate(since30.getDate()-30);
 
     // ── Attendance: from daily_reports.students[].absent, aggregated per date ──
-    fetch(_SB_URL + '/rest/v1/daily_reports?date=gte.' + since14.toISOString().slice(0,10) + '&select=date,students', {
+    fetch(_SB_URL + '/rest/v1/daily_reports?date=gte.' + localDateStr(since14) + '&select=date,students', {
       headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
     })
     .then(function(r){ return r.ok ? r.json() : []; })
@@ -7569,7 +8230,7 @@ function saveDailyReport() {
     });
 
     // ── Marks: from assessments.students[].pct, aggregated per date ──
-    fetch(_SB_URL + '/rest/v1/assessments?date=gte.' + since30.toISOString().slice(0,10) + '&select=date,students', {
+    fetch(_SB_URL + '/rest/v1/assessments?date=gte.' + localDateStr(since30) + '&select=date,students', {
       headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
     })
     .then(function(r){ return r.ok ? r.json() : []; })
@@ -7764,7 +8425,7 @@ function saveDailyReport() {
   function dashLoadEvents() {
     var el = document.getElementById('dash-events');
     if (!el) return;
-    var today = new Date().toISOString().slice(0,10);
+    var today = localDateStr();
     // Get upcoming events from _calEvents
     var upcoming = (_calEvents || []).filter(function(e){ return e.start >= today; })
       .sort(function(a,b){ return a.start > b.start ? 1 : -1; }).slice(0,6);
@@ -8368,10 +9029,55 @@ function saveDailyReport() {
   var ASM_FORMATIVE = ['Class Test','Quiz','Oral Test','Science Project','Assignment','Practical'];
   var ASM_SUMMATIVE = ['Weekly Test','Unit Test','Monthly Test','Mid-Term Exam','Final Exam','Term Paper'];
 
+  // Assessments previously had NO safety net at all on a failed save — no
+  // retry, no local backup, nothing. If the request failed the only copy of
+  // those scores was whatever was still visibly typed into the form; leave
+  // the page and it was gone. This mirrors the daily-report fix: persist to
+  // localStorage BEFORE attempting the network call (so even a crash
+  // mid-request leaves it recoverable), retry automatically, and surface a
+  // banner that only clears once every pending record is actually confirmed
+  // saved to Supabase.
+  function asmLoadPending() {
+    try { var d = localStorage.getItem('redbridge_pending_assessments'); return d ? JSON.parse(d) : []; }
+    catch(e) { return []; }
+  }
+  function asmSavePending(arr) {
+    try { localStorage.setItem('redbridge_pending_assessments', JSON.stringify(arr)); } catch(e) {}
+  }
+  function asmUpdateUnsyncedBanner() {
+    var banner = document.getElementById('asm-unsynced-banner');
+    var text   = document.getElementById('asm-unsynced-banner-text');
+    if (!banner || !text) return;
+    var pending = asmLoadPending();
+    if (!pending.length) { banner.style.display = 'none'; return; }
+    banner.style.display = 'flex';
+    text.textContent = '⚠ ' + pending.length + ' assessment' + (pending.length !== 1 ? 's' : '') +
+      ' saved on this device but not yet confirmed in the cloud. Stay connected — retrying automatically.';
+  }
+  function asmSyncPendingAssessments() {
+    var pending = asmLoadPending();
+    asmUpdateUnsyncedBanner();
+    if (!pending.length) return;
+    var stillPending = [];
+    var remaining = pending.length;
+    pending.forEach(function(rec) {
+      sbFetch('assessments', 'POST', rec)
+        .catch(function() { stillPending.push(rec); })
+        .then(function() {
+          remaining--;
+          if (remaining === 0) {
+            asmSavePending(stillPending);
+            asmUpdateUnsyncedBanner();
+          }
+        });
+    });
+  }
+
   function asmInit() {
+    asmSyncPendingAssessments();
     // Set today's date
     var dateEl = document.getElementById('asm-date');
-    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+    if (dateEl && !dateEl.value) dateEl.value = localDateStr();
 
     // Populate class dropdown based on user access
     var clsSel = document.getElementById('asm-class');
@@ -8641,7 +9347,7 @@ function saveDailyReport() {
     var subj  = (document.getElementById('asm-subject')||{}).value;
     var name  = (document.getElementById('asm-name')||{}).value;
     var total = parseInt((document.getElementById('asm-total')||{}).value) || 100;
-    var date  = (document.getElementById('asm-date')||{}).value || new Date().toISOString().slice(0,10);
+    var date  = (document.getElementById('asm-date')||{}).value || localDateStr();
 
     if (!cls || !subj || !name) { showToast('Please fill in Class, Subject and Assessment Name.'); return; }
 
@@ -8672,14 +9378,27 @@ function saveDailyReport() {
       students: students
     };
 
-    // Save to Supabase
-    updateCloudStatus('saving');
-    sbFetch('assessments','POST', {
+    var payload = {
       id: rec.id, class: rec.class, subject: rec.subject,
       teacher: rec.teacher, type: rec.type, name: rec.name,
       date: rec.date, total_marks: rec.total_marks, students: rec.students
-    }).then(function() {
+    };
+
+    // Persist locally FIRST, before the network attempt — so the entered
+    // scores are never only-in-the-DOM. Recoverable even if this fails or
+    // the tab closes mid-request, and will retry automatically.
+    var pendingNow = asmLoadPending();
+    pendingNow.push(payload);
+    asmSavePending(pendingNow);
+    asmUpdateUnsyncedBanner();
+
+    // Save to Supabase
+    updateCloudStatus('saving');
+    sbFetch('assessments','POST', payload).then(function() {
       _asmAssessments.unshift(rec);
+      var stillPending = asmLoadPending().filter(function(p) { return p.id !== payload.id; });
+      asmSavePending(stillPending);
+      asmUpdateUnsyncedBanner();
       updateCloudStatus('saved');
       showToast('✓ Assessment saved — ' + name + ' · Class ' + cls);
       // Clear scores
@@ -8689,7 +9408,7 @@ function saveDailyReport() {
       if (badge) badge.innerHTML = '';
     }).catch(function(e) {
       updateCloudStatus('error');
-      showToast('Error saving. Check connection.');
+      showToast('⚠ Cloud save failed — scores are saved on this device and will retry automatically.');
       console.error(e);
     });
   }
@@ -9179,18 +9898,14 @@ function saveDailyReport() {
       reactions:    {}
     };
 
-    fetch(_SB_URL+'/rest/v1/messages', {
-      method:'POST',
-      headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify(msg)
-    }).then(function(r){ if(!r.ok) return r.text().then(function(t){throw new Error(t);}); return {}; })
+    sbQueueWrite('messages', 'POST', msg)
       .then(function() {
         if (inp) inp.value = '';
         _msgPendingImage = null;
         msgClearReply();
         msgFetchMessages();
       })
-      .catch(function(e){ console.error('msgSend error:',e); showToast('Send failed.'); });
+      .catch(function(e){ console.error('msgSend error:',e); showToast('Cloud send failed — message saved on this device and will retry automatically.'); });
   }
 
   var _msgPendingImage = null;
@@ -9713,7 +10428,7 @@ function saveDailyReport() {
     obsCambBuildCriteria();
     obsCambSwitchTab('new');
     var dateEl = document.getElementById('obsc-date');
-    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+    if (dateEl && !dateEl.value) dateEl.value = localDateStr();
   }
 
   function obsCambSwitchTab(tab) {
@@ -9898,7 +10613,7 @@ function saveDailyReport() {
     document.getElementById('obsc-strengths').value = '';
     document.getElementById('obsc-development').value = '';
     document.getElementById('obsc-action').value = '';
-    document.getElementById('obsc-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('obsc-date').value = localDateStr();
     obsCambBuildCriteria();
   }
 
@@ -10027,7 +10742,7 @@ function saveDailyReport() {
   function calRenderUpcoming() {
     var list = document.getElementById('cal-upcoming-list');
     if (!list) return;
-    var today = new Date().toISOString().slice(0,10);
+    var today = localDateStr();
     var upcoming = (_calEvents || [])
       .filter(function(e){ return e.start >= today; })
       .sort(function(a,b){ return a.start > b.start ? 1 : -1; })
@@ -10105,7 +10820,7 @@ function saveDailyReport() {
   function calOpenAddEvent(defaultDate) {
     var modal = document.getElementById('cal-event-modal');
     if (!modal) return;
-    var d = defaultDate || new Date().toISOString().slice(0,10);
+    var d = defaultDate || localDateStr();
     var g = function(id){ return document.getElementById(id); };
     if(g('cal-edit-id'))    g('cal-edit-id').value    = '';
     if(g('cal-evt-title'))  g('cal-evt-title').value  = '';
@@ -10176,36 +10891,12 @@ function saveDailyReport() {
     updateCloudStatus('saving');
 
     var doInsert = function() {
-      return sbFetch('calendar_events', 'POST', body);
+      return sbQueueWrite('calendar_events', 'POST', body);
     };
 
-    // Use raw fetch with minimal headers to avoid CORS preflight issues
-    function calRawPost(bodyObj) {
-      return fetch(_SB_URL + '/rest/v1/calendar_events', {
-        method: 'POST',
-        headers: {
-          'apikey': _SB_KEY,
-          'Authorization': 'Bearer ' + _SB_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=ignore-duplicates'
-        },
-        body: JSON.stringify(bodyObj)
-      }).then(function(r) {
-        if (!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+': '+t); });
-        return {};
-      });
-    }
-
-    function calRawDelete(id) {
-      return fetch(_SB_URL + '/rest/v1/calendar_events?id=eq.' + id, {
-        method: 'DELETE',
-        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY }
-      }).then(function(r) { return {}; });
-    }
-
     var savePromise = editId
-      ? calRawDelete(editId).then(function(){ return calRawPost(body); })
-      : calRawPost(body);
+      ? sbQueueWrite('calendar_events', 'DELETE', null, 'id=eq.' + editId).then(function(){ return doInsert(); })
+      : doInsert();
 
     savePromise
       .then(function() {
@@ -10234,11 +10925,10 @@ function saveDailyReport() {
       })
       .catch(function(e) {
         console.error('Cal save error:', e.message);
-        showToast('Save failed: ' + (e.message||'Unknown error'));
+        showToast('Cloud save failed — event saved on this device and will retry automatically.');
         updateCloudStatus('error');
-        // Remove local placeholder since save failed
-        _calEvents = _calEvents.filter(function(e){ return e.id !== localId; });
-        calRender();
+        // Local placeholder stays — it's safely queued (sbQueueWrite) and
+        // will sync automatically, so it should remain visible, not vanish.
       });
   }
 
@@ -10426,22 +11116,22 @@ function saveDailyReport() {
     var text = input.value.trim();
     if (!text || !_pmCurrentStudent) return;
     input.value = '';
+    var studentRef = _pmCurrentStudent;
 
-    fetch(_SB_URL + '/rest/v1/parent_messages', {
-      method: 'POST',
-      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({
-        student_id: _pmCurrentStudent.id,
-        sender: 'teacher',
-        sender_name: _currentUser ? _currentUser.name : 'Staff',
-        message: text,
-        read: true
-      })
+    sbQueueWrite('parent_messages', 'POST', {
+      student_id: studentRef.id,
+      sender: 'teacher',
+      sender_name: _currentUser ? _currentUser.name : 'Staff',
+      message: text,
+      read: true
     }).then(function() {
-      pmOpenThread(_pmCurrentStudent);
-      sendPushNotification('parent', _pmCurrentStudent.id,
+      pmOpenThread(studentRef);
+      sendPushNotification('parent', studentRef.id,
         (_currentUser ? _currentUser.name : 'Your teacher') + ' sent a message',
         text, '/parent.html');
+    }).catch(function(e) {
+      console.error('pmSendReply error:', e);
+      showToast('Cloud send failed — message saved on this device and will retry automatically.');
     });
   }
 
@@ -10710,6 +11400,48 @@ function saveDailyReport() {
         }).join('');
       }
 
+      // ── Subject average by class (matrix) ──
+      var byClassSubject = {};
+      var subjectSet = {};
+      assessments.forEach(function(a) {
+        byClassSubject[a.class] = byClassSubject[a.class] || {};
+        byClassSubject[a.class][a.subject] = byClassSubject[a.class][a.subject] || [];
+        subjectSet[a.subject] = true;
+        (a.students||[]).forEach(function(s) {
+          if (!s.absent && s.pct !== null && s.pct !== undefined) byClassSubject[a.class][a.subject].push(s.pct);
+        });
+      });
+      var matrixSubjects = Object.keys(subjectSet).sort();
+      var matrixClasses = Object.keys(byClassSubject).sort(function(a,b){
+        return a.localeCompare(b, undefined, {numeric:true});
+      });
+      var matrixWrap = document.getElementById('acad-class-subject-wrap');
+      if (matrixWrap) {
+        if (!matrixClasses.length || !matrixSubjects.length) {
+          matrixWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No assessments recorded yet.</div>';
+        } else {
+          var mHead = '<th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);position:sticky;left:0;background:var(--bg,#f8fafc);">Class</th>' +
+            matrixSubjects.map(function(s) {
+              return '<th style="padding:9px 8px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);white-space:nowrap;">' + s + '</th>';
+            }).join('');
+          var mBody = matrixClasses.map(function(cls) {
+            var cells = matrixSubjects.map(function(subj) {
+              var pcts = (byClassSubject[cls][subj]) || [];
+              var a = avg(pcts);
+              if (a === null) return '<td style="padding:8px 8px;text-align:center;color:#cbd5e1;">—</td>';
+              var color = acadColor(a, true);
+              return '<td style="padding:8px 8px;text-align:center;font-weight:700;color:'+color+';">' + a.toFixed(1) + '%</td>';
+            }).join('');
+            return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+              '<td style="padding:8px 12px;font-weight:700;position:sticky;left:0;background:var(--white,#fff);">' + cls + '</td>' + cells +
+            '</tr>';
+          }).join('');
+          matrixWrap.innerHTML = '<table style="width:100%;min-width:' + (150 + matrixSubjects.length*90) + 'px;border-collapse:collapse;font-size:12.5px;">' +
+            '<thead><tr style="background:var(--bg,#f8fafc);">' + mHead + '</tr></thead>' +
+            '<tbody>' + mBody + '</tbody></table>';
+        }
+      }
+
       // ── By subject (school-wide) ──
       var bySubject = {};
       assessments.forEach(function(a) {
@@ -10735,32 +11467,42 @@ function saveDailyReport() {
         }).join('');
       }
 
-      // ── School-wide trend chart (last 30 days) ──
-      var byDate = {};
+      // ── Daily average BY SUBJECT (last 30 days) ──
+      // Previously this blended every subject into one line, which is what
+      // was missing: no way to see how a specific subject trends day to day,
+      // only the whole school blended together.
+      var bySubjectDate = {};
       var since = new Date(); since.setDate(since.getDate()-30);
-      var sinceStr = since.toISOString().slice(0,10);
+      var sinceStr = localDateStr(since);
       assessments.forEach(function(a) {
         if (a.date < sinceStr) return;
+        bySubjectDate[a.subject] = bySubjectDate[a.subject] || {};
         (a.students||[]).forEach(function(s) {
           if (s.absent || s.pct === null || s.pct === undefined) return;
-          byDate[a.date] = byDate[a.date] || [];
-          byDate[a.date].push(s.pct);
+          bySubjectDate[a.subject][a.date] = bySubjectDate[a.subject][a.date] || [];
+          bySubjectDate[a.subject][a.date].push(s.pct);
         });
       });
-      var dates = Object.keys(byDate).sort();
+      var trendSubjects = Object.keys(bySubjectDate).sort();
       var canvas = document.getElementById('acad-trend-chart');
-      if (!dates.length) {
+      if (!trendSubjects.length) {
         if (canvas) canvas.parentElement.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No assessment data in the last 30 days.</div>';
       } else if (canvas && typeof Chart !== 'undefined') {
-        var points = dates.map(function(d) { return { x:d, y: Math.round(avg(byDate[d])) }; });
+        var trendPalette = ['#7367F0','#28C76F','#FF9F43','#EA5455','#00CFE8','#8B5CF6','#F97316','#0EA5E9','#DB2777','#65A30D'];
+        var datasets = trendSubjects.map(function(subj, i) {
+          var dates = Object.keys(bySubjectDate[subj]).sort();
+          var points = dates.map(function(d) { return { x:d, y: Math.round(avg(bySubjectDate[subj][d])) }; });
+          var color = trendPalette[i % trendPalette.length];
+          return { label: subj, data: points, borderColor: color, backgroundColor: color+'22', tension:0.3, pointRadius:3 };
+        });
         var ctx = canvas.getContext('2d');
         if (_acadTrendChart) _acadTrendChart.destroy();
         _acadTrendChart = new Chart(ctx, {
           type: 'line',
-          data: { datasets: [{ label:'School Avg %', data: points, borderColor:'#7367F0', backgroundColor:'#7367F022', tension:0.3, pointRadius:3 }] },
+          data: { datasets: datasets },
           options: { responsive:true, maintainAspectRatio:false,
             scales: { x:{type:'time',time:{unit:'week'},grid:{display:false}}, y:{min:0,max:100,ticks:{callback:function(v){return v+'%';}}} },
-            plugins: { legend:{display:false} } }
+            plugins: { legend:{display:true, position:'bottom', labels:{boxWidth:10, font:{size:11}}} } }
         });
       }
     });
@@ -10878,25 +11620,18 @@ function ttInitPanel() {
 
     var payload = { day: day, period: period, class: cls, subject: subject, teacher_name: teacher || null };
     var req = id
-      ? fetch(_SB_URL + '/rest/v1/timetable?id=eq.' + id, {
-          method: 'PATCH',
-          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-          body: JSON.stringify(payload)
-        })
-      : fetch(_SB_URL + '/rest/v1/timetable', {
-          method: 'POST',
-          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-          body: JSON.stringify(payload)
-        });
+      ? sbQueueWrite('timetable', 'PATCH', payload, 'id=eq.' + id)
+      : sbQueueWrite('timetable', 'POST', payload);
 
-    req.then(function(r) {
-      if (!r.ok) throw new Error('Save failed');
+    req.then(function() {
       showToast('✓ Lesson saved');
       document.getElementById('tt-edit-modal').style.display = 'none';
       _ttCache = null; // force reload
       ttRenderGrid();
+      if (typeof loadGlobalTeacherSchedule === 'function') loadGlobalTeacherSchedule();
     }).catch(function() {
-      showToast('Error saving lesson.');
+      showToast('Cloud save failed — saved on this device and will retry automatically.');
+      document.getElementById('tt-edit-modal').style.display = 'none';
     });
   }
 
@@ -10947,44 +11682,6 @@ function ttInitPanel() {
   function ttRender() {
     if (_ttView === 'personal') ttRenderPersonal();
     else ttRenderSchool();
-  }
-
-  function ttRenderPersonal() {
-    var grid = document.getElementById('tt-grid');
-    if (!grid) return;
-    var u = _currentUser;
-    if (!u) { grid.innerHTML = '<div style="padding:20px;color:var(--muted);">Please log in.</div>'; return; }
-    var teacherName = u.teacherName;
-    if (!teacherName || typeof TEACHER_SCHEDULE === 'undefined' || !TEACHER_SCHEDULE[teacherName]) {
-      grid.innerHTML = '<div style="padding:20px;color:var(--muted);">No timetable found for this account.</div>'; return;
-    }
-    var sched = TEACHER_SCHEDULE[teacherName];
-    var days  = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-    var html  = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">';
-    html += '<thead><tr style="background:var(--navy);">' +
-      '<th style="padding:8px 12px;color:white;font-size:11px;text-align:left;">Period</th>' +
-      days.map(function(d) { return '<th style="padding:8px 12px;color:white;font-size:11px;">' + d + '</th>'; }).join('') +
-      '</tr></thead><tbody>';
-    for (var p = 1; p <= 7; p++) {
-      html += '<tr style="border-bottom:1px solid #f1f5f9;">';
-      html += '<td style="padding:8px 12px;font-weight:700;font-size:11.5px;color:var(--muted);">P' + p + '</td>';
-      days.forEach(function(day) {
-        var lessons = (sched[day] || []).filter(function(l) { return l.period === p; });
-        if (lessons.length) {
-          var l = lessons[0];
-          html += '<td style="padding:6px 8px;text-align:center;">' +
-            '<div style="padding:6px 8px;border-radius:8px;background:#eff6ff;font-size:11.5px;">' +
-            '<div style="font-weight:700;color:#1d4ed8;">' + l.class + '</div>' +
-            '<div style="color:#3b82f6;">' + l.subject + '</div>' +
-            '</div></td>';
-        } else {
-          html += '<td></td>';
-        }
-      });
-      html += '</tr>';
-    }
-    html += '</tbody></table>';
-    grid.innerHTML = html;
   }
 
   function ttRenderSchool() {
