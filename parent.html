@@ -391,6 +391,22 @@
     return [_student.full_name_en, _student.full_name_ru].filter(Boolean);
   }
 
+  // Exact string equality (names.indexOf(s.name)) was used everywhere a
+  // student's saved records get matched against their own name. That's
+  // fragile: a trailing space, different capitalization, or extra internal
+  // whitespace between the two data-entry points (setting up the roster vs.
+  // whatever a teacher's device saved into a report) makes the match fail
+  // silently — no error, the tab just shows "no data yet" even though the
+  // record genuinely exists. This normalizes both sides before comparing.
+  function normName(s) {
+    return (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+  function isMyName(candidate) {
+    var norm = normName(candidate);
+    if (!norm) return false;
+    return studentFullNames().some(function(n) { return normName(n) === norm; });
+  }
+
   // ── HOMEWORK / CLASSWORK (text) ──
   function loadHomework() {
     var el = document.getElementById('tab-homework');
@@ -406,17 +422,42 @@
         el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📝</div><div class="msg">' + t('no_homework') + '</div></div></div>';
         return;
       }
-      var html = '<div class="card">';
+
+      // Group entries by date so a parent sees everything from one day
+      // together under a single clear header, instead of a flat list
+      // repeating the date on every single row.
+      var byDate = {};
+      var dateOrder = [];
       rows.forEach(function(r) {
-        html += '<div class="item-row">' +
-          '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div><div class="item-date">' + (r.date||'') + '</div></div>';
-        if (r.topic) html += '<div class="item-detail"><b>' + t('classwork') + ':</b> ' + r.topic + '</div>';
-        if (r.topic_file_url) html += '<div class="item-detail"><a href="' + fileViewUrl(r.topic_file_url, r.topic_file_name) + '" target="_blank" style="color:var(--blue);">📎 ' + (r.topic_file_name||'File') + '</a></div>';
-        if (r.homework) html += '<div class="item-detail" style="margin-top:4px;"><b>' + t('homework') + ':</b> ' + r.homework + '</div>';
-        if (r.homework_file_url) html += '<div class="item-detail"><a href="' + fileViewUrl(r.homework_file_url, r.homework_file_name) + '" target="_blank" style="color:var(--blue);">📎 ' + (r.homework_file_name||'File') + '</a></div>';
+        if (!byDate[r.date]) { byDate[r.date] = []; dateOrder.push(r.date); }
+        byDate[r.date].push(r);
+      });
+
+      function formatDateHeader(dateStr) {
+        var d = new Date(dateStr + 'T00:00:00');
+        if (isNaN(d)) return dateStr;
+        var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        return days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+      }
+
+      var html = '';
+      dateOrder.forEach(function(dateStr) {
+        html += '<div class="card" style="margin-bottom:12px;">' +
+          '<div style="padding:10px 16px;background:var(--blue,#3b82f6);color:white;font-weight:700;font-size:13px;border-radius:10px 10px 0 0;">' +
+            formatDateHeader(dateStr) +
+          '</div>';
+        byDate[dateStr].forEach(function(r, idx) {
+          html += '<div class="item-row"' + (idx > 0 ? ' style="border-top:1px solid var(--border,#e5e7eb);"' : '') + '>' +
+            '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div></div>';
+          if (r.topic) html += '<div class="item-detail"><b>' + t('classwork') + ':</b> ' + r.topic + '</div>';
+          if (r.topic_file_url) html += '<div class="item-detail"><a href="' + fileViewUrl(r.topic_file_url, r.topic_file_name) + '" target="_blank" style="color:var(--blue);">📎 ' + (r.topic_file_name||'File') + '</a></div>';
+          if (r.homework) html += '<div class="item-detail" style="margin-top:4px;"><b>' + t('homework') + ':</b> ' + r.homework + '</div>';
+          if (r.homework_file_url) html += '<div class="item-detail"><a href="' + fileViewUrl(r.homework_file_url, r.homework_file_name) + '" target="_blank" style="color:var(--blue);">📎 ' + (r.homework_file_name||'File') + '</a></div>';
+          html += '</div>';
+        });
         html += '</div>';
       });
-      html += '</div>';
       el.innerHTML = html;
     })
     .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
@@ -436,7 +477,7 @@
       var records = [];
       (rows||[]).forEach(function(r) {
         (r.students||[]).forEach(function(s) {
-          if (names.indexOf(s.name) === -1) return;
+          if (!isMyName(s.name)) return;
           if (s.absent) return; // no scores to show on an absent day
           if (s.cw === undefined && s.hw === undefined && s.disc === undefined && !s.comment) return;
           records.push({ date:r.date, subject:r.subject, cw:s.cw, hw:s.hw, disc:s.disc, comment:s.comment });
@@ -483,7 +524,7 @@
       var mine = [];
       (rows||[]).forEach(function(a) {
         (a.students||[]).forEach(function(s) {
-          if (names.indexOf(s.name) !== -1) {
+          if (isMyName(s.name)) {
             mine.push({ subject:a.subject, name:a.name, type:a.type, date:a.date, pct:s.pct, absent:s.absent });
           }
         });
@@ -521,7 +562,7 @@
       var records = [];
       (rows||[]).forEach(function(r) {
         (r.students||[]).forEach(function(s) {
-          if (names.indexOf(s.name) !== -1) {
+          if (isMyName(s.name)) {
             records.push({ date:r.date, subject:r.subject, absent:s.absent });
           }
         });
@@ -552,12 +593,17 @@
     el.innerHTML = '<div class="loading">Loading…</div>';
     var names = studentFullNames();
 
-    fetch(_SB_URL + '/rest/v1/incidents?order=created_at.desc&select=*', {
+    // Filtered server-side by student — previously this fetched every
+    // incident for every student in the school (no filter at all) and only
+    // narrowed it down to this child in the browser, meaning the raw network
+    // response handed any parent the whole school's discipline records.
+    var nameFilter = 'or=(' + names.map(function(n) { return 'student.eq.' + encodeURIComponent(n); }).join(',') + ')';
+    fetch(_SB_URL + '/rest/v1/incidents?' + nameFilter + '&order=created_at.desc&select=*', {
       headers: sbHeaders()
     })
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(rows) {
-      var mine = (rows||[]).filter(function(r) { return names.indexOf(r.student_name) !== -1; });
+      var mine = (rows||[]).filter(function(r) { return isMyName(r.student); });
       if (!mine.length) {
         el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">🛡</div><div class="msg">' + t('no_discipline') + '</div></div></div>';
         return;
@@ -598,7 +644,7 @@
       var bySubject = {};
       (rows||[]).forEach(function(a) {
         (a.students||[]).forEach(function(s) {
-          if (names.indexOf(s.name) === -1 || s.absent || s.pct === null || s.pct === undefined) return;
+          if (!isMyName(s.name) || s.absent || s.pct === null || s.pct === undefined) return;
           bySubject[a.subject] = bySubject[a.subject] || [];
           bySubject[a.subject].push({ x: a.date, y: s.pct });
         });
@@ -634,7 +680,7 @@
       var byDate = {};
       (rows||[]).forEach(function(r) {
         (r.students||[]).forEach(function(s) {
-          if (names.indexOf(s.name) === -1) return;
+          if (!isMyName(s.name)) return;
           byDate[r.date] = byDate[r.date] || { total: 0, present: 0 };
           byDate[r.date].total++;
           if (!s.absent) byDate[r.date].present++;
@@ -670,7 +716,12 @@
     var el = document.getElementById('tab-calendar');
     el.innerHTML = '<div class="loading">Loading…</div>';
 
-    var today = new Date().toISOString().slice(0,10);
+    // Local date, not toISOString() — toISOString() converts to UTC, and
+    // Samarkand is UTC+5 with no daylight saving, so between roughly
+    // midnight and 5am local time the UTC date is still "yesterday",
+    // which would let an already-past event still show as upcoming.
+    var now = new Date();
+    var today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
     fetch(_SB_URL + '/rest/v1/calendar_events?date=gte.' + today + '&order=date.asc&select=*', {
       headers: sbHeaders()
     })
