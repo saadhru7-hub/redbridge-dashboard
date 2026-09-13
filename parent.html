@@ -148,24 +148,24 @@
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="homework" onclick="switchTab('homework')">📝 <span data-i18n="tab_homework">Homework</span></button>
+    <button class="tab-btn" data-tab="timetable" onclick="switchTab('timetable')">🗓 <span data-i18n="tab_timetable">Timetable</span></button>
     <button class="tab-btn" data-tab="scores" onclick="switchTab('scores')">📋 <span data-i18n="tab_scores">Daily Scores</span></button>
     <button class="tab-btn" data-tab="marks" onclick="switchTab('marks')">📊 <span data-i18n="tab_marks">Marks</span></button>
     <button class="tab-btn" data-tab="attendance" onclick="switchTab('attendance')">📅 <span data-i18n="tab_attendance">Attendance</span></button>
     <button class="tab-btn" data-tab="discipline" onclick="switchTab('discipline')">🛡 <span data-i18n="tab_discipline">Discipline</span></button>
     <button class="tab-btn" data-tab="progress" onclick="switchTab('progress')">📈 <span data-i18n="tab_progress">Progress</span></button>
     <button class="tab-btn" data-tab="calendar" onclick="switchTab('calendar')">📅 <span data-i18n="tab_calendar">Calendar</span></button>
-    <button class="tab-btn" data-tab="messages" onclick="switchTab('messages')">💬 <span data-i18n="tab_messages">Message Teacher</span><span id="badge-messages" class="tab-dot" style="display:none;"></span></button>
   </div>
 
   <div class="content">
     <div id="tab-homework"></div>
+    <div id="tab-timetable" style="display:none;"></div>
     <div id="tab-scores" style="display:none;"></div>
     <div id="tab-marks" style="display:none;"></div>
     <div id="tab-attendance" style="display:none;"></div>
     <div id="tab-discipline" style="display:none;"></div>
     <div id="tab-progress" style="display:none;"></div>
     <div id="tab-calendar" style="display:none;"></div>
-    <div id="tab-messages" style="display:none;"></div>
   </div>
 </div>
 
@@ -177,7 +177,8 @@
       login_title: 'Redbridge Parent Portal', login_sub: 'Enter the access code given to you by the school',
       login_btn: "View my child's information", logout: 'Log out',
       tab_homework: 'Homework', tab_scores: 'Daily Scores', tab_marks: 'Marks', tab_attendance: 'Attendance',
-      tab_discipline: 'Discipline', tab_progress: 'Progress', tab_calendar: 'Calendar', tab_messages: 'Message Teacher',
+      tab_discipline: 'Discipline', tab_progress: 'Progress', tab_calendar: 'Calendar',
+      tab_timetable: 'Timetable', no_timetable: 'No timetable available yet',
       code_not_found: 'Code not recognized. Please check and try again.',
       code_empty: 'Please enter your access code.',
       conn_error: 'Connection error. Please try again.',
@@ -191,16 +192,14 @@
       no_discipline: 'No discipline records — all clear!',
       marks_trend: 'Marks over time', attendance_trend: 'Attendance over time',
       no_events: 'No upcoming events yet',
-      choose_teacher: 'Choose a teacher to message', back_to_teachers: '← Choose a different teacher',
-      no_messages: "No messages yet. Say hello!",
-      msg_placeholder: 'Type a message…', send: 'Send',
       could_not_load: 'Could not load. Please try again.',
     },
     ru: {
       login_title: 'Родительский портал Redbridge', login_sub: 'Введите код доступа, полученный от школы',
       login_btn: 'Посмотреть информацию о ребёнке', logout: 'Выйти',
       tab_homework: 'Домашнее задание', tab_scores: 'Ежедневные оценки', tab_marks: 'Оценки', tab_attendance: 'Посещаемость',
-      tab_discipline: 'Дисциплина', tab_progress: 'Динамика', tab_calendar: 'Календарь', tab_messages: 'Написать учителю',
+      tab_discipline: 'Дисциплина', tab_progress: 'Динамика', tab_calendar: 'Календарь',
+      tab_timetable: 'Расписание', no_timetable: 'Расписание пока недоступно',
       code_not_found: 'Код не распознан. Проверьте и попробуйте снова.',
       code_empty: 'Пожалуйста, введите код доступа.',
       conn_error: 'Ошибка соединения. Попробуйте снова.',
@@ -214,16 +213,14 @@
       no_discipline: 'Нет замечаний по дисциплине — всё в порядке!',
       marks_trend: 'Оценки по времени', attendance_trend: 'Посещаемость по времени',
       no_events: 'Пока нет предстоящих событий',
-      choose_teacher: 'Выберите учителя для сообщения', back_to_teachers: '← Выбрать другого учителя',
-      no_messages: 'Сообщений пока нет. Поздоровайтесь!',
-      msg_placeholder: 'Введите сообщение…', send: 'Отправить',
       could_not_load: 'Не удалось загрузить. Попробуйте снова.',
     },
     uz: {
       login_title: 'Redbridge ota-onalar portali', login_sub: 'Maktab tomonidan berilgan kirish kodini kiriting',
       login_btn: "Farzandim haqida maʼlumot koʻrish", logout: 'Chiqish',
       tab_homework: 'Uy vazifasi', tab_scores: 'Kunlik baholar', tab_marks: 'Baholar', tab_attendance: 'Davomat',
-      tab_discipline: 'Intizom', tab_progress: 'Dinamika', tab_calendar: 'Kalendar', tab_messages: 'Oʻqituvchiga xabar',
+      tab_discipline: 'Intizom', tab_progress: 'Dinamika', tab_calendar: 'Kalendar',
+      tab_timetable: 'Dars jadvali', no_timetable: 'Dars jadvali hali mavjud emas',
       code_not_found: 'Kod topilmadi. Tekshirib, qayta urinib koʻring.',
       code_empty: 'Iltimos, kirish kodini kiriting.',
       conn_error: 'Ulanish xatosi. Qayta urinib koʻring.',
@@ -237,9 +234,6 @@
       no_discipline: 'Intizom holatlari yoʻq — hammasi joyida!',
       marks_trend: 'Vaqt boʻyicha baholar', attendance_trend: 'Vaqt boʻyicha davomat',
       no_events: 'Hozircha rejalashtirilgan tadbirlar yoʻq',
-      choose_teacher: 'Xabar yuborish uchun oʻqituvchini tanlang', back_to_teachers: '← Boshqa oʻqituvchini tanlash',
-      no_messages: 'Hozircha xabarlar yoʻq. Salom bering!',
-      msg_placeholder: 'Xabar yozing…', send: 'Yuborish',
       could_not_load: 'Yuklab boʻlmadi. Qayta urinib koʻring.',
     }
   };
@@ -335,56 +329,26 @@
     document.getElementById('student-class').textContent = 'Class ' + _student.class;
 
     loadHomework();
-    checkNotifications();
-    setInterval(checkNotifications, 60000);
   }
 
-  // ── NOTIFICATIONS ──
-  function checkNotifications() {
-    if (!_student) return;
-    var lastSeenMsg = localStorage.getItem('lastSeen_messages_' + _student.id) || '1970-01-01';
-
-    fetch(_SB_URL + '/rest/v1/parent_messages?student_id=eq.' + _student.id + '&sender=eq.teacher&created_at=gt.' + encodeURIComponent(lastSeenMsg) + '&select=id', {
-      headers: sbHeaders()
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(rows) {
-      var badge = document.getElementById('badge-messages');
-      if (badge) badge.style.display = (rows && rows.length) ? 'inline-block' : 'none';
-      updateTitleBadge();
-    });
-  }
-
-  function updateTitleBadge() {
-    var badge = document.getElementById('badge-messages');
-    var hasAny = badge && badge.style.display !== 'none';
-    document.title = (hasAny ? '🔴 ' : '') + 'Redbridge Parent Portal';
-  }
-
-  function markSeen(category) {
-    if (!_student) return;
-    localStorage.setItem('lastSeen_' + category + '_' + _student.id, new Date().toISOString());
-    var badge = document.getElementById('badge-' + category);
-    if (badge) badge.style.display = 'none';
-    updateTitleBadge();
-  }
+  // (Notification/badge system removed along with the Message Teacher tab)
 
   // ── TABS ──
   function switchTab(tab) {
-    ['homework','scores','marks','attendance','discipline','progress','calendar','messages'].forEach(function(t) {
+    ['homework','timetable','scores','marks','attendance','discipline','progress','calendar'].forEach(function(t) {
       document.getElementById('tab-' + t).style.display = (t === tab) ? 'block' : 'none';
     });
     document.querySelectorAll('.tab-btn').forEach(function(b) {
       b.classList.toggle('active', b.dataset.tab === tab);
     });
     if (tab === 'homework') loadHomework();
+    if (tab === 'timetable') loadTimetable();
     if (tab === 'scores') loadDailyScores();
     if (tab === 'marks') loadMarks();
     if (tab === 'attendance') loadAttendance();
     if (tab === 'discipline') loadDiscipline();
     if (tab === 'progress') loadProgress();
     if (tab === 'calendar') loadCalendar();
-    if (tab === 'messages') { loadMessages(); markSeen('messages'); }
   }
 
   function studentFullNames() {
@@ -463,7 +427,88 @@
     .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
   }
 
-  // ── DAILY SCORES (the 1-5 CW/HW/Discipline marks + comment, per lesson) ──
+  // ── TIMETABLE (this child's class only — filtered server-side, never
+  // the whole school's schedule) — landscape weekly grid, one page,
+  // matching the reference layout: days across the top, periods down
+  // the side, one cell per lesson.
+  function loadTimetable() {
+    var el = document.getElementById('tab-timetable');
+    el.innerHTML = '<div class="loading">Loading…</div>';
+
+    fetch(_SB_URL + '/rest/v1/timetable?class=eq.' + encodeURIComponent(_student.class) + '&select=day,period,subject,teacher_name', {
+      headers: sbHeaders()
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(rows) {
+      if (!rows || !rows.length) {
+        el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">🗓</div><div class="msg">' + t('no_timetable') + '</div></div></div>';
+        return;
+      }
+
+      // Same period times as the staff dashboard — kept in sync there
+      // (period 6 is 14:40–15:30, not 14:35–15:25 — that was a real data
+      // error fixed directly in Supabase).
+      var TIMES = {1:'08:10–09:00',2:'09:45–10:35',3:'10:40–11:30',4:'11:35–12:25',5:'13:45–14:35',6:'14:40–15:30',7:'15:35–16:25'};
+      var DAY_ORDER = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'];
+      var DAY_LABEL = {MONDAY:'Mon',TUESDAY:'Tue',WEDNESDAY:'Wed',THURSDAY:'Thu',FRIDAY:'Fri'};
+      var SUBJ_COLORS = ['#3b82f6','#8b5cf6','#f59e0b','#10b981','#ef4444','#06b6d4','#ec4899','#84cc16'];
+      var colorOf = {}; var nextColor = 0;
+      function colorFor(subj) {
+        if (!colorOf[subj]) { colorOf[subj] = SUBJ_COLORS[nextColor % SUBJ_COLORS.length]; nextColor++; }
+        return colorOf[subj];
+      }
+
+      // grid[period][day] = {subject, teacher}
+      var grid = {};
+      var maxPeriod = 1;
+      rows.forEach(function(r) {
+        var day = (r.day || '').toUpperCase();
+        if (DAY_ORDER.indexOf(day) === -1) return; // skip weekend/unknown rows, if any
+        var periodNum = parseInt(String(r.period).replace(/[^0-9]/g, ''), 10);
+        if (isNaN(periodNum)) return;
+        maxPeriod = Math.max(maxPeriod, periodNum);
+        grid[periodNum] = grid[periodNum] || {};
+        grid[periodNum][day] = { subject: r.subject, teacher: r.teacher_name };
+      });
+
+      var html = '<div class="card" style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px;">' +
+        '<table style="border-collapse:collapse;width:100%;min-width:560px;font-size:11px;">' +
+        '<thead><tr>' +
+          '<th style="width:56px;padding:6px 4px;text-align:center;color:var(--muted,#64748b);font-size:10px;"></th>';
+      DAY_ORDER.forEach(function(day) {
+        html += '<th style="padding:6px 4px;text-align:center;background:var(--blue,#3b82f6);color:white;font-weight:700;font-size:11.5px;border-radius:6px 6px 0 0;">' + DAY_LABEL[day] + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      for (var p = 1; p <= maxPeriod; p++) {
+        html += '<tr>' +
+          '<td style="padding:4px;text-align:center;vertical-align:top;border-right:1px solid var(--border,#e5e7eb);">' +
+            '<div style="font-weight:700;font-size:11px;">' + p + '</div>' +
+            '<div style="font-size:8.5px;color:var(--muted,#64748b);white-space:nowrap;">' + (TIMES[p]||'') + '</div>' +
+          '</td>';
+        DAY_ORDER.forEach(function(day) {
+          var cell = (grid[p]||{})[day];
+          if (cell) {
+            var c = colorFor(cell.subject);
+            html += '<td style="padding:3px;vertical-align:top;">' +
+              '<div style="background:' + c + '18;border-left:2.5px solid ' + c + ';border-radius:5px;padding:4px 5px;min-height:34px;">' +
+                '<div style="font-weight:700;font-size:10.5px;color:' + c + ';line-height:1.2;">' + (cell.subject||'') + '</div>' +
+                (cell.teacher ? '<div style="font-size:8.5px;color:var(--muted,#64748b);line-height:1.2;">' + cell.teacher + '</div>' : '') +
+              '</div>' +
+            '</td>';
+          } else {
+            html += '<td style="padding:3px;"></td>';
+          }
+        });
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
+  }
+
+
   function loadDailyScores() {
     var el = document.getElementById('tab-scores');
     el.innerHTML = '<div class="loading">Loading…</div>';
@@ -478,9 +523,9 @@
       (rows||[]).forEach(function(r) {
         (r.students||[]).forEach(function(s) {
           if (!isMyName(s.name)) return;
-          if (s.absent) return; // no scores to show on an absent day
+          if (s.absent) { records.push({ date:r.date, subject:r.subject, absent:true }); return; }
           if (s.cw === undefined && s.hw === undefined && s.disc === undefined && !s.comment) return;
-          records.push({ date:r.date, subject:r.subject, cw:s.cw, hw:s.hw, disc:s.disc, comment:s.comment });
+          records.push({ date:r.date, subject:r.subject, cw:s.cw, hw:s.hw, disc:s.disc, comment:s.comment, absent:false });
         });
       });
       if (!records.length) {
@@ -488,18 +533,25 @@
         return;
       }
       function pillColor(v) {
-        if (v === undefined || v === null) return { bg:'#f1f5f9', fg:'#94a3b8' };
+        if (!v) return { bg:'#f1f5f9', fg:'#94a3b8' };
         return v >= 4 ? { bg:'var(--green-light)', fg:'var(--green)' } : v === 3 ? { bg:'var(--amber-light)', fg:'var(--amber)' } : { bg:'var(--red-light)', fg:'var(--red)' };
       }
       var html = '<div class="card">';
       records.forEach(function(r) {
+        if (r.absent) {
+          html += '<div class="item-row">' +
+            '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div><div class="item-date">' + (r.date||'') + '</div></div>' +
+            '<span class="badge" style="background:var(--red-light);color:var(--red);">' + t('absent') + '</span>' +
+          '</div>';
+          return;
+        }
         var cwC = pillColor(r.cw), hwC = pillColor(r.hw), discC = pillColor(r.disc);
         html += '<div class="item-row">' +
           '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div><div class="item-date">' + (r.date||'') + '</div></div>' +
           '<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">' +
-            '<div class="score-pill" style="background:' + cwC.bg + ';color:' + cwC.fg + ';"><span class="lbl">' + t('cw_label') + '</span><span class="val">' + (r.cw !== undefined && r.cw !== null ? r.cw : '—') + '</span></div>' +
-            '<div class="score-pill" style="background:' + hwC.bg + ';color:' + hwC.fg + ';"><span class="lbl">' + t('hw_label') + '</span><span class="val">' + (r.hw !== undefined && r.hw !== null ? r.hw : '—') + '</span></div>' +
-            '<div class="score-pill" style="background:' + discC.bg + ';color:' + discC.fg + ';"><span class="lbl">' + t('disc_label') + '</span><span class="val">' + (r.disc !== undefined && r.disc !== null ? r.disc : '—') + '</span></div>' +
+            '<div class="score-pill" style="background:' + cwC.bg + ';color:' + cwC.fg + ';"><span class="lbl">' + t('cw_label') + '</span><span class="val">' + (r.cw || '—') + '</span></div>' +
+            '<div class="score-pill" style="background:' + hwC.bg + ';color:' + hwC.fg + ';"><span class="lbl">' + t('hw_label') + '</span><span class="val">' + (r.hw || '—') + '</span></div>' +
+            '<div class="score-pill" style="background:' + discC.bg + ';color:' + discC.fg + ';"><span class="lbl">' + t('disc_label') + '</span><span class="val">' + (r.disc || '—') + '</span></div>' +
           '</div>' +
           (r.comment ? '<div class="item-detail" style="margin-top:8px;"><b>' + t('comment_label') + ':</b> ' + r.comment + '</div>' : '') +
         '</div>';
@@ -554,7 +606,7 @@
     el.innerHTML = '<div class="loading">Loading…</div>';
     var names = studentFullNames();
 
-    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&limit=60&select=*', {
+    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&limit=60&select=*', {
       headers: sbHeaders()
     })
     .then(function(r){ return r.ok ? r.json() : []; })
@@ -563,7 +615,7 @@
       (rows||[]).forEach(function(r) {
         (r.students||[]).forEach(function(s) {
           if (isMyName(s.name)) {
-            records.push({ date:r.date, subject:r.subject, absent:s.absent });
+            records.push({ date:r.date, subject:r.subject, absent:!!s.absent });
           }
         });
       });
@@ -572,16 +624,57 @@
         return;
       }
       var absentCount = records.filter(function(r){return r.absent;}).length;
+
+      // Register grid: one row per subject, one column per date (in
+      // chronological order, like a real attendance register), P/A per
+      // cell. Scrolls left-to-right if there are more dates than fit.
+      var dateSet = {}, subjectSet = {};
+      var grid = {}; // grid[subject][date] = true(absent)/false(present)
+      records.forEach(function(r) {
+        dateSet[r.date] = true;
+        subjectSet[r.subject] = true;
+        grid[r.subject] = grid[r.subject] || {};
+        grid[r.subject][r.date] = r.absent;
+      });
+      var dates = Object.keys(dateSet).sort();
+      var subjects = Object.keys(subjectSet).sort();
+
+      function shortDate(dateStr) {
+        var d = new Date(dateStr + 'T00:00:00');
+        if (isNaN(d)) return dateStr;
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return d.getDate() + ' ' + months[d.getMonth()];
+      }
+
       var html = '<div class="card"><div class="card-body" style="text-align:center;border-bottom:1px solid var(--rule-light);">' +
         '<div style="font-size:26px;font-weight:800;color:' + (absentCount>3?'var(--red)':'var(--green)') + ';">' + absentCount + '</div>' +
         '<div style="font-size:12px;color:var(--text-3);">' + t('absences_of') + ' ' + records.length + ' ' + t('lessons_recorded') + '</div></div>';
-      records.forEach(function(r) {
-        var badge = r.absent
-          ? '<span class="badge" style="background:var(--red-light);color:var(--red);">' + t('absent') + '</span>'
-          : '<span class="badge" style="background:var(--green-light);color:var(--green);">' + t('present') + '</span>';
-        html += '<div class="item-row"><div class="item-top"><div class="item-title">' + r.subject + '</div><div class="item-date">' + r.date + '</div></div>' + badge + '</div>';
+
+      html += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px;">' +
+        '<table style="border-collapse:collapse;font-size:11px;">' +
+        '<thead><tr>' +
+          '<th style="position:sticky;left:0;background:var(--surface,white);z-index:1;padding:5px 10px;text-align:left;border-bottom:1.5px solid var(--border,#e5e7eb);"></th>';
+      dates.forEach(function(d) {
+        html += '<th style="padding:5px 6px;text-align:center;font-size:9.5px;color:var(--muted,#64748b);font-weight:600;white-space:nowrap;border-bottom:1.5px solid var(--border,#e5e7eb);">' + shortDate(d) + '</th>';
       });
-      html += '</div>';
+      html += '</tr></thead><tbody>';
+
+      subjects.forEach(function(subj, idx) {
+        html += '<tr style="background:' + (idx%2===0?'transparent':'var(--surface-2,#f8fafc)') + ';">' +
+          '<td style="position:sticky;left:0;background:' + (idx%2===0?'var(--surface,white)':'var(--surface-2,#f8fafc)') + ';padding:5px 10px;font-weight:600;white-space:nowrap;border-right:1px solid var(--border,#e5e7eb);">' + subj + '</td>';
+        dates.forEach(function(d) {
+          var absentHere = grid[subj] ? grid[subj][d] : undefined;
+          if (absentHere === undefined) {
+            html += '<td style="padding:5px 6px;text-align:center;color:#cbd5e1;">·</td>';
+          } else if (absentHere) {
+            html += '<td style="padding:5px 6px;text-align:center;"><span style="display:inline-block;width:18px;height:18px;line-height:18px;border-radius:4px;background:var(--red-light);color:var(--red);font-weight:800;font-size:10px;">A</span></td>';
+          } else {
+            html += '<td style="padding:5px 6px;text-align:center;"><span style="display:inline-block;width:18px;height:18px;line-height:18px;border-radius:4px;background:var(--green-light);color:var(--green);font-weight:800;font-size:10px;">P</span></td>';
+          }
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div></div>';
       el.innerHTML = html;
     })
     .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
@@ -747,89 +840,7 @@
     .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
   }
 
-  // ── MESSAGES (per-teacher threads) ──
-  var _selectedTeacher = null;
-
-  function loadMessages() {
-    var el = document.getElementById('tab-messages');
-    el.innerHTML = '<div class="loading">Loading…</div>';
-
-    fetch(_SB_URL + '/rest/v1/teacher_assignments?class=eq.' + encodeURIComponent(_student.class) + '&select=teacher_name,subject', {
-      headers: sbHeaders()
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(rows) {
-      var byTeacher = {};
-      (rows||[]).forEach(function(r) {
-        if (!byTeacher[r.teacher_name]) byTeacher[r.teacher_name] = [];
-        if (r.subject && byTeacher[r.teacher_name].indexOf(r.subject) === -1) byTeacher[r.teacher_name].push(r.subject);
-      });
-      var teachers = Object.keys(byTeacher).sort();
-
-      if (!teachers.length) {
-        el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>';
-        return;
-      }
-
-      if (!_selectedTeacher) {
-        renderTeacherPicker(teachers, byTeacher);
-      } else {
-        renderThread(_selectedTeacher);
-      }
-    })
-    .catch(function() {
-      el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>';
-    });
-  }
-
-  function renderTeacherPicker(teachers, byTeacher) {
-    var el = document.getElementById('tab-messages');
-    var html = '<div class="card"><div class="card-body" style="padding-bottom:8px;"><b style="font-size:13px;">' + t('choose_teacher') + '</b></div>' +
-      '<div class="teacher-picker">';
-    teachers.forEach(function(tname) {
-      html += '<div class="teacher-option" data-teacher="' + tname.replace(/"/g,'&quot;') + '">' +
-        '<div><div style="font-weight:700;font-size:13px;">' + tname + '</div>' +
-        '<div class="subj">' + (byTeacher[tname]||[]).join(', ') + '</div></div>' +
-        '<span style="color:var(--blue);font-size:18px;">›</span></div>';
-    });
-    html += '</div></div>';
-    el.innerHTML = html;
-    el.querySelectorAll('.teacher-option').forEach(function(opt) {
-      opt.addEventListener('click', function() {
-        _selectedTeacher = opt.dataset.teacher;
-        loadMessages();
-      });
-    });
-  }
-
-  function renderThread(teacherName) {
-    var el = document.getElementById('tab-messages');
-    el.innerHTML = '<div style="margin-bottom:8px;"><a href="#" onclick="_selectedTeacher=null;loadMessages();return false;" style="font-size:12px;color:var(--blue);text-decoration:none;">' + t('back_to_teachers') + '</a></div>' +
-      '<div class="card">' +
-      '<div class="card-body" style="padding:12px 16px;border-bottom:1px solid var(--rule-light);"><b style="font-size:13px;">' + teacherName + '</b></div>' +
-      '<div id="messages-list"><div class="loading">Loading…</div></div>' +
-      '<div class="msg-input-row"><input id="msg-input" type="text" placeholder="' + t('msg_placeholder') + '">' +
-      '<button id="msg-send" onclick="sendParentMessage()">' + t('send') + '</button></div></div>';
-
-    fetch(_SB_URL + '/rest/v1/parent_messages?student_id=eq.' + _student.id + '&teacher_name=eq.' + encodeURIComponent(teacherName) + '&order=created_at.asc&select=*', {
-      headers: sbHeaders()
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(rows) {
-      var list = document.getElementById('messages-list');
-      if (!rows || !rows.length) {
-        list.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('no_messages') + '</div></div>';
-        return;
-      }
-      list.innerHTML = rows.map(function(m) {
-        var cls = m.sender === 'parent' ? 'msg-parent' : 'msg-teacher';
-        var nameLabel = (m.sender === 'teacher' && m.sender_name)
-          ? '<div style="font-size:10.5px;font-weight:700;color:var(--blue);margin-bottom:3px;">' + m.sender_name + '</div>' : '';
-        return '<div class="msg-bubble ' + cls + '">' + nameLabel + m.message + '</div>';
-      }).join('');
-      list.scrollTop = list.scrollHeight;
-    });
-  }
+  // (Message Teacher feature removed — loadMessages/renderTeacherPicker/renderThread deleted)
 
   // ══ PUSH NOTIFICATIONS ═══════════════════════════════════════════════
   var _VAPID_PUBLIC_KEY = 'BLKTbVN_CHUQmYLJfdZzHW5PeBCupPS9xfvAe9FHHQQ510YXf-sjPL2xG7FILD0TU2HN965Z5RxtJ403r8yqRBk';
@@ -883,29 +894,7 @@
       .catch(function(e) { btn.textContent = '🔔 Enable Notifications'; alert(e.message); });
   }
 
-  function sendParentMessage() {
-    var input = document.getElementById('msg-input');
-    var text = input.value.trim();
-    if (!text || !_selectedTeacher) return;
-    input.value = '';
-
-    fetch(_SB_URL + '/rest/v1/parent_messages', {
-      method: 'POST',
-      headers: sbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
-      body: JSON.stringify({
-        student_id: _student.id,
-        teacher_name: _selectedTeacher,
-        sender: 'parent',
-        sender_name: _student.father_name_en || _student.mother_name_en || 'Parent',
-        message: text
-      })
-    }).then(function() {
-      renderThread(_selectedTeacher);
-      sendPushNotification('staff', _selectedTeacher,
-        (_student.father_name_en || _student.mother_name_en || 'A parent') + ' sent a message',
-        text, '/index.html');
-    });
-  }
+  // (sendParentMessage removed along with the Message Teacher tab)
 
   // ── AUTO LOGIN + LANGUAGE RESTORE ──
   window.addEventListener('load', function() {
