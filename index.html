@@ -532,7 +532,9 @@
   /* Daily Report form is mobile-first (single column by default);
      widen to two columns side-by-side only on larger screens. */
   @media (min-width: 900px) {
-    .dr-submit-grid { grid-template-columns: minmax(300px,1fr) minmax(400px,1.5fr) !important; }
+    /* dr-submit-grid: Lesson Info is now a modal overlay (position:fixed),
+       not a normal grid item, so the grid only ever has one real column —
+       the marking grid, which should always take the full width. */
   }
 
   @media (max-width: 480px) {
@@ -696,10 +698,6 @@
     <a class="nav-item" data-panel="messenger" onclick="showPanel('messenger', this)" id="nav-messenger">
       <span class="nav-icon">💬</span> <span data-i18n="nav_messenger">Messages</span>
       <span id="msg-badge" style="display:none;background:#EF4444;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:10px;margin-left:4px;">0</span>
-    </a>
-    <a class="nav-item" data-panel="parentmsgs" onclick="showPanel('parentmsgs', this)" id="nav-parentmsgs">
-      <span class="nav-icon">👨‍👩‍👧</span> Parent Messages
-      <span id="pm-badge" style="display:none;background:#EF4444;color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:10px;margin-left:4px;">0</span>
     </a>
     <a class="nav-item" data-panel="ai" onclick="showPanel('ai', this)">
       <span class="nav-icon">✨</span> AI Assistant
@@ -991,7 +989,7 @@
         </div>
         <div style="display:flex;gap:8px;">
           <button onclick="document.getElementById('add-incident-form').style.display='block'" class="btn btn-primary"><span data-i18n="disc_log_incident">+ Log Incident</span></button>
-          <button onclick="discShowResolved()" class="btn btn-outline"><span data-i18n="disc_view_resolved">View Resolved</span></button>
+          <button onclick="viewResolvedIncidents()" class="btn btn-outline"><span data-i18n="disc_view_resolved">View Resolved</span></button>
         </div>
       </div>
 
@@ -1007,7 +1005,7 @@
             <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_subject">Subject (optional)</label>
               <select id="inc-subject"><option value="" data-i18n="opt_select_subject">— Select subject —</option></select></div>
             <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_incident_type">Incident Type</label>
-              <select id="inc-type"><option data-i18n="inc_fighting">Fighting</option><option data-i18n="inc_bullying">Bullying</option><option data-i18n="inc_disrespect">Disrespect</option><option data-i18n="inc_cheating">Cheating</option><option data-i18n="inc_vandalism">Vandalism</option><option data-i18n="inc_late">Late</option><option data-i18n="inc_phone">Phone use</option><option data-i18n="inc_other">Other</option></select></div>
+              <select id="inc-type"><option value="Fighting" data-i18n="inc_fighting">Fighting</option><option value="Bullying" data-i18n="inc_bullying">Bullying</option><option value="Disrespect" data-i18n="inc_disrespect">Disrespect</option><option value="Cheating" data-i18n="inc_cheating">Cheating</option><option value="Vandalism" data-i18n="inc_vandalism">Vandalism</option><option value="Late" data-i18n="inc_late">Late</option><option value="Phone use" data-i18n="inc_phone">Phone use</option><option value="Other" data-i18n="inc_other">Other</option></select></div>
             <div><label style="font-size:10.5px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;" data-i18n="disc_stage">Stage</label>
               <select id="inc-stage"><option value="1" data-i18n="stage_1">Stage 1 — Minor</option><option value="2" data-i18n="stage_2">Stage 2 — Moderate</option><option value="3" data-i18n="stage_3">Stage 3 — Serious</option><option value="4" data-i18n="stage_4">Stage 4 — Critical</option></select></div>
             <div style="grid-column:1/-1;">
@@ -1663,14 +1661,20 @@ id="panel-timetable">
       <div id="dr-submit-section">
         <div class="dr-submit-grid" id="dr-submit-grid" style="display:grid;grid-template-columns:1fr;gap:20px;align-items:start;">
 
-          <!-- Left: Form -->
-          <div class="card" id="dr-left-card">
+          <!-- Lesson Info: a modal over the persistent gradebook grid behind
+               it, not a separate full-page state — the grid is always the
+               base view once a class/subject is loaded. -->
+          <div id="dr-lesson-info-overlay" class="modal-overlay" style="display:none;" onclick="if(event.target===this) drCloseLessonInfoModal()">
+          <div class="card" id="dr-left-card" style="max-width:720px;width:100%;max-height:90vh;overflow-y:auto;">
             <div class="card-header" style="background:linear-gradient(135deg,var(--navy),#1a2448);">
               <div>
                 <div class="card-title" style="color:white;" data-i18n="dr_new_entry">New Lesson Entry</div>
                 <div class="card-subtitle" style="color:rgba(200,210,240,0.7);" data-i18n="dr_fill_details">Fill in details for today's lesson</div>
               </div>
-              <div id="dr-date-display" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);font-weight:700;"></div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div id="dr-date-display" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);font-weight:700;"></div>
+                <button onclick="drCloseLessonInfoModal()" aria-label="Close" style="background:none;border:none;color:white;font-size:20px;line-height:1;cursor:pointer;padding:0 4px;">×</button>
+              </div>
             </div>
             <div style="padding:14px 22px 0;border-bottom:1.5px solid var(--cream);">
               <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;" data-i18n="dr_todays_lessons">📅 Today's Lessons — Click to fill report</div>
@@ -1706,22 +1710,34 @@ id="panel-timetable">
                   <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_subject">Subject</div>
                   <select id="dr-subject" onchange="drLoadStudents();" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
                     <option value="" data-i18n="opt_select_subject">— Select subject —</option>
-                    <option data-i18n="subj_english">English</option>
-                    <option data-i18n="subj_maths">Maths</option>
-                    <option data-i18n="subj_cmaths">Cambridge Maths</option>
-                    <option data-i18n="subj_science">Science</option>
-                    <option data-i18n="subj_physics">Physics</option>
-                    <option data-i18n="subj_chemistry">Chemistry</option>
-                    <option data-i18n="subj_biology">Biology</option>
-                    <option data-i18n="subj_russian">Russian Language</option>
-                    <option data-i18n="subj_gp">GP (Hist-Geo)</option>
-                    <option data-i18n="subj_econ">Economics</option>
-                    <option data-i18n="subj_business">Business</option>
-                    <option data-i18n="subj_ielts">IELTS</option>
-                    <option data-i18n="subj_pe">Physical Education</option>
-                    <option data-i18n="subj_art">Art</option>
-                    <option data-i18n="subj_ict">ICT</option>
+                    <option value="English" data-i18n="subj_english">English</option>
+                    <option value="Maths" data-i18n="subj_maths">Maths</option>
+                    <option value="Cambridge Maths" data-i18n="subj_cmaths">Cambridge Maths</option>
+                    <option value="Maths-Eng" data-i18n="subj_maths_eng">Maths-Eng</option>
+                    <option value="Maths-Rus" data-i18n="subj_maths_rus">Maths-Rus</option>
+                    <option value="Science" data-i18n="subj_science">Science</option>
+                    <option value="CC-Science" data-i18n="subj_ccscience">CC-Science</option>
+                    <option value="Physics" data-i18n="subj_physics">Physics</option>
+                    <option value="Chemistry" data-i18n="subj_chemistry">Chemistry</option>
+                    <option value="Biology" data-i18n="subj_biology">Biology</option>
+                    <option value="Russian" data-i18n="subj_russian">Russian</option>
+                    <option value="Russian Reading" data-i18n="subj_russian_reading">Russian Reading</option>
+                    <option value="History" data-i18n="subj_history">History</option>
+                    <option value="Geography" data-i18n="subj_geography">Geography</option>
+                    <option value="Economics" data-i18n="subj_econ">Economics</option>
+                    <option value="Business" data-i18n="subj_business">Business</option>
+                    <option value="Law" data-i18n="subj_law">Law</option>
+                    <option value="IELTS" data-i18n="subj_ielts">IELTS</option>
+                    <option value="Literature" data-i18n="subj_literature">Literature</option>
+                    <option value="PE" data-i18n="subj_pe">PE</option>
+                    <option value="Art" data-i18n="subj_art">Art</option>
+                    <option value="ICT" data-i18n="subj_ict">ICT</option>
+                    <option value="Activity" data-i18n="subj_activity">Activity</option>
+                    <option value="Chess" data-i18n="subj_chess">Chess</option>
+                    <option value="TechDraw" data-i18n="subj_techdraw">TechDraw</option>
+                    <option value="Uzbek" data-i18n="subj_uzbek">Uzbek</option>
                   </select>
+                  <div id="dr-subject-blank-hint" style="display:none;margin-top:4px;font-size:11px;color:var(--gold-dark,#a16207);">This lesson's subject isn't in the list yet — pick the closest match, or ask an admin to add it.</div>
                 </div>
               </div>
 
@@ -1768,6 +1784,7 @@ id="panel-timetable">
               <!-- Homework assigned -->
               <div>
                 <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_homework">Homework Assigned</div>
+                <div id="dr-prev-homework" style="display:none;margin-bottom:8px;padding:8px 10px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;font-size:12px;color:#1e40af;"></div>
                 <textarea id="dr-homework" oninput="drAutoSaveTextFields()" placeholder="e.g. Exercise 5.3 — Q1 to Q10 (due Thursday)" data-i18n-ph="dr_homework_ph" style="width:100%;height:70px;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);resize:none;"></textarea>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
                   <label style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:7px;border:1.5px dashed var(--rule);background:var(--bg,#f8fafc);cursor:pointer;font-size:11.5px;color:var(--muted);font-weight:600;">
@@ -1782,6 +1799,7 @@ id="panel-timetable">
                 <span data-i18n="dr_save">💾 Save Lesson Report</span>
               </button>
             </div>
+          </div>
           </div>
 
           <!-- Right: Student marks table -->
@@ -1921,29 +1939,6 @@ id="panel-timetable">
     </div>
 
 
-    <div class="panel" id="panel-parentmsgs">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;">👨‍👩‍👧 Parent Messages</h2>
-        <div style="font-size:12.5px;color:var(--muted);">Conversations from the Parent Portal</div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;height:calc(100vh - 180px);">
-        <div class="card" style="overflow-y:auto;">
-          <div class="card-header"><div class="card-title" style="font-size:13px;">Students</div></div>
-          <div id="pm-student-list"><div style="padding:30px;text-align:center;color:var(--muted);font-size:12.5px;">Loading…</div></div>
-        </div>
-        <div class="card" style="display:flex;flex-direction:column;">
-          <div class="card-header"><div class="card-title" style="font-size:13px;" id="pm-thread-title">Select a student</div></div>
-          <div id="pm-thread-body" style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
-            <div style="padding:40px;text-align:center;color:var(--muted);font-size:12.5px;">👈 Select a student to view their messages</div>
-          </div>
-          <div id="pm-reply-row" style="display:none;padding:12px 16px;border-top:1px solid var(--rule-light,#f1f5f9);gap:8px;">
-            <input id="pm-reply-input" type="text" placeholder="Reply to parent…" style="flex:1;padding:10px 14px;border-radius:20px;border:1.5px solid var(--rule);outline:none;font-size:13px;">
-            <button onclick="pmSendReply()" class="btn btn-primary" style="border-radius:20px;">Send</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="panel" id="panel-messenger" style="padding:0;">
       <div style="display:flex;height:calc(100vh - 60px);overflow:hidden;">
         <div id="msg-sidebar" style="width:240px;min-width:240px;background:#0F172A;display:flex;flex-direction:column;overflow:hidden;">
@@ -2073,6 +2068,7 @@ id="panel-timetable">
   function showPanel(id, el) {
     // Auto-close mobile sidebar after navigation
     if (window.innerWidth <= 900) { var sb=document.querySelector('.sidebar'); var ov=document.getElementById('sidebar-overlay'); if(sb) sb.classList.remove('mobile-open'); if(ov) ov.classList.remove('active'); }
+    window.scrollTo(0, 0);
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     // Stop messenger polling when switching away
     if (id !== 'messenger') {
@@ -2097,7 +2093,6 @@ id="panel-timetable">
     if (id === 'classes')      { if(typeof classesInitPanel==='function') classesInitPanel(); }
     if (id === 'rubric')       { if(typeof obsCambInit==='function') obsCambInit(); }
     if (id === 'messenger')   { if(typeof msgInit==='function') msgInit(); }
-    if (id === 'parentmsgs')  { if(typeof pmInit==='function') pmInit(); }
   }
 
   // AI Chat
@@ -2587,6 +2582,9 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; })
     ]).then(function(results) {
       renderResultsTable(cls, results[0] || [], results[1] || []);
+    }).catch(function(e) {
+      console.error('Failed to load class roster:', e);
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">⚠ Could not load the class list. Check your connection and try again.</div>';
     });
   }
 
@@ -4256,7 +4254,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'AS',
       access: 'all',
       panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments','messenger'],
-      teacherName: 'Sharma Akash',
+      teacherName: 'Akash',
       loadName: 'Akash',
       teacherClasses: ['Humanities-9-11','7A','7B','7C'],
       teacherSubjects: ['IELTS']
@@ -4324,7 +4322,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       deptTeachers: [],
       panels: ['dashboard','academics','results','teachers','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Abdullayeva Gulnara Asatovna',
+      teacherName: 'Gulnara Asadovna',
       loadName: 'Gulnara Asadovna',
     },
     'nasiba.maths': {
@@ -4343,7 +4341,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       deptTeachers: [],
       panels: ['dashboard','academics','results','teachers','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Ibragimova Nasiba Ismailovna',
+      teacherName: 'Nasiba Ismailovna',
       loadName: 'Nasiba Ismailovna',
     },
     // English Head: Principal Mr. Akash Sharma — uses akash.sharma (full access)
@@ -4361,7 +4359,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       classes: [],
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Abduazizova Feruza Erkinovna',
+      teacherName: 'Feruza Erkinovna',
       loadName: 'Feruza Erkinovna',
       teacherClasses: ['5A','5B','5C','6A','6B','7A','7C'],
       teacherSubjects: ['Literature','Russian']
@@ -4376,7 +4374,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       classes: [],
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Bobobekova Barno Olimovna',
+      teacherName: 'Barno Olimovna',
       loadName: 'Barno Olimovna',
       teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A','5B','5C','6A','6B','7A','7B','7C'],
       teacherSubjects: ['Art','TechDraw']
@@ -4391,7 +4389,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       classes: [],
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Djurayeva Oygul Isayevna',
+      teacherName: 'Oygul Isaevna',
       loadName: 'Oygul Isaevna',
       teacherClasses: ['2A','2B','2C','3A','3B','3C'],
       teacherSubjects: ['Russian']
@@ -4406,7 +4404,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       classes: [],
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Egamberdiyev Zafar',
+      teacherName: 'Zafar',
       loadName: 'Zafar',
       teacherClasses: ['2A','2B','2C','3A','3B','3C'],
       teacherSubjects: ['English']
@@ -4418,13 +4416,9 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Class Teacher — 3B & 3C',
       avatar: 'XI',
       access: 'class',
-      classes: [],
+      classes: ['3B','3C'],
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Isomatov Xushbaxt Sadriddinovich',
-      loadName: 'Khushbakht (5A only)',
-      teacherClasses: ['5A'],
-      teacherSubjects: ['PE']
     },
     'naimov.musino': {
       password: 'class4b4c',
@@ -4436,7 +4430,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       classes: [],
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Naimova Zarrina Musinovna',
+      teacherName: 'Zarrina Musinovna',
       loadName: 'Zarrina Musinovna',
       teacherClasses: ['1A','1B','1C','4A','4B','4C'],
       teacherSubjects: ['Russian']
@@ -4451,7 +4445,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       classes: [],
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Normamatova Sitora Furkatovna',
+      teacherName: 'Sitora Furkatovna',
       loadName: 'Sitora Furkatovna',
       teacherClasses: ['1A','1B','1C','2A','2C','4A'],
       teacherSubjects: ['Maths-Rus']
@@ -4466,7 +4460,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       classes: [],
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
-      teacherName: 'Yusupov Abdussator Davlatovich',
+      teacherName: 'Abdulsattor Davlatovich',
       loadName: 'Abdulsattor Davlatovich',
       teacherClasses: ['4B','4C','5A','5B','5C','6A','6B'],
       teacherSubjects: ['Maths-Rus']
@@ -4480,8 +4474,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'BU',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
+      teacherSubjects: ['Science'],
+      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
       teacherName: 'Banu Umera',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4495,7 +4489,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       access: 'subject',
       teacherSubjects: [],
       teacherClasses: [],
-      teacherName: 'Bulgak Emine',
+      teacherName: 'Soniya',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
@@ -4508,7 +4502,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       access: 'subject',
       teacherSubjects: ['Maths-Eng'],
       teacherClasses: ['5B','5C','6A','6B','7A','7B'],
-      teacherName: 'Hella Manzoor Ahmad',
+      teacherName: 'Manzoor Ahmad',
       loadName: 'Manzoor Ahmad',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4522,7 +4516,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       access: 'subject',
       teacherSubjects: ['English'],
       teacherClasses: ['4A','4B','4C','5A','5B','5C'],
-      teacherName: 'Mishra Soniya',
+      teacherName: 'Soniya',
       loadName: 'Soniya',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4536,7 +4530,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       access: 'subject',
       teacherSubjects: ['Literature','Russian'],
       teacherClasses: ['Humanities-9-11','7B','8A','8B','8C'],
-      teacherName: 'Rakhimova Sabina Robertovna',
+      teacherName: 'Sabina Robertovna',
       loadName: 'Sabina Robertovna',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4550,7 +4544,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       access: 'subject',
       teacherSubjects: ['Biology'],
       teacherClasses: ['7A','7B','7C','8B'],
-      teacherName: 'Raxmanova Aziza',
+      teacherName: 'Aziza',
       loadName: 'Aziza',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4564,7 +4558,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       access: 'subject',
       teacherSubjects: ['Maths-Eng'],
       teacherClasses: ['Humanities-9-11','7C','8A','8B','8C'],
-      teacherName: 'Yaqoob Adeel',
+      teacherName: 'Adeel',
       loadName: 'Adeel',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4577,8 +4571,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'M',
       access: 'subject',
       teacherSubjects: ['PE'],
-      teacherClasses: ['6A','6B'],
-      teacherName: 'ms.Karina',
+      teacherClasses: ['5A','6A','6B'],
+      teacherName: 'Karina',
       loadName: 'Karina (6A,6B only)',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4592,7 +4586,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       access: 'subject',
       teacherSubjects: ['Uzbek'],
       teacherClasses: ['Humanities-9-11','6B','7A','7B','7C','8A','8B','8C'],
-      teacherName: 'ms.Madina',
+      teacherName: 'Madina',
       loadName: 'Madina',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4606,7 +4600,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       access: 'subject',
       teacherSubjects: [],
       teacherClasses: [],
-      teacherName: 'ms.Nasiba',
+      teacherName: 'Nasiba Ismailovna',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
@@ -4735,8 +4729,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'A',
       access: 'subject',
-      teacherSubjects: ['Science'],
-      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
+      teacherSubjects: [],
+      teacherClasses: [],
       teacherName: 'Ahmed',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4780,16 +4774,16 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
-    'sharifa.teacher': {
+    'manozat.teacher': {
       password: 'redbridge2024',
-      name: 'Ms Sharifa',
+      name: 'Manozat',
       role: 'teacher',
       title: 'Subject Teacher',
-      avatar: 'MS',
+      avatar: 'MZ',
       access: 'subject',
       teacherSubjects: ['Chemistry'],
-      teacherClasses: ['7A','7B','7C','8B'],
-      teacherName: 'Ms Sharifa',
+      teacherClasses: ['7A','7B','7C','8B','9-ChemBio'],
+      teacherName: 'Manozat',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
@@ -5975,48 +5969,46 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     var subjEl = document.getElementById('dr-subject');
     var periodEl = document.getElementById('dr-period');
     if (clsEl) clsEl.value = cls;
-    if (subjEl) subjEl.value = subject;
+    var hint = document.getElementById('dr-subject-blank-hint');
+    subject = normalizeSubject(subject);
+    if (subjEl) {
+      subjEl.value = subject;
+      // If the timetable's subject string has no matching option, the
+      // native <select> just silently ends up with nothing selected — the
+      // exact "why is it blank" this hint exists to explain instead.
+      if (hint) hint.style.display = (subjEl.value !== subject) ? 'block' : 'none';
+    }
     if (periodEl) periodEl.value = period.replace('L','');
 
-    // Once a lesson is picked, the lesson list has done its job — hide
-    // it and let the marking table use the FULL page width, matching
-    // a real gradebook rather than sharing half the screen with a list
-    // that's no longer needed.
-    var leftCard = document.getElementById('dr-left-card');
-    var submitGrid = document.getElementById('dr-submit-grid');
-    var showBtn = document.getElementById('dr-show-lessons-btn');
-    if (leftCard) leftCard.style.display = 'none';
-    if (submitGrid) submitGrid.style.setProperty('grid-template-columns', '1fr', 'important');
-    if (showBtn) showBtn.style.display = '';
-
+    // The gradebook grid is the persistent base view once a class/subject
+    // is loaded — Lesson Info opens as a modal on top of it, not as a
+    // separate full-page state. Build the grid first so it's already
+    // there behind the modal, exactly like the reference screenshot.
     drBuildGrid(cls, subject);
     drShowExistingAttachments();
-    var grid = document.getElementById('dr-students-wrap');
-    if (grid && grid.scrollIntoView) grid.scrollIntoView({ behavior:'smooth', block:'start' });
+    drOpenLessonInfoModal();
   }
 
-  // Brings the lesson list (and topic/homework form) back, in case a
-  // teacher wants to switch to a different lesson or fill in the
-  // topic/homework text for the one they're on.
-  // Clicking "Student Marks" itself jumps straight back to the grid
-  // using whichever class/subject was last selected — no need to go
-  // back through Lessons and click the same one again.
+  // Lesson Info modal, over the persistent grid behind it. Opens
+  // automatically when a lesson is selected, and reopens from the grid
+  // via a date column header click or the "☰ Lessons" button.
+  function drOpenLessonInfoModal() {
+    var overlay = document.getElementById('dr-lesson-info-overlay');
+    overlay.style.display = 'flex';
+  }
+
+  function drCloseLessonInfoModal() {
+    var overlay = document.getElementById('dr-lesson-info-overlay');
+    overlay.style.display = 'none';
+  }
+
+  // "Student Marks" title click in the grid header, and the "☰ Lessons"
+  // button — both just reopen the modal.
   function drReturnToMarks() {
-    var cls = (document.getElementById('dr-class')||{}).value;
-    var subject = (document.getElementById('dr-subject')||{}).value;
-    if (!cls || !subject) return; // nothing selected yet — nothing to return to
-    var leftCard = document.getElementById('dr-left-card');
-    var submitGrid = document.getElementById('dr-submit-grid');
-    if (leftCard) leftCard.style.display = 'none';
-    if (submitGrid) submitGrid.style.setProperty('grid-template-columns', '1fr', 'important');
-    drBuildGrid(cls, subject);
+    drOpenLessonInfoModal();
   }
-
   function drShowLessonList() {
-    var leftCard = document.getElementById('dr-left-card');
-    var submitGrid = document.getElementById('dr-submit-grid');
-    if (leftCard) leftCard.style.display = '';
-    if (submitGrid && window.innerWidth >= 900) submitGrid.style.gridTemplateColumns = 'minmax(300px,1fr) minmax(400px,1.5fr)';
+    drOpenLessonInfoModal();
   }
 
 
@@ -6069,7 +6061,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
 
     var tbody = document.createElement('tbody');
     students.forEach(function(st, idx) {
-      var fullName = stuDisplayName(st);
+      var fullName = stuStableKey(st);
       var saved = existingByName[fullName] || {};
       var bg = idx % 2 === 0 ? 'white' : '#f8fafc';
 
@@ -6167,7 +6159,29 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     drAutoSaveInline(rep);
   }
 
+  // Maps every known non-canonical subject string (mostly Russian-UI
+  // translations, saved back when the subject dropdown had no stable
+  // value attribute — fixed now, but old browser sessions/caches could
+  // still send these) to its correct canonical form. This runs at the
+  // ONE shared function every single save path goes through
+  // (drGetOrCreateTodayReport), so it's structurally impossible for a
+  // fragmented subject to slip through again — regardless of which
+  // deployed version of the dropdown produced the value, or any future
+  // code path that calls this function.
+  var SUBJECT_NORMALIZE = {
+    'русский язык': 'Russian',
+    'russian language': 'Russian',
+    'искусство': 'Art',
+    'математика': 'Maths-Rus'
+  };
+  function normalizeSubject(raw) {
+    if (!raw) return raw;
+    var mapped = SUBJECT_NORMALIZE[raw.trim().toLowerCase()];
+    return mapped || raw;
+  }
+
   function drGetOrCreateTodayReport(cls, subject, date) {
+    subject = normalizeSubject(subject);
     if (typeof dailyReports === 'undefined') window.dailyReports = [];
     var rep = null;
     dailyReports.forEach(function(r) { if (r.cls===cls && r.subject===subject && r.date===date) rep = r; });
@@ -6213,7 +6227,14 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   function drAutoSaveTextFields() {
     var cls = drOpenGrid._cls, subj = drOpenGrid._subject;
     if (!cls || !subj) return;
-    var rep = drGetOrCreateTodayReport(cls, subj, localDateStr());
+    // Use whichever date is actually selected (dr-date), not always today.
+    // Editing a past report via "Edit" in View Reports correctly loads that
+    // report's real date into dr-date — but this function used to ignore
+    // that and always save under today's date instead, silently turning an
+    // edit to an old report into a brand-new report dated today.
+    var dateEl = document.getElementById('dr-date');
+    var date = (dateEl && dateEl.value) ? dateEl.value : localDateStr();
+    var rep = drGetOrCreateTodayReport(cls, subj, date);
     rep.topic    = (document.getElementById('dr-topic')||{}).value    || '';
     rep.remark   = (document.getElementById('dr-remark')||{}).value   || '';
     rep.homework = (document.getElementById('dr-homework')||{}).value || '';
@@ -6223,9 +6244,13 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     } else {
       fetchClassStudents(cls).then(function(students) {
         students.forEach(function(st) {
-          drGetOrCreateStudentEntry(rep, stuDisplayName(st));
+          drGetOrCreateStudentEntry(rep, stuStableKey(st));
         });
         drAutoSaveInline(rep);
+      }).catch(function(e) {
+        console.error('Roster fetch failed:', e);
+        showToast('⚠ Could not load the class list — this report has no students yet. Check your connection.');
+        drAutoSaveInline(rep); // still save the typed text, just without a roster
       });
     }
   }
@@ -6334,6 +6359,11 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     var days  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     var months= ['January','February','March','April','May','June','July','August','September','October','November','December'];
     var today = days[now.getDay()];
+
+    // Every visit starts with the Lesson Info modal open (Today's Lessons
+    // + class/subject pickers) — the grid sits behind it showing its
+    // normal "select a class" placeholder until something loads.
+    if (typeof drOpenLessonInfoModal === 'function') drOpenLessonInfoModal();
 
     // Retry any report with real marks that never made it to the cloud —
     // e.g. from a previous network failure the teacher didn't notice.
@@ -6450,7 +6480,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     if (fs) {
       fs.innerHTML = '<option value="">All Subjects</option>';
       ['English','Maths','Cambridge Maths','Science','Russian Language',
-       'Physics','Chemistry','Biology','GP (Hist-Geo)','Economics','ICT'].forEach(function(s) {
+       'Physics','Chemistry','Biology','History','Geography','Economics','ICT'].forEach(function(s) {
         var o = document.createElement('option'); o.value = s; o.textContent = s;
         fs.appendChild(o);
       });
@@ -6568,7 +6598,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
 
 function saveDailyReport() {
     var cls     = (document.getElementById('dr-class')||{}).value;
-    var subject = (document.getElementById('dr-subject')||{}).value;
+    var subject = normalizeSubject((document.getElementById('dr-subject')||{}).value);
     var dateEl  = document.getElementById('dr-date');
     var date    = (dateEl && dateEl.value) ? dateEl.value : localDateStr();
     var period  = (document.getElementById('dr-period')||{}).value || '';
@@ -6591,7 +6621,7 @@ function saveDailyReport() {
       rep = { id:'dr'+Date.now(), date:date, cls:cls, subject:subject,
         teacher: _currentUser ? _currentUser.name : '',
         period:period, topic:topic, remark:remark, homework:homework, students:[],
-        topicFileUrl:'', topicFileName:'', homeworkFileUrl:'', homeworkFileName:'' };
+        topicFileUrl:'', topicFileName:'', homeworkFileUrl:'', homeworkFileName:'', submitted:false };
       dailyReports.push(rep);
     } else {
       rep.period  = period;
@@ -6601,34 +6631,66 @@ function saveDailyReport() {
       // rep.students is left untouched — preserves any marks already entered via the grid
     }
 
-    showToast('Saving report…');
+    // If this report has no roster yet (e.g. a teacher logging a missed
+    // day's topic/homework/remark without touching the marks grid at all —
+    // exactly what "Save Lesson Report" is for), populate it with the full
+    // class roster first. Without this, clicking Save here directly saved
+    // a report with zero students, even though real notes were written.
+    var rosterFetchFailed = false;
+    var rosterPromise = (rep.students && rep.students.length)
+      ? Promise.resolve()
+      : fetchClassStudents(cls).then(function(students) {
+          students.forEach(function(st) {
+            drGetOrCreateStudentEntry(rep, stuStableKey(st));
+          });
+        }).catch(function(e) {
+          // Don't silently save with zero students and no explanation —
+          // still save the topic/homework/remark text below (that's real,
+          // typed content and shouldn't be lost over a roster hiccup), but
+          // make sure the teacher actually sees that the class list didn't
+          // load, so they know to come back and check this report.
+          console.error('Roster fetch failed:', e);
+          rosterFetchFailed = true;
+        });
 
-    // Upload any attached files first, then save the report
-    var uploadPromises = [];
-    if (_drPendingFiles.topic) {
-      uploadPromises.push(
-        drUploadFile(_drPendingFiles.topic).then(function(res) {
-          rep.topicFileUrl = res.url; rep.topicFileName = res.name;
-        }).catch(function(e){ console.error('Topic file upload failed:', e); })
-      );
-    }
-    if (_drPendingFiles.homework) {
-      uploadPromises.push(
-        drUploadFile(_drPendingFiles.homework).then(function(res) {
-          rep.homeworkFileUrl = res.url; rep.homeworkFileName = res.name;
-        }).catch(function(e){ console.error('Homework file upload failed:', e); })
-      );
-    }
-
-    Promise.all(uploadPromises).then(function() {
-      saveDailyReports();
-      if (typeof sbSaveDailyReport === 'function') {
-        sbSaveDailyReportWithRetry(rep).then(function(){ updateCloudStatus('saved'); })
-          .catch(function(){ updateCloudStatus('error'); });
+    rosterPromise.then(function() {
+      if (rosterFetchFailed) {
+        showToast('⚠ Could not load the class list — report saved with NO students. Check your connection and reopen this report to fix it.');
+      } else {
+        showToast('Saving report…');
       }
-      drClearFileInputs();
-      drShowExistingAttachments();
-      showToast('Report saved for Class ' + cls + ' · ' + subject);
+
+      // Upload any attached files first, then save the report
+      var uploadPromises = [];
+      if (_drPendingFiles.topic) {
+        uploadPromises.push(
+          drUploadFile(_drPendingFiles.topic).then(function(res) {
+            rep.topicFileUrl = res.url; rep.topicFileName = res.name;
+          }).catch(function(e){ console.error('Topic file upload failed:', e); })
+        );
+      }
+      if (_drPendingFiles.homework) {
+        uploadPromises.push(
+          drUploadFile(_drPendingFiles.homework).then(function(res) {
+            rep.homeworkFileUrl = res.url; rep.homeworkFileName = res.name;
+          }).catch(function(e){ console.error('Homework file upload failed:', e); })
+        );
+      }
+
+      Promise.all(uploadPromises).then(function() {
+        saveDailyReports();
+        if (typeof sbSaveDailyReport === 'function') {
+          sbSaveDailyReportWithRetry(rep).then(function(){
+            rep.submitted = true;
+            saveDailyReports();
+            if (typeof drFilterReports === 'function') drFilterReports();
+            updateCloudStatus('saved');
+          }).catch(function(){ updateCloudStatus('error'); });
+        }
+        drClearFileInputs();
+        drShowExistingAttachments();
+        showToast('Report saved for Class ' + cls + ' · ' + subject);
+      });
     });
   }
 
@@ -6874,7 +6936,7 @@ function saveDailyReport() {
 
     // Store current context
     drOpenGrid._cls     = cls;
-    drOpenGrid._subject = subject;
+    drOpenGrid._subject = normalizeSubject(subject);
     drOpenGrid._period  = period;
 
     // Load today's existing topic/hw if already saved
@@ -6909,21 +6971,62 @@ function saveDailyReport() {
 
   function fetchClassStudents(cls) {
     // Real student roster from Supabase, replacing the old dead resultsData source.
+    // Rejects on an actual fetch/HTTP failure rather than silently resolving
+    // to [] — a genuinely empty class (0 rows, request succeeded) is a real,
+    // distinct outcome from "the request itself failed" (network issue, or
+    // — notably — opening this file directly via file:// in a browser,
+    // which some browsers restrict cross-origin fetches from differently
+    // than a real https:// deploy). Collapsing both into the same silent []
+    // is exactly what let reports save with zero students without any
+    // visible error.
     return fetch(_SB_URL + '/rest/v1/students?class=eq.' + encodeURIComponent(cls) + '&order=full_name_en.asc&select=*', {
       headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
     })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Roster fetch failed: HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(rows) { return rows || []; });
+  }
+
+  // Shows what homework was assigned in the most recent PRIOR lesson for
+  // this class/subject — not strictly "yesterday", since subjects taught
+  // only 2-3x/week won't always have a lesson the day before. Whatever
+  // date the last lesson actually was, that's what shows, labeled with
+  // its date, so a teacher can check it was done before marking today.
+  function drShowPrevHomework(cls, subject) {
+    var box = document.getElementById('dr-prev-homework');
+    if (!box) return;
+    box.style.display = 'none';
+    if (!cls || !subject) return;
+    var today = localDateStr();
+    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(cls) +
+        '&subject=eq.' + encodeURIComponent(subject) + '&date=lt.' + today +
+        '&homework=not.is.null&homework=neq.&order=date.desc&limit=1&select=date,homework', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
     .then(function(r) { return r.ok ? r.json() : []; })
-    .then(function(rows) { return rows || []; })
-    .catch(function() { return []; });
+    .then(function(rows) {
+      if (!rows || !rows.length || !rows[0].homework) return;
+      var dateLabel = new Date(rows[0].date + 'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+      box.innerHTML = '<b>Previous lesson (' + dateLabel + '):</b> ' + rows[0].homework;
+      box.style.display = 'block';
+    })
+    .catch(function() {});
   }
 
   function drBuildGrid(cls, subject) {
+    subject = normalizeSubject(subject);
     var grid = document.getElementById('dr-students-wrap');
     if (!grid) return;
     grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading…</div>';
+    drShowPrevHomework(cls, subject);
 
     fetchClassStudents(cls).then(function(students) {
       drRenderGrid(cls, subject, students);
+    }).catch(function(e) {
+      console.error('Failed to load class roster:', e);
+      grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load the class list. Check your connection, then reopen this class.</div>';
     });
   }
 
@@ -6963,7 +7066,7 @@ function saveDailyReport() {
       })();
       var todayRep = drGetOrCreateTodayReport(cls, subject, todayDateStr);
       students.forEach(function(st) {
-        drGetOrCreateStudentEntry(todayRep, stuDisplayName(st));
+        drGetOrCreateStudentEntry(todayRep, stuStableKey(st));
       });
     })();
 
@@ -7035,6 +7138,9 @@ function saveDailyReport() {
         var borderStyle = i===0 ? 'border-left:1.5px solid rgba(255,255,255,0.18);' : 'border-left:1px solid rgba(255,255,255,0.06);';
         th.style.cssText = 'padding:2px 1px 1px;text-align:center;color:' + co + ';font-size:9px;font-weight:' + fw + ';background:' + bg + ';' + borderStyle + ';';
         if (i === 1) {
+          th.style.cursor = 'pointer';
+          th.title = 'Open lesson info';
+          th.addEventListener('click', function() { drOpenLessonInfoModal(); });
           th.innerHTML = '<div style="font-size:6.5px;opacity:0.8;line-height:1.1;">' + monthLabel + '</div>' +
             '<div style="font-size:10.5px;font-weight:900;line-height:1.1;">' + dt.day + '</div>' + tipHtml;
         }
@@ -7066,6 +7172,7 @@ function saveDailyReport() {
     var tbody = document.createElement('tbody');
     students.forEach(function(st, idx) {
       var fullName = stuDisplayName(st);
+      var matchKey = stuStableKey(st);
       var bg = idx % 2 === 0 ? 'white' : '#f8fafc';
 
       var tr = document.createElement('tr');
@@ -7078,7 +7185,7 @@ function saveDailyReport() {
         dailyReports.forEach(function(rep) {
           if (rep.cls !== cls || rep.subject !== subject) return;
           (rep.students||[]).forEach(function(s2) {
-            if (s2.name === fullName && !s2.absent) {
+            if (s2.name === matchKey && !s2.absent) {
               [s2.cw, s2.hw, s2.disc].forEach(function(v) { if (v && parseInt(v) > 0) allMarks.push(parseInt(v)); });
             }
           });
@@ -7114,7 +7221,7 @@ function saveDailyReport() {
       tr.appendChild(tdName);
 
       dates.forEach(function(dt) {
-        var key = dt.dateStr + '|' + fullName;
+        var key = dt.dateStr + '|' + matchKey;
         var saved = dataMap[key];
 
         ['cw','hw','disc'].forEach(function(sec, i) {
@@ -7145,7 +7252,7 @@ function saveDailyReport() {
           cellDiv.addEventListener('mouseleave', function(){ this.style.opacity='1'; });
           (function(d, n, c, s) {
             cellDiv.addEventListener('click', function() { drGridCellClick(d, n, c, s, cellDiv); });
-          })(dt.dateStr, fullName, cls, subject);
+          })(dt.dateStr, matchKey, cls, subject);
 
           td.appendChild(cellDiv);
           tr.appendChild(td);
@@ -7172,14 +7279,14 @@ function saveDailyReport() {
     if (drRenderGrid._roster && drRenderGrid._cls === cls && drRenderGrid._subject === subject) {
       var backfillRep = drGetOrCreateTodayReport(cls, subject, dateStr);
       drRenderGrid._roster.forEach(function(st) {
-        drGetOrCreateStudentEntry(backfillRep, stuDisplayName(st));
+        drGetOrCreateStudentEntry(backfillRep, stuStableKey(st));
       });
     }
 
     drCloseMarkPopup();
     _drPopup.sec = 'grid';
     _drPopup.gridDate = dateStr; _drPopup.gridName = studentName;
-    _drPopup.gridCls  = cls;    _drPopup.gridSubj = subject;
+    _drPopup.gridCls  = cls;    _drPopup.gridSubj = normalizeSubject(subject);
 
     var existing = {};
     if (typeof dailyReports !== 'undefined') {
@@ -7196,21 +7303,21 @@ function saveDailyReport() {
 
     var popup = document.createElement('div');
     popup.id = 'dr-mark-popup';
-    popup.style.cssText = 'position:fixed;z-index:9500;background:white;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.28);padding:12px 14px 10px;width:230px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:"DM Sans",sans-serif;font-size:12px;';
+    popup.style.cssText = 'position:fixed;z-index:9500;background:white;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,0.28);padding:9px 11px 8px;width:196px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:"DM Sans",sans-serif;font-size:12px;';
     popup._marks = { cw: existing.cw||0, hw: existing.hw||0, disc: existing.disc||0 };
 
     // Header
-    var hdr = '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">' +
-      '<div><div style="font-size:13px;font-weight:800;color:#0a0f2e;margin-bottom:2px;">' + studentName + '</div>' +
-      '<div style="font-size:11px;color:#64748b;">' + cls + ' · ' + subject + ' · ' + dateLabel + '</div></div>' +
-      '<button onclick="drCloseMarkPopup()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;line-height:1;padding:0;margin-left:8px;">✕</button>' +
+    var hdr = '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">' +
+      '<div><div style="font-size:12px;font-weight:800;color:#0a0f2e;margin-bottom:1px;">' + studentName + '</div>' +
+      '<div style="font-size:9.5px;color:#64748b;">' + cls + ' · ' + subject + ' · ' + dateLabel + '</div></div>' +
+      '<button onclick="drCloseMarkPopup()" style="background:none;border:none;font-size:16px;cursor:pointer;color:#94a3b8;line-height:1;padding:0;margin-left:6px;">✕</button>' +
     '</div>';
 
     // Build a mark section (CW/HW/Disc)
     function mkSection(label, sec, color, cur) {
-      var html = '<div style="margin-bottom:10px;">' +
-        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:' + color + ';margin-bottom:5px;">' + label + '</div>' +
-        '<div style="display:flex;gap:6px;" id="popup-sec-' + sec + '">';
+      var html = '<div style="margin-bottom:6px;">' +
+        '<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:' + color + ';margin-bottom:3px;">' + label + '</div>' +
+        '<div style="display:flex;gap:4px;" id="popup-sec-' + sec + '">';
       [1,2,3,4,5].forEach(function(n) {
         var mc = n>=4 ? '#16a34a' : n===3 ? '#ca8a04' : '#dc2626';
         var active = (parseInt(cur) === n);
@@ -7218,7 +7325,7 @@ function saveDailyReport() {
         var bg = active ? mc : 'white';
         var co = active ? 'white' : mc;
         html += '<button data-sec="' + sec + '" data-grade="' + n + '" ' +
-          'style="flex:1;height:32px;border-radius:7px;border:2px solid ' + bd + ';background:' + bg + ';color:' + co + ';font-size:13px;font-weight:900;cursor:pointer;">' + n + '</button>';
+          'style="flex:1;height:25px;border-radius:6px;border:1.5px solid ' + bd + ';background:' + bg + ';color:' + co + ';font-size:12px;font-weight:900;cursor:pointer;">' + n + '</button>';
       });
       html += '</div></div>';
       return html;
@@ -7228,13 +7335,13 @@ function saveDailyReport() {
       mkSection('Classwork',  'cw',   '#7c3aed', existing.cw)   +
       mkSection('Homework',   'hw',   '#a16207', existing.hw)   +
       mkSection('Discipline', 'disc', '#b91c1c', existing.disc) +
-      '<label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#475569;cursor:pointer;margin-bottom:12px;">' +
-        '<input type="checkbox" id="grid-popup-absent" onchange="drGridAutoSave()" ' + (existing.absent?'checked':'') + ' style="width:16px;height:16px;accent-color:#dc2626;cursor:pointer;"> Mark as Absent' +
+      '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#475569;cursor:pointer;margin-bottom:8px;">' +
+        '<input type="checkbox" id="grid-popup-absent" onchange="drGridAutoSave()" ' + (existing.absent?'checked':'') + ' style="width:13px;height:13px;accent-color:#dc2626;cursor:pointer;"> Mark as Absent' +
       '</label>' +
       '<textarea id="grid-popup-comment" placeholder="Comment (optional)..." rows="2" ' +
-        'style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12.5px;resize:none;outline:none;box-sizing:border-box;">' +
+        'style="width:100%;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:11px;resize:none;outline:none;box-sizing:border-box;">' +
         (existing.comment||'') + '</textarea>' +
-      '<button onclick="drGridSaveCell()" style="width:100%;margin-top:10px;padding:10px;border-radius:9px;border:none;background:#0a0f2e;color:white;font-size:13px;font-weight:700;cursor:pointer;">✓ Done</button>';
+      '<button onclick="drGridSaveCell()" style="width:100%;margin-top:7px;padding:8px;border-radius:8px;border:none;background:#0a0f2e;color:white;font-size:12px;font-weight:700;cursor:pointer;">✓ Done</button>';
 
     document.body.appendChild(popup);
 
@@ -7245,7 +7352,7 @@ function saveDailyReport() {
       drGridSetMark(btn.dataset.sec, parseInt(btn.dataset.grade), btn);
     });
 
-    var pw = 230;
+    var pw = 196;
     var left, top;
     if (clickedEl && clickedEl.getBoundingClientRect) {
       // Anchor the popup right next to whichever cell/+ button was actually
@@ -7255,7 +7362,7 @@ function saveDailyReport() {
       left = Math.max(8, Math.min(window.innerWidth - pw - 8, rect.left));
       // Prefer opening just below the clicked cell; if that would run off
       // the bottom of the screen, open above it instead.
-      var estHeight = 320; // reasonable estimate before actual render
+      var estHeight = 250; // reasonable estimate before actual render
       if (rect.bottom + estHeight + 8 <= window.innerHeight) {
         top = rect.bottom + 6;
       } else if (rect.top - estHeight - 8 >= 0) {
@@ -7265,7 +7372,7 @@ function saveDailyReport() {
       }
     } else {
       left = Math.max(8, Math.min(window.innerWidth - pw - 8, (window.innerWidth - pw)/2));
-      top = Math.max(8, (window.innerHeight - 320)/2);
+      top = Math.max(8, (window.innerHeight - 250)/2);
     }
     popup.style.left = left + 'px';
     popup.style.top = top + 'px';
@@ -7352,7 +7459,8 @@ function saveDailyReport() {
         cls: p.gridCls, subject: p.gridSubj,
         teacher: _currentUser ? _currentUser.name : '',
         period: drOpenGrid._period || '',
-        topic: topicNow, homework: hwNow, students: []
+        topic: topicNow, homework: hwNow, students: [],
+        submitted: false
       };
       dailyReports.push(rep);
     } else {
@@ -7370,8 +7478,12 @@ function saveDailyReport() {
     // This is the primary auto-save path (fires on every grade button click),
     // so it's critical this actually reaches the cloud, not just the local browser.
     if (typeof sbSaveDailyReport === 'function') {
-      sbSaveDailyReportWithRetry(rep).then(function(){ updateCloudStatus('saved'); })
-        .catch(function(){ updateCloudStatus('error'); });
+      sbSaveDailyReportWithRetry(rep).then(function(){
+        rep.submitted = true;
+        saveDailyReports();
+        if (typeof drFilterReports === 'function') drFilterReports();
+        updateCloudStatus('saved');
+      }).catch(function(){ updateCloudStatus('error'); });
     }
 
     // Refresh the grid cell immediately without closing popup
@@ -7448,7 +7560,7 @@ function saveDailyReport() {
     if (!rep) {
       rep = { id:'dr'+Date.now(), date:p.gridDate, cls:p.gridCls, subject:p.gridSubj,
         teacher:_currentUser?_currentUser.name:'', period:drOpenGrid._period||'',
-        topic:topicNow, homework:hwNow, students:[] };
+        topic:topicNow, homework:hwNow, students:[], submitted:false };
       dailyReports.push(rep);
     } else { if(topicNow) rep.topic=topicNow; if(hwNow) rep.homework=hwNow; }
     var found=false;
@@ -7458,8 +7570,12 @@ function saveDailyReport() {
     // Sync this report to Supabase — saveDailyReports() only writes localStorage,
     // it does NOT push to the cloud, so we must do that explicitly here too.
     if (typeof sbSaveDailyReport === 'function') {
-      sbSaveDailyReportWithRetry(rep).then(function(){ updateCloudStatus('saved'); })
-        .catch(function(){ updateCloudStatus('error'); showToast('Saved locally — cloud sync failed.'); });
+      sbSaveDailyReportWithRetry(rep).then(function(){
+        rep.submitted = true;
+        saveDailyReports();
+        if (typeof drFilterReports === 'function') drFilterReports();
+        updateCloudStatus('saved');
+      }).catch(function(){ updateCloudStatus('error'); showToast('Saved locally — cloud sync failed.'); });
     }
     drCloseMarkPopup();
     drRefreshCell(p.gridCls, p.gridSubj, p.gridDate, p.gridName, studentEntry);
@@ -7602,11 +7718,14 @@ function saveDailyReport() {
       showToast('Please select both a class and a subject.');
       return;
     }
-    var grid = document.getElementById('dr-students-wrap');
-    if (grid) grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading…</div>';
-    fetchClassStudents(cls).then(function(students) {
-      drRenderInlineTable(cls, subject, students);
-    });
+    // Uses the same grid/popup system as clicking a lesson from Timetable
+    // or Today's Lessons — there was a second, older grid implementation
+    // here (drRenderInlineTable) that a teacher could reach only via these
+    // manual dropdowns, with a real bug: it never marked reports as
+    // submitted, so marks entered through it could vanish from View
+    // Reports until the page reloaded. One grid system now, reachable
+    // however a teacher gets there.
+    drBuildGrid(cls, subject);
     drShowExistingAttachments();
   }
 
@@ -9096,7 +9215,7 @@ function saveDailyReport() {
       subjSel.innerHTML = '<option value="">— Select subject —</option>';
       var u = _currentUser;
       var ALL_SUBJECTS = ['English','Maths','Cambridge Maths','Science','Russian Language',
-        'Physics','Chemistry','Biology','GP (Hist-Geo)','Economics','ICT',
+        'Physics','Chemistry','Biology','History','Geography','Economics','ICT',
         'Uzbek Language','Literature','Art','Physical Education','Chess'];
       var isAdmin = u && (u.access === 'all' || u.role === 'admin' ||
                           u.role === 'principal' || u.role === 'founder');
@@ -9124,7 +9243,7 @@ function saveDailyReport() {
     var fs = document.getElementById('asm-filter-subject');
     if (fs && fs.options.length <= 1) {
       ['English','Maths','Cambridge Maths','Science','Russian Language','Physics',
-       'Chemistry','Biology','GP (Hist-Geo)','Economics','ICT','Uzbek Language'].forEach(function(s) {
+       'Chemistry','Biology','History','Geography','Economics','ICT','Uzbek Language'].forEach(function(s) {
         var o = document.createElement('option'); o.value=s; o.textContent=s; fs.appendChild(o);
       });
     }
@@ -9201,6 +9320,9 @@ function saveDailyReport() {
 
     fetchClassStudents(cls).then(function(students) {
       asmRenderStudents(cls, subj, students);
+    }).catch(function(e) {
+      console.error('Failed to load class roster:', e);
+      wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load the class list. Check your connection and try again.</div>';
     });
   }
 
@@ -9231,10 +9353,11 @@ function saveDailyReport() {
     var tbody = document.createElement('tbody');
     students.forEach(function(st, idx) {
       var name = stuDisplayName(st);
+      var matchKey = stuStableKey(st);
       var bg   = idx%2===0 ? 'white' : '#f8fafc';
       var tr   = document.createElement('tr');
       tr.style.cssText = 'background:'+bg+';border-bottom:1px solid #f1f5f9;';
-      tr.dataset.name  = name;
+      tr.dataset.name  = matchKey;
 
       var tdN = document.createElement('td');
       tdN.style.cssText = 'padding:7px 14px;font-weight:600;font-size:12.5px;color:var(--ink);';
@@ -9245,7 +9368,7 @@ function saveDailyReport() {
       var inp = document.createElement('input');
       inp.type = 'number'; inp.min = '0';
       inp.className = 'asm-score-input';
-      inp.dataset.student = name;
+      inp.dataset.student = matchKey;
       inp.style.cssText = 'width:65px;padding:6px 8px;border-radius:7px;border:1.5px solid #e2e8f0;text-align:center;font-size:13px;font-weight:700;outline:none;font-family:"DM Sans",sans-serif;';
       inp.placeholder = '—';
 
@@ -10111,6 +10234,18 @@ function saveDailyReport() {
     return s.full_name_en || s.full_name_ru || '';
   }
 
+  // For anything that KEYS or MATCHES a saved record (daily report entries,
+  // grid lookups) — never for display. stuDisplayName() changes with the
+  // interface language (_lang), so using it as a storage/lookup key meant
+  // the same physical student could get saved as two separate entries (one
+  // per language a teacher happened to be in), and marks saved under one
+  // language could look "missing" when the grid was viewed in the other.
+  // Always prefers the English name so existing historical data — which
+  // predates this fix and is already keyed in English — keeps matching.
+  function stuStableKey(s) {
+    return s.full_name_en || s.full_name_ru || '';
+  }
+
   function stuParentDisplay(s) {
     if (typeof _lang !== 'undefined' && _lang === 'ru') {
       return s.father_name_ru || s.father_name_en ||
@@ -10486,7 +10621,7 @@ function saveDailyReport() {
     var sel = document.getElementById('obsc-subject');
     if (!sel) return;
     var subs = ['English','Maths','Cambridge Maths','Science','Physics','Chemistry','Biology',
-      'Russian Language','Literature','GP (Hist-Geo)','Economics','ICT','Uzbek Language','Art','Physical Education'];
+      'Russian Language','Literature','History','Geography','Economics','ICT','Uzbek Language','Art','Physical Education'];
     sel.innerHTML = '<option value="">— Select subject —</option>';
     subs.forEach(function(s) {
       var opt = document.createElement('option'); opt.value = s; opt.textContent = s;
@@ -10965,98 +11100,9 @@ function saveDailyReport() {
   // ══ TIMETABLE PANEL ══════════════════════════════════════════════════════
   var _ttView = 'school';
 
-    // ══ PARENT MESSAGES (staff-side view/reply) ═══════════════════════════
-  var _pmCurrentStudent = null;
-  var _pmStudentsCache = [];
+  // (Parent Messages feature removed — pmInit/pmUpdateBadge/pmOpenThread/pmSendReply deleted,
+  // since parents no longer have any way to read or send messages from their portal)
 
-  function pmInit() {
-    var list = document.getElementById('pm-student-list');
-    list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);font-size:12.5px;">Loading…</div>';
-
-    fetch(_SB_URL + '/rest/v1/parent_messages?select=student_id,sender,read,message,created_at&order=created_at.desc', {
-      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(rows) {
-      rows = rows || [];
-      var byStudent = {};
-      rows.forEach(function(m) {
-        if (!byStudent[m.student_id]) byStudent[m.student_id] = { lastMsg: m.message, lastDate: m.created_at, unread: 0 };
-        if (m.sender === 'parent' && !m.read) byStudent[m.student_id].unread++;
-      });
-
-      var studentIds = Object.keys(byStudent);
-      if (!studentIds.length) {
-        list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);font-size:12.5px;">No parent messages yet.</div>';
-        pmUpdateBadge(0);
-        return;
-      }
-
-      fetch(_SB_URL + '/rest/v1/students?id=in.(' + studentIds.join(',') + ')&select=id,full_name_en,class', {
-        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-      })
-      .then(function(r){ return r.ok ? r.json() : []; })
-      .then(function(students) {
-        _pmStudentsCache = students || [];
-        var totalUnread = 0;
-        list.innerHTML = '';
-        students.forEach(function(s) {
-          var info = byStudent[s.id] || { unread: 0 };
-          totalUnread += info.unread;
-          var row = document.createElement('div');
-          row.style.cssText = 'padding:12px 14px;border-bottom:1px solid var(--rule-light,#f1f5f9);cursor:pointer;display:flex;justify-content:space-between;align-items:center;';
-          row.innerHTML = '<div><div style="font-size:12.5px;font-weight:700;color:var(--text-1,var(--ink));">' + s.full_name_en + '</div>' +
-            '<div style="font-size:11px;color:var(--text-3,var(--muted));">Class ' + s.class + '</div></div>' +
-            (info.unread ? '<span style="background:#EF4444;color:white;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;">' + info.unread + '</span>' : '');
-          row.addEventListener('click', function(){ pmOpenThread(s); });
-          list.appendChild(row);
-        });
-        pmUpdateBadge(totalUnread);
-      });
-    });
-  }
-
-  function pmUpdateBadge(count) {
-    var badge = document.getElementById('pm-badge');
-    if (!badge) return;
-    badge.textContent = count;
-    badge.style.display = count > 0 ? 'inline-block' : 'none';
-  }
-
-  function pmOpenThread(student) {
-    _pmCurrentStudent = student;
-    document.getElementById('pm-thread-title').textContent = student.full_name_en + ' — Class ' + student.class;
-    document.getElementById('pm-reply-row').style.display = 'flex';
-    var body = document.getElementById('pm-thread-body');
-    body.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;">Loading…</div>';
-
-    fetch(_SB_URL + '/rest/v1/parent_messages?student_id=eq.' + student.id + '&order=created_at.asc&select=*', {
-      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(rows) {
-      body.innerHTML = '';
-      (rows||[]).forEach(function(m) {
-        var isParent = m.sender === 'parent';
-        var bubble = document.createElement('div');
-        bubble.style.cssText = 'max-width:75%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.4;' +
-          (isParent ? 'align-self:flex-start;background:var(--bg,#f1f5f9);color:var(--ink);' : 'align-self:flex-end;background:var(--blue,var(--navy));color:white;');
-        bubble.textContent = m.message;
-        body.appendChild(bubble);
-      });
-      body.scrollTop = body.scrollHeight;
-
-      // Mark parent messages as read
-      var unreadIds = (rows||[]).filter(function(m){ return m.sender==='parent' && !m.read; });
-      if (unreadIds.length) {
-        fetch(_SB_URL + '/rest/v1/parent_messages?student_id=eq.' + student.id + '&sender=eq.parent&read=eq.false', {
-          method: 'PATCH',
-          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ read: true })
-        }).then(function(){ pmInit(); });
-      }
-    });
-  }
 
   // ══ PUSH NOTIFICATIONS ═══════════════════════════════════════════════
   var _VAPID_PUBLIC_KEY = 'BLKTbVN_CHUQmYLJfdZzHW5PeBCupPS9xfvAe9FHHQQ510YXf-sjPL2xG7FILD0TU2HN965Z5RxtJ403r8yqRBk';
@@ -11111,29 +11157,7 @@ function saveDailyReport() {
       .catch(function(e) { btn.textContent = '🔔 Enable Notifications'; showToast(e.message); });
   }
 
-  function pmSendReply() {
-    var input = document.getElementById('pm-reply-input');
-    var text = input.value.trim();
-    if (!text || !_pmCurrentStudent) return;
-    input.value = '';
-    var studentRef = _pmCurrentStudent;
-
-    sbQueueWrite('parent_messages', 'POST', {
-      student_id: studentRef.id,
-      sender: 'teacher',
-      sender_name: _currentUser ? _currentUser.name : 'Staff',
-      message: text,
-      read: true
-    }).then(function() {
-      pmOpenThread(studentRef);
-      sendPushNotification('parent', studentRef.id,
-        (_currentUser ? _currentUser.name : 'Your teacher') + ' sent a message',
-        text, '/parent.html');
-    }).catch(function(e) {
-      console.error('pmSendReply error:', e);
-      showToast('Cloud send failed — message saved on this device and will retry automatically.');
-    });
-  }
+  // (pmSendReply removed along with the rest of the Parent Messages feature)
 
 
   // ══ REPORT CARDS ═════════════════════════════════════════════════════
@@ -11820,11 +11844,19 @@ function ttInitPanel() {
         if (les) {
           var col = SUBJ_COLORS[(les.subject||'').toUpperCase()] || '#1e3a5f';
           var pill = document.createElement('div');
-          pill.style.cssText = 'padding:8px 12px;border-radius:9px;border-left:3px solid '+col+';background:'+col+'14;';
+          pill.style.cssText = 'padding:8px 12px;border-radius:9px;border-left:3px solid '+col+';background:'+col+'14;cursor:pointer;';
+          pill.addEventListener('mouseenter',function(){this.style.filter='brightness(0.96)';});
+          pill.addEventListener('mouseleave',function(){this.style.filter='';});
           pill.innerHTML =
             '<div style="font-weight:800;font-size:13px;color:'+col+';">'+les.subject+'</div>'+
             '<div style="font-size:11px;color:#64748b;margin-top:2px;">'+les.teacher.split(' ')[0]+'</div>'+
             (les.room ? '<div style="font-size:10.5px;color:#94a3b8;margin-top:1px;">Room '+les.room+'</div>' : '');
+          (function(cls, subj, period) {
+            pill.addEventListener('click', function() {
+              showPanel('dailyreport', null);
+              drSelectLesson(cls, subj, 'L' + period);
+            });
+          })(clsFilter, les.subject, p);
           td.appendChild(pill);
         } else {
           td.innerHTML = '<div style="color:#e2e8f0;font-size:13px;text-align:center;">—</div>';
@@ -11918,10 +11950,18 @@ function ttInitPanel() {
         if(les){
           var col=SUBJ_COLORS[(les.subject||'').toUpperCase()]||'#1e3a5f';
           var pill=document.createElement('div');
-          pill.style.cssText='padding:7px 10px;border-radius:8px;background:'+col+'14;border-left:3px solid '+col+';';
+          pill.style.cssText='padding:7px 10px;border-radius:8px;background:'+col+'14;border-left:3px solid '+col+';cursor:pointer;';
+          pill.addEventListener('mouseenter',function(){this.style.filter='brightness(0.96)';});
+          pill.addEventListener('mouseleave',function(){this.style.filter='';});
           pill.innerHTML='<div style="font-weight:800;color:'+col+';font-size:12.5px;">'+les.class+'</div>'+
             '<div style="font-size:11px;color:#64748b;">'+les.subject+'</div>'+
             (les.room?'<div style="font-size:10px;color:#94a3b8;">Rm '+les.room+'</div>':'');
+          (function(cls, subj, period) {
+            pill.addEventListener('click', function() {
+              showPanel('dailyreport', null);
+              drSelectLesson(cls, subj, 'L' + period);
+            });
+          })(les.class, les.subject, les.period);
           td.appendChild(pill);
         } else {
           td.innerHTML='<div style="color:#e2e8f0;text-align:center;">—</div>';
