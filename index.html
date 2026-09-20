@@ -676,6 +676,9 @@
     <a class="nav-item" data-panel="results" onclick="showPanel('results', this)">
       <span class="nav-icon">📊</span> Student Results
     </a>
+    <a class="nav-item" data-panel="reportcompliance" onclick="showPanel('reportcompliance', this)">
+      <span class="nav-icon">✅</span> Report Compliance
+    </a>
   </div>
 
   <div class="nav-section">
@@ -1061,6 +1064,13 @@
         <div class="card-header"><div class="card-title">🎯 Subject Average by Class</div></div>
         <div class="card-body" style="overflow-x:auto;">
           <div id="acad-class-subject-wrap"><div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header"><div class="card-title">📝 Daily Marks (CW / HW / Disc) by Class &amp; Subject — Last 15 Days</div></div>
+        <div class="card-body" style="overflow-x:auto;">
+          <div id="acad-daily-subject-wrap"><div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div></div>
         </div>
       </div>
 
@@ -1468,6 +1478,34 @@
 
     </div>
 
+    <div class="panel" id="panel-reportcompliance">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div><h2 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:3px;">✅ Report Compliance</h2>
+        <div style="font-size:12.5px;color:var(--muted);">Every lesson on the timetable for the selected day, checked against what's actually been submitted in Daily Report</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;padding:16px;">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Date</label>
+            <input type="date" id="cmpl-date" onchange="cmplLoadCompliance()" style="padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);padding-bottom:9px;cursor:pointer;">
+            <input type="checkbox" id="cmpl-show-all" onchange="cmplRenderResults()"> Show reported lessons too (not just missing)
+          </label>
+        </div>
+      </div>
+
+      <div id="cmpl-summary" style="margin-bottom:16px;"></div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">By Teacher</div></div>
+        <div id="cmpl-body" style="padding:0;"></div>
+      </div>
+
+    </div>
+
     <div class="panel" id="panel-rubric">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
@@ -1711,9 +1749,7 @@ id="panel-timetable">
                   <select id="dr-subject" onchange="drLoadStudents();" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
                     <option value="" data-i18n="opt_select_subject">— Select subject —</option>
                     <option value="English" data-i18n="subj_english">English</option>
-                    <option value="Maths" data-i18n="subj_maths">Maths</option>
                     <option value="Cambridge Maths" data-i18n="subj_cmaths">Cambridge Maths</option>
-                    <option value="Maths-Eng" data-i18n="subj_maths_eng">Maths-Eng</option>
                     <option value="Maths-Rus" data-i18n="subj_maths_rus">Maths-Rus</option>
                     <option value="Science" data-i18n="subj_science">Science</option>
                     <option value="CC-Science" data-i18n="subj_ccscience">CC-Science</option>
@@ -1795,9 +1831,16 @@ id="panel-timetable">
                 </div>
               </div>
 
-              <button type="button" onclick="saveDailyReport()" style="padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--navy),#1a2448);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 14px rgba(10,15,46,0.2);" onmouseenter="this.style.transform='translateY(-1px)'" onmouseleave="this.style.transform='translateY(0)'">
-                <span data-i18n="dr_save">💾 Save Lesson Report</span>
-              </button>
+              <div id="dr-cancelled-banner" style="display:none;padding:10px 12px;border-radius:9px;background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;font-size:12px;font-weight:600;margin-top:2px;"></div>
+
+              <div style="display:flex;gap:8px;">
+                <button type="button" onclick="saveDailyReport()" style="flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--navy),#1a2448);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 14px rgba(10,15,46,0.2);" onmouseenter="this.style.transform='translateY(-1px)'" onmouseleave="this.style.transform='translateY(0)'">
+                  <span data-i18n="dr_save">💾 Save Lesson Report</span>
+                </button>
+                <button type="button" id="dr-cancel-lesson-btn" onclick="drToggleCancelLesson()" style="padding:12px 14px;border-radius:10px;border:1.5px solid #fca5a5;background:white;color:#dc2626;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                  🚫 Cancel Lesson
+                </button>
+              </div>
             </div>
           </div>
           </div>
@@ -2089,6 +2132,7 @@ id="panel-timetable">
     if (id === 'timetable')   { if(typeof ttInitPanel==='function') ttInitPanel(); }
     if (id === 'teachers')    { if(typeof renderPerfTable==='function') renderPerfTable(); }
     if (id === 'results')     { if(typeof renderResults==='function') setTimeout(function(){ renderResults(); }, 50); }
+    if (id === 'reportcompliance') { if(typeof cmplInit==='function') cmplInit(); }
     if (id === 'assessments') { if(typeof asmInit==='function') asmInit(); }
     if (id === 'classes')      { if(typeof classesInitPanel==='function') classesInitPanel(); }
     if (id === 'rubric')       { if(typeof obsCambInit==='function') obsCambInit(); }
@@ -2388,11 +2432,10 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     if (!el) return;
 
     // Curriculum card names don't always match the exact subject strings
-    // used in the real timetable/teacher assignment data (e.g. the card
-    // says "Cambridge Maths" but the real data says "Maths-Eng"/"Maths-Rus").
+    // used in the real timetable/teacher assignment data.
     // This maps each card to every real-world name variant it should match.
     const subjectAliases = {
-      'Cambridge Maths': ['Cambridge Maths', 'Maths-Eng', 'Maths-Rus'],
+      'Cambridge Maths': ['Cambridge Maths'],
       'GP (History–Geography)': ['GP (History–Geography)', 'History', 'Geography'],
       'Russian Maths': ['Russian Maths', 'Maths-Rus'],
       'Russian Language': ['Russian Language', 'Russian'],
@@ -2559,6 +2602,138 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       return '<span style="display:inline-block;width:28px;height:28px;border-radius:6px;background:' + c.bg + ';border:1.5px solid ' + c.border + ';vertical-align:middle;"></span>';
     }
     return '<span style="display:inline-block;padding:3px 7px;border-radius:6px;background:' + c.bg + ';color:' + c.text + ';border:1px solid ' + c.border + ';font-weight:700;font-size:11.5px;min-width:38px;text-align:center;">' + (text||'') + '</span>';
+  }
+
+  // ══ REPORT COMPLIANCE ══════════════════════════════════════════════════
+  // Cross-checks every lesson scheduled on the timetable for a given day
+  // against what's actually been submitted in Daily Report, so an admin
+  // can see who hasn't filed a report — something there was previously no
+  // way to check at all.
+  var _cmplData = null; // { total, reported, byTeacher: {name: [{cls,subject,period,status}]} }
+
+  function cmplInit() {
+    var dateEl = document.getElementById('cmpl-date');
+    if (dateEl && !dateEl.value) dateEl.value = localDateStr();
+    cmplLoadCompliance();
+  }
+
+  function cmplLoadCompliance() {
+    var dateEl = document.getElementById('cmpl-date');
+    var date = (dateEl && dateEl.value) ? dateEl.value : localDateStr();
+    var body = document.getElementById('cmpl-body');
+    var summary = document.getElementById('cmpl-summary');
+    if (body) body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div>';
+    if (summary) summary.innerHTML = '';
+
+    // Same weekday-name convention the timetable already uses.
+    var DAY_NAMES = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    var dayName = DAY_NAMES[new Date(date + 'T12:00:00').getDay()];
+
+    if (dayName === 'SATURDAY' || dayName === 'SUNDAY') {
+      if (body) body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No lessons scheduled — ' + date + ' is a weekend.</div>';
+      return;
+    }
+
+    Promise.all([
+      fetch(_SB_URL + '/rest/v1/timetable?day=eq.' + dayName + '&select=class,subject,period,teacher_name', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; }),
+      fetch(_SB_URL + '/rest/v1/daily_reports?date=eq.' + date + '&select=class,subject,cancelled', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; })
+    ]).then(function(results) {
+      var lessons = results[0] || [];
+      var reports = results[1] || [];
+
+      // A report is keyed by (class, subject, date) — one shared report
+      // per class+subject regardless of how many teachers are involved
+      // (e.g. a split-group lesson with two teachers still has just one
+      // report covering the whole class), so that's what "reported" means.
+      // Cancelled lessons are tracked separately — they genuinely didn't
+      // happen, so they shouldn't count as a missing report.
+      var reportedSet = {};
+      var cancelledSet = {};
+      reports.forEach(function(r) {
+        var key = r.class + '|||' + r.subject;
+        if (r.cancelled) cancelledSet[key] = true;
+        else reportedSet[key] = true;
+      });
+
+      var byTeacher = {};
+      var total = 0, reportedCount = 0, cancelledCount = 0;
+      lessons.forEach(function(l) {
+        var teacher = l.teacher_name || '(no teacher assigned)';
+        var key = l.class + '|||' + l.subject;
+        var isReported = !!reportedSet[key];
+        var isCancelled = !!cancelledSet[key];
+        total++;
+        if (isReported) reportedCount++;
+        if (isCancelled) cancelledCount++;
+        byTeacher[teacher] = byTeacher[teacher] || [];
+        byTeacher[teacher].push({ cls: l.class, subject: l.subject, period: l.period, reported: isReported, cancelled: isCancelled });
+      });
+
+      _cmplData = { date: date, total: total, reported: reportedCount, cancelled: cancelledCount, byTeacher: byTeacher };
+      cmplRenderResults();
+    }).catch(function(e) {
+      console.error('Report compliance load failed:', e);
+      if (body) body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load. Check your connection and try again.</div>';
+    });
+  }
+
+  function cmplRenderResults() {
+    if (!_cmplData) return;
+    var body = document.getElementById('cmpl-body');
+    var summary = document.getElementById('cmpl-summary');
+    var showAll = (document.getElementById('cmpl-show-all')||{}).checked;
+    if (!body) return;
+
+    // Cancelled lessons genuinely didn't happen, so they're excluded from
+    // the compliance percentage entirely — not counted as reported, and
+    // not counted as missing either.
+    var accountable = _cmplData.total - _cmplData.cancelled;
+    var pct = accountable ? Math.round(100 * _cmplData.reported / accountable) : 100;
+    var pctColor = pct >= 90 ? 'var(--green,#16a34a)' : pct >= 70 ? '#ca8a04' : 'var(--red,#dc2626)';
+    if (summary) {
+      summary.innerHTML =
+        '<div class="card"><div class="card-body" style="display:flex;align-items:center;gap:24px;padding:18px 20px;flex-wrap:wrap;">' +
+          '<div><div style="font-size:30px;font-weight:900;color:' + pctColor + ';">' + pct + '%</div>' +
+          '<div style="font-size:11.5px;color:var(--muted);">reported</div></div>' +
+          '<div style="font-size:13px;color:var(--text-1,var(--ink));"><b>' + _cmplData.reported + '</b> of <b>' + accountable + '</b> scheduled lessons have a submitted Daily Report for ' + _cmplData.date +
+            (_cmplData.cancelled ? ' (<b>' + _cmplData.cancelled + '</b> cancelled, not counted).' : '.') + '</div>' +
+        '</div></div>';
+    }
+
+    var teacherNames = Object.keys(_cmplData.byTeacher).sort();
+    var html = '';
+    teacherNames.forEach(function(teacher) {
+      var lessons = _cmplData.byTeacher[teacher];
+      var missing = lessons.filter(function(l) { return !l.reported && !l.cancelled; });
+      var toShow = showAll ? lessons : missing;
+      if (!toShow.length) return; // fully compliant teacher, and "missing only" mode — nothing to show
+
+      html += '<div style="padding:12px 18px;border-bottom:1px solid var(--rule-light,#f1f5f9);">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+          '<div style="font-weight:700;font-size:13.5px;">' + teacher + '</div>' +
+          (missing.length ? '<span style="background:#fee2e2;color:#dc2626;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;">' + missing.length + ' missing</span>'
+                           : '<span style="background:#dcfce7;color:#16a34a;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;">All reported ✓</span>') +
+        '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+      toShow.forEach(function(l) {
+        var chipColor = l.cancelled ? '#f1f5f9' : l.reported ? '#dcfce7' : '#fee2e2';
+        var textColor = l.cancelled ? '#64748b' : l.reported ? '#16a34a' : '#dc2626';
+        var suffix = l.cancelled ? ' 🚫' : l.reported ? ' ✓' : '';
+        html += '<span style="background:' + chipColor + ';color:' + textColor + ';font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;">' +
+          l.period + ' · ' + l.cls + ' · ' + l.subject + suffix + '</span>';
+      });
+      html += '</div></div>';
+    });
+
+    if (!html) {
+      html = '<div style="padding:30px;text-align:center;color:var(--muted);">' +
+        (showAll ? 'No lessons scheduled for this day.' : '🎉 Every scheduled lesson has been reported.') + '</div>';
+    }
+    body.innerHTML = html;
   }
 
   function renderResults() {
@@ -4256,8 +4431,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       panels: ['dashboard','teachers','discipline','academics','classes','subjects','results','rubric','calendar','ai','dailyreport','assessments','messenger'],
       teacherName: 'Akash',
       loadName: 'Akash',
-      teacherClasses: ['10-11','7A','7B','7C'],
-      teacherSubjects: ['IELTS']
+      teacherClasses: ['10-11','7A','7B','7C','9B'],
+      teacherSubjects: ['IELTS'],
     },
 
     // ── CO-FOUNDERS ──
@@ -4335,7 +4510,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       dept: 'Maths',
       classes: ['8-PhysMath','8-ChemBio','9A','10-11'],
       teacherSubjects: ['Maths-Rus'],
-      teacherClasses: ['10-11','7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities'],
+      teacherClasses: ['10-11','7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities','9A','9B'],
       deptClasses: [],
       deptSubjects: [],
       deptTeachers: [],
@@ -4392,7 +4567,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherName: 'Oygul Isaevna',
       loadName: 'Oygul Isaevna',
       teacherClasses: ['2A','2B','2C','3A','3B','3C'],
-      teacherSubjects: ['Russian']
+      teacherSubjects: ['Russian', 'Russian Reading']
     },
     'egambe.zafar': {
       password: 'class1c2c',
@@ -4433,7 +4608,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherName: 'Zarrina Musinovna',
       loadName: 'Zarrina Musinovna',
       teacherClasses: ['1A','1B','1C','4A','4B','4C'],
-      teacherSubjects: ['Russian']
+      teacherSubjects: ['Russian', 'Russian Reading']
     },
     'normam.furkat': {
       password: 'class1b2b',
@@ -4487,8 +4662,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'BE',
       access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
+      teacherSubjects: ['English'],
+      teacherClasses: ['4A','4B','4C','5A','5B','5C'],
       teacherName: 'Soniya',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4500,7 +4675,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'HM',
       access: 'subject',
-      teacherSubjects: ['Maths-Eng'],
+      teacherSubjects: ['Cambridge Maths'],
       teacherClasses: ['5B','5C','6A','6B','7A','7B'],
       teacherName: 'Manzoor Ahmad',
       loadName: 'Manzoor Ahmad',
@@ -4529,7 +4704,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'RS',
       access: 'subject',
       teacherSubjects: ['Literature','Russian'],
-      teacherClasses: ['10-11','7B','8-PhysMath','8-ChemBio','8-Humanities'],
+      teacherClasses: ['10-11','7B','8-PhysMath','8-ChemBio','8-Humanities','9A','9B'],
       teacherName: 'Sabina Robertovna',
       loadName: 'Sabina Robertovna',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
@@ -4543,7 +4718,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'RA',
       access: 'subject',
       teacherSubjects: ['Biology'],
-      teacherClasses: ['7A','7B','7C','8-ChemBio'],
+      teacherClasses: ['7A','7B','7C','8-ChemBio','9B'],
       teacherName: 'Aziza',
       loadName: 'Aziza',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
@@ -4556,8 +4731,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'YA',
       access: 'subject',
-      teacherSubjects: ['Maths-Eng'],
-      teacherClasses: ['10-11','7C','8-PhysMath','8-ChemBio','8-Humanities'],
+      teacherSubjects: ['Cambridge Maths'],
+      teacherClasses: ['10-11','7C','8-PhysMath','8-ChemBio','8-Humanities','9A','9B'],
       teacherName: 'Adeel',
       loadName: 'Adeel',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
@@ -4585,22 +4760,9 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'M',
       access: 'subject',
       teacherSubjects: ['Uzbek'],
-      teacherClasses: ['10-11','6B','7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities'],
+      teacherClasses: ['10-11','6B','7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities','9A','9B'],
       teacherName: 'Madina',
       loadName: 'Madina',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
-      readonlyStats: true,
-    },
-    'msnasiba': {
-      password: 'teacher2024',
-      name: 'ms.Nasiba',
-      role: 'teacher',
-      title: 'Subject Teacher',
-      avatar: 'M',
-      access: 'subject',
-      teacherSubjects: [],
-      teacherClasses: [],
-      teacherName: 'Nasiba Ismailovna',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
@@ -4612,7 +4774,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'K',
       access: 'subject',
-      teacherSubjects: ['Activity','Art','Chess','English','Maths-Eng','PE','Science'],
+      teacherSubjects: ['Activity','Art','Chess','English','Cambridge Maths','PE','Science'],
       teacherClasses: ['1A','1B'],
       teacherName: 'Khutsi',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
@@ -4625,7 +4787,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'A',
       access: 'subject',
-      teacherSubjects: ['Activity','Art','Chess','English','Maths-Eng','PE','Science'],
+      teacherSubjects: ['Activity','Art','Chess','English','Cambridge Maths','PE','Science'],
       teacherClasses: ['1B','1C'],
       teacherName: 'Alima',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
@@ -4639,7 +4801,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'NB',
       access: 'subject',
       teacherSubjects: ['English','IELTS'],
-      teacherClasses: ['10-11','8-PhysMath','8-ChemBio','8-Humanities'],
+      teacherClasses: ['10-11','8-PhysMath','8-ChemBio','8-Humanities','9A','9B'],
       teacherName: 'Nasser B.',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4664,7 +4826,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'PD',
       access: 'subject',
-      teacherSubjects: ['Maths-Eng'],
+      teacherSubjects: ['Cambridge Maths'],
       teacherClasses: ['3A','3B','3C','4A','4B','4C','5A'],
       teacherName: 'Princess D.',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
@@ -4691,7 +4853,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'MO',
       access: 'subject',
       teacherSubjects: ['Maths-Rus'],
-      teacherClasses: ['7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities'],
+      teacherClasses: ['10-11','7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities','9A'],
       teacherName: 'Ms Ozoda',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4717,7 +4879,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'MS',
       access: 'subject',
       teacherSubjects: ['CC-Science','Science'],
-      teacherClasses: ['5B','5C','6A','6B','7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities'],
+      teacherClasses: ['5B','5C','6A','6B','7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities','9A','9B'],
       teacherName: 'Ms Stephanie',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4735,19 +4897,6 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
-    'ameen.alam': {
-      password: 'redbridge2024',
-      name: 'Ameen Alam',
-      role: 'teacher',
-      title: 'Subject Teacher',
-      avatar: 'AA',
-      access: 'subject',
-      teacherSubjects: ['Geography','History'],
-      teacherClasses: ['10-11','5A','5B','5C','6A','6B','7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities'],
-      teacherName: 'Ameen Alam',
-      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
-      readonlyStats: true,
-    },
     'liyaqat.teacher': {
       password: 'redbridge2024',
       name: 'Liyaqat',
@@ -4755,7 +4904,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'L',
       access: 'subject',
-      teacherSubjects: ['ICT','Maths-Eng'],
+      teacherSubjects: ['ICT','Cambridge Maths'],
       teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A','5B','5C','6A','6B'],
       teacherName: 'Liyaqat',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
@@ -4821,7 +4970,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'MT',
       access: 'subject',
       teacherSubjects: ['PE'],
-      teacherClasses: ['10-11','8-PhysMath','8-ChemBio','8-Humanities'],
+      teacherClasses: ['10-11','8-PhysMath','8-ChemBio','8-Humanities','9A','9B'],
       teacherName: 'Military Training Instructor',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4860,7 +5009,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       avatar: 'B',
       access: 'subject',
       teacherSubjects: ['Business','Economics'],
-      teacherClasses: ['10-11','8-PhysMath','8-ChemBio','8-Humanities'],
+      teacherClasses: ['10-11','8-PhysMath','8-ChemBio','8-Humanities','9A','9B'],
       teacherName: 'Beth',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -5286,9 +5435,16 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       }).then(function(r){ return r.ok ? r.json() : []; }),
       fetch(_SB_URL + '/rest/v1/daily_reports?select=*&order=date.desc&limit=100', {
         headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-      }).then(function(r){ return r.ok ? r.json() : []; })
+      }).then(function(r){ return r.ok ? r.json() : []; }),
+      (function() {
+        var since = new Date(); since.setDate(since.getDate()-15);
+        var sinceStr = localDateStr(since);
+        return fetch(_SB_URL + '/rest/v1/daily_reports?select=subject,date,students&date=gte.' + sinceStr + '&limit=1000', {
+          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+        }).then(function(r){ return r.ok ? r.json() : []; });
+      })()
     ]).then(function(results) {
-      var assessRows = results[0], dailyRows = results[1];
+      var assessRows = results[0], dailyRows = results[1], daily15dRows = results[2];
 
       // ── Assessment history (unchanged) ──
       var history = [];
@@ -5345,6 +5501,47 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
             '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;">Discipline</div>' +
             '<div style="font-size:22px;font-weight:800;color:' + scoreColor(discAvg) + ';">' + (discAvg||'—') + '</div></div>' +
         '</div></div>';
+
+      // ── Per-subject daily averages — last 15 days ──
+      var bySubject15d = {};
+      (daily15dRows||[]).forEach(function(r) {
+        (r.students||[]).forEach(function(s) {
+          if (s.name === name && !s.absent) {
+            bySubject15d[r.subject] = bySubject15d[r.subject] || { cw:[], hw:[], disc:[] };
+            if (s.cw) bySubject15d[r.subject].cw.push(s.cw);
+            if (s.hw) bySubject15d[r.subject].hw.push(s.hw);
+            if (s.disc) bySubject15d[r.subject].disc.push(s.disc);
+          }
+        });
+      });
+      function avg15(arr) { return arr.length ? (arr.reduce(function(a,b){return a+b;},0)/arr.length) : null; }
+      var subject15dNames = Object.keys(bySubject15d).sort();
+      html += '<div style="margin-bottom:20px;">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Per-Subject Daily Averages — Last 15 Days</div>';
+      if (!subject15dNames.length) {
+        html += '<div style="padding:16px;text-align:center;color:var(--muted);font-size:12px;background:#f8fafc;border-radius:10px;">No Daily Report marks for this student in the last 15 days.</div>';
+      } else {
+        html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+          '<thead><tr style="background:#f8fafc;">' +
+            '<th style="padding:6px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">Subject</th>' +
+            '<th style="padding:6px 8px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">CW</th>' +
+            '<th style="padding:6px 8px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">HW</th>' +
+            '<th style="padding:6px 8px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">Disc</th>' +
+          '</tr></thead><tbody>';
+        subject15dNames.forEach(function(subj) {
+          var d = bySubject15d[subj];
+          var c = avg15(d.cw), h = avg15(d.hw), disc = avg15(d.disc);
+          function tdVal(v) {
+            if (v === null) return '<td style="padding:6px 8px;text-align:center;color:#cbd5e1;">—</td>';
+            return '<td style="padding:6px 8px;text-align:center;font-weight:700;color:' + scoreColor(v.toFixed(1)) + ';">' + v.toFixed(1) + '</td>';
+          }
+          html += '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+            '<td style="padding:6px 10px;font-weight:600;">' + subj + '</td>' + tdVal(c) + tdVal(h) + tdVal(disc) +
+          '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
 
       if (dailyEntries.length) {
         html += '<div style="margin-bottom:20px;">' +
@@ -5985,6 +6182,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     // separate full-page state. Build the grid first so it's already
     // there behind the modal, exactly like the reference screenshot.
     drBuildGrid(cls, subject);
+    drLoadExistingLessonFields(cls, subject, localDateStr());
     drShowExistingAttachments();
     drOpenLessonInfoModal();
   }
@@ -6209,6 +6407,89 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     return entry;
   }
 
+  // Loads Topic/Homework/Remark into the Lesson Info fields if a report
+  // already exists for this exact class+subject+date, or clears the
+  // fields if not. Neither the Timetable-click path (drSelectLesson) nor
+  // the manual Class/Subject dropdown path (drLoadStudents) used to do
+  // this at all — a teacher filling in homework for one class, then
+  // navigating to another and back, would find the fields blank even
+  // though the data was safely saved, because nothing ever loaded it
+  // back in. Only the explicit "Edit" button in View Reports did this.
+  function drLoadExistingLessonFields(cls, subject, date) {
+    subject = normalizeSubject(subject);
+    var rep = null;
+    if (typeof dailyReports !== 'undefined') {
+      dailyReports.forEach(function(r) {
+        if (r.cls === cls && r.subject === subject && r.date === date) rep = r;
+      });
+    }
+    var topicEl = document.getElementById('dr-topic');
+    var hwEl = document.getElementById('dr-homework');
+    var remarkEl = document.getElementById('dr-remark');
+    if (topicEl) topicEl.value = rep ? (rep.topic || '') : '';
+    if (hwEl) hwEl.value = rep ? (rep.homework || '') : '';
+    if (remarkEl) remarkEl.value = rep ? (rep.remark || '') : '';
+    drUpdateCancelUI(rep);
+  }
+
+  // Reflects a report's cancelled state in the modal — the red banner and
+  // whether the button reads "Cancel Lesson" or "Un-cancel".
+  function drUpdateCancelUI(rep) {
+    var banner = document.getElementById('dr-cancelled-banner');
+    var btn = document.getElementById('dr-cancel-lesson-btn');
+    var isCancelled = !!(rep && rep.cancelled);
+    if (banner) {
+      banner.style.display = isCancelled ? 'block' : 'none';
+      banner.textContent = isCancelled
+        ? '🚫 This lesson is marked cancelled' + (rep.cancel_reason ? ': ' + rep.cancel_reason : '') + '. No marks are required.'
+        : '';
+    }
+    if (btn) {
+      btn.innerHTML = isCancelled ? '↩ Un-cancel Lesson' : '🚫 Cancel Lesson';
+      btn.style.background = isCancelled ? '#fef2f2' : 'white';
+    }
+  }
+
+  // Marks (or un-marks) the currently-open lesson as cancelled — for
+  // substitutions, school events, sports day, staff meetings, or any
+  // other reason a scheduled lesson genuinely didn't happen. This is
+  // distinct from simply never filling in a report: a cancelled lesson
+  // shows clearly as cancelled in the marking grid and in Report
+  // Compliance, rather than looking like a missed/forgotten report.
+  function drToggleCancelLesson() {
+    var cls = (document.getElementById('dr-class')||{}).value;
+    var subject = (document.getElementById('dr-subject')||{}).value;
+    if (!cls || !subject) { showToast('Select a class and subject first.'); return; }
+    var dateEl = document.getElementById('dr-date');
+    var date = (dateEl && dateEl.value) ? dateEl.value : localDateStr();
+
+    var rep = drGetOrCreateTodayReport(cls, subject, date);
+
+    if (rep.cancelled) {
+      if (!confirm('Un-cancel this lesson? It will go back to needing marks as normal.')) return;
+      rep.cancelled = false;
+      rep.cancel_reason = '';
+    } else {
+      var reason = prompt('Optional reason (substitution, sports day, meeting, etc.) — leave blank if you don\'t want to specify:', '');
+      if (reason === null) return; // they hit Cancel on the prompt itself
+      rep.cancelled = true;
+      rep.cancel_reason = reason || '';
+    }
+
+    saveDailyReports();
+    drUpdateCancelUI(rep);
+    if (typeof sbSaveDailyReport === 'function') {
+      sbSaveDailyReportWithRetry(rep).then(function() {
+        rep.submitted = true;
+        saveDailyReports();
+        updateCloudStatus('saved');
+        showToast(rep.cancelled ? 'Lesson marked as cancelled ✓' : 'Lesson un-cancelled ✓');
+      }).catch(function() { updateCloudStatus('error'); });
+    }
+    // Refresh the grid behind the modal so the date column reflects the change immediately
+    if (typeof drBuildGrid === 'function') drBuildGrid(cls, subject);
+  }
+
   // Marks already auto-save on click; these text fields required an
   // explicit "Save Lesson Report" click to reach the cloud at all — so
   // typing a paragraph of notes and then navigating away without pressing
@@ -6423,6 +6704,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
           topic_file_name:  r.topic_file_name   || '',
           homework_file_url:  r.homework_file_url  || '',
           homework_file_name: r.homework_file_name || '',
+          cancelled:        !!r.cancelled,
+          cancel_reason:    r.cancel_reason || '',
           submitted: true
         };
         if (!existingIds[rep.id]) {
@@ -7085,9 +7368,11 @@ function saveDailyReport() {
     }
 
     var dataMap = {};
+    var cancelledDates = {}; // dateStr -> reason (or true if no reason given)
     if (typeof dailyReports !== 'undefined') {
       dailyReports.forEach(function(rep) {
         if (rep.cls !== cls || rep.subject !== subject) return;
+        if (rep.cancelled) cancelledDates[rep.date] = rep.cancel_reason || true;
         (rep.students||[]).forEach(function(st) {
           dataMap[rep.date + '|' + st.name] = st;
         });
@@ -7112,8 +7397,9 @@ function saveDailyReport() {
     hRow1.appendChild(th0);
 
     dates.forEach(function(dt) {
-      var bg = dt.isToday ? 'var(--gold)' : 'transparent';
-      var co = dt.isToday ? 'var(--navy)' : 'rgba(255,255,255,0.7)';
+      var isCancelled = !!cancelledDates[dt.dateStr];
+      var bg = isCancelled ? '#7f1d1d' : dt.isToday ? 'var(--gold)' : 'transparent';
+      var co = isCancelled ? '#fca5a5' : dt.isToday ? 'var(--navy)' : 'rgba(255,255,255,0.7)';
       var fw = dt.isToday ? '900' : '600';
 
       var dayRep = null;
@@ -7139,10 +7425,11 @@ function saveDailyReport() {
         th.style.cssText = 'padding:2px 1px 1px;text-align:center;color:' + co + ';font-size:9px;font-weight:' + fw + ';background:' + bg + ';' + borderStyle + ';';
         if (i === 1) {
           th.style.cursor = 'pointer';
-          th.title = 'Open lesson info';
+          th.title = isCancelled ? 'Cancelled' + (typeof cancelledDates[dt.dateStr]==='string' ? ': ' + cancelledDates[dt.dateStr] : '') + ' — click to open lesson info' : 'Open lesson info';
           th.addEventListener('click', function() { drOpenLessonInfoModal(); });
           th.innerHTML = '<div style="font-size:6.5px;opacity:0.8;line-height:1.1;">' + monthLabel + '</div>' +
-            '<div style="font-size:10.5px;font-weight:900;line-height:1.1;">' + dt.day + '</div>' + tipHtml;
+            '<div style="font-size:10.5px;font-weight:900;line-height:1.1;' + (isCancelled ? 'text-decoration:line-through;' : '') + '">' + dt.day + '</div>' +
+            (isCancelled ? '<div style="font-size:6px;font-weight:800;letter-spacing:.03em;">CANCELLED</div>' : tipHtml);
         }
         hRow1.appendChild(th);
       }
@@ -7208,7 +7495,15 @@ function saveDailyReport() {
       (function(capturedTr, capturedBg) {
         tdName.addEventListener('click', function() {
           var sel = capturedTr.dataset.selected === '1';
-          capturedTr.closest('tbody').querySelectorAll('tr').forEach(function(r) { r.dataset.selected = ''; r.style.background = r._origBg || ''; });
+          capturedTr.closest('tbody').querySelectorAll('tr').forEach(function(r) {
+            r.dataset.selected = '';
+            r.style.background = r._origBg || '';
+            // This was the actual bug: clicking a name set its text blue
+            // and bold directly, but nothing ever reset it back — not on
+            // re-clicking the same name, not on clicking a different one.
+            var nameSpan = r.querySelector('td:first-child span:nth-child(2)');
+            if (nameSpan) { nameSpan.style.color = '#0f172a'; nameSpan.style.fontWeight = '600'; }
+          });
           if (!sel) {
             capturedTr._origBg = capturedBg;
             capturedTr.dataset.selected = '1';
@@ -7227,14 +7522,22 @@ function saveDailyReport() {
         ['cw','hw','disc'].forEach(function(sec, i) {
           var td = document.createElement('td');
           td.setAttribute('data-cell-key', key + '|' + sec);
+          var isCancelled = !!cancelledDates[dt.dateStr];
           var borderStyle = dt.isToday ? '2px solid var(--gold)' : (i===0 ? '1.5px solid #cbd5e1' : '1px solid #eef2f7');
-          td.style.cssText = 'padding:3px 1px;text-align:center;border-left:' + borderStyle + ';vertical-align:middle;';
+          td.style.cssText = 'padding:3px 1px;text-align:center;border-left:' + borderStyle + ';vertical-align:middle;' + (isCancelled ? 'background:#fef2f2;' : '');
 
           var val = saved ? saved[sec] : null;
           var isAbsent = saved && saved.absent;
           var cellDiv = document.createElement('div');
 
-          if (isAbsent) {
+          if (isCancelled) {
+            cellDiv.style.cssText = 'font-size:9px;font-weight:700;color:#dc2626;text-align:center;cursor:not-allowed;';
+            cellDiv.textContent = i===1 ? '✕' : '';
+            cellDiv.title = 'Lesson cancelled' + (typeof cancelledDates[dt.dateStr]==='string' ? ': ' + cancelledDates[dt.dateStr] : '') + ' — no marks needed';
+            td.appendChild(cellDiv);
+            tr.appendChild(td);
+            return;
+          } else if (isAbsent) {
             cellDiv.style.cssText = 'font-size:10px;font-weight:700;color:#b91c1c;text-align:center;cursor:pointer;';
             cellDiv.textContent = i===0 ? 'A' : '';
           } else if (val && parseInt(val) > 0) {
@@ -7726,6 +8029,9 @@ function saveDailyReport() {
     // Reports until the page reloaded. One grid system now, reachable
     // however a teacher gets there.
     drBuildGrid(cls, subject);
+    var dateEl = document.getElementById('dr-date');
+    var date = (dateEl && dateEl.value) ? dateEl.value : localDateStr();
+    drLoadExistingLessonFields(cls, subject, date);
     drShowExistingAttachments();
   }
 
@@ -7828,7 +8134,9 @@ function saveDailyReport() {
       topic_file_url:      rep.topicFileUrl    || null,
       topic_file_name:     rep.topicFileName   || null,
       homework_file_url:   rep.homeworkFileUrl || null,
-      homework_file_name:  rep.homeworkFileName|| null
+      homework_file_name:  rep.homeworkFileName|| null,
+      cancelled:           !!rep.cancelled,
+      cancel_reason:       rep.cancel_reason || null
     };
     // True atomic upsert — the (class,subject,date) unique constraint now
     // exists (added directly in Supabase, along with a one-time merge of
@@ -9214,9 +9522,9 @@ function saveDailyReport() {
     if (subjSel) {
       subjSel.innerHTML = '<option value="">— Select subject —</option>';
       var u = _currentUser;
-      var ALL_SUBJECTS = ['English','Maths','Cambridge Maths','Science','Russian Language',
-        'Physics','Chemistry','Biology','History','Geography','Economics','ICT',
-        'Uzbek Language','Literature','Art','Physical Education','Chess'];
+      var ALL_SUBJECTS = ['English','Cambridge Maths','Maths-Rus','Science','CC-Science','Russian',
+        'Russian Reading','Physics','Chemistry','Biology','History','Geography','Economics',
+        'Business','Law','IELTS','Literature','PE','Art','ICT','Activity','Chess','TechDraw','Uzbek'];
       var isAdmin = u && (u.access === 'all' || u.role === 'admin' ||
                           u.role === 'principal' || u.role === 'founder');
       var allowedSubjs = isAdmin
@@ -10620,8 +10928,9 @@ function saveDailyReport() {
   function obsCambPopulateSubjects() {
     var sel = document.getElementById('obsc-subject');
     if (!sel) return;
-    var subs = ['English','Maths','Cambridge Maths','Science','Physics','Chemistry','Biology',
-      'Russian Language','Literature','History','Geography','Economics','ICT','Uzbek Language','Art','Physical Education'];
+    var subs = ['English','Cambridge Maths','Maths-Rus','Science','CC-Science','Physics','Chemistry','Biology',
+      'Russian','Russian Reading','Literature','History','Geography','Economics','Business','Law','IELTS',
+      'ICT','Uzbek','Art','Activity','Chess','TechDraw','PE'];
     sel.innerHTML = '<option value="">— Select subject —</option>';
     subs.forEach(function(s) {
       var opt = document.createElement('option'); opt.value = s; opt.textContent = s;
@@ -11367,9 +11676,16 @@ function saveDailyReport() {
       }).then(function(r){ return r.ok ? r.json() : []; }),
       fetch(_SB_URL + '/rest/v1/daily_reports?select=class,date,students&limit=3000', {
         headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-      }).then(function(r){ return r.ok ? r.json() : []; })
+      }).then(function(r){ return r.ok ? r.json() : []; }),
+      (function() {
+        var since = new Date(); since.setDate(since.getDate()-15);
+        var sinceStr = localDateStr(since);
+        return fetch(_SB_URL + '/rest/v1/daily_reports?select=class,subject,date,students&date=gte.' + sinceStr + '&limit=3000', {
+          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+        }).then(function(r){ return r.ok ? r.json() : []; });
+      })()
     ]).then(function(results) {
-      var assessments = results[0] || [], dailyReports = results[1] || [];
+      var assessments = results[0] || [], dailyReports = results[1] || [], dailyReports15d = results[2] || [];
 
       // ── By class: assessment avg, cw/hw/disc avg, attendance ──
       var byClass = {};
@@ -11463,6 +11779,56 @@ function saveDailyReport() {
           matrixWrap.innerHTML = '<table style="width:100%;min-width:' + (150 + matrixSubjects.length*90) + 'px;border-collapse:collapse;font-size:12.5px;">' +
             '<thead><tr style="background:var(--bg,#f8fafc);">' + mHead + '</tr></thead>' +
             '<tbody>' + mBody + '</tbody></table>';
+        }
+      }
+
+      // ── Daily Marks (CW/HW/Disc) by Class & Subject — last 15 days ──
+      var byClassSubjectDaily = {};
+      var dailySubjectSet = {};
+      dailyReports15d.forEach(function(r) {
+        byClassSubjectDaily[r.class] = byClassSubjectDaily[r.class] || {};
+        byClassSubjectDaily[r.class][r.subject] = byClassSubjectDaily[r.class][r.subject] || { cw:[], hw:[], disc:[] };
+        dailySubjectSet[r.subject] = true;
+        (r.students||[]).forEach(function(s) {
+          if (s.absent) return;
+          if (s.cw) byClassSubjectDaily[r.class][r.subject].cw.push(s.cw);
+          if (s.hw) byClassSubjectDaily[r.class][r.subject].hw.push(s.hw);
+          if (s.disc) byClassSubjectDaily[r.class][r.subject].disc.push(s.disc);
+        });
+      });
+      var dailyMatrixSubjects = Object.keys(dailySubjectSet).sort();
+      var dailyMatrixClasses = Object.keys(byClassSubjectDaily).sort(function(a,b){
+        return a.localeCompare(b, undefined, {numeric:true});
+      });
+      var dailyMatrixWrap = document.getElementById('acad-daily-subject-wrap');
+      if (dailyMatrixWrap) {
+        if (!dailyMatrixClasses.length || !dailyMatrixSubjects.length) {
+          dailyMatrixWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No Daily Report marks in the last 15 days.</div>';
+        } else {
+          function miniPill(val, label) {
+            if (val === null) return '<span style="color:#cbd5e1;font-size:10px;">' + label + ':—</span>';
+            var color = acadColor(val, false);
+            return '<span style="color:' + color + ';font-weight:700;font-size:10px;">' + label + ':' + val.toFixed(1) + '</span>';
+          }
+          var dHead = '<th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);position:sticky;left:0;background:var(--bg,#f8fafc);">Class</th>' +
+            dailyMatrixSubjects.map(function(s) {
+              return '<th style="padding:9px 8px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);white-space:nowrap;">' + s + '</th>';
+            }).join('');
+          var dBody = dailyMatrixClasses.map(function(cls) {
+            var cells = dailyMatrixSubjects.map(function(subj) {
+              var d = byClassSubjectDaily[cls][subj];
+              if (!d || (!d.cw.length && !d.hw.length && !d.disc.length)) return '<td style="padding:8px 8px;text-align:center;color:#cbd5e1;">—</td>';
+              return '<td style="padding:6px 8px;text-align:center;white-space:nowrap;"><div style="display:flex;gap:6px;justify-content:center;">' +
+                miniPill(avg(d.cw), 'C') + miniPill(avg(d.hw), 'H') + miniPill(avg(d.disc), 'D') +
+              '</div></td>';
+            }).join('');
+            return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+              '<td style="padding:8px 12px;font-weight:700;position:sticky;left:0;background:var(--white,#fff);">' + cls + '</td>' + cells +
+            '</tr>';
+          }).join('');
+          dailyMatrixWrap.innerHTML = '<table style="width:100%;min-width:' + (150 + dailyMatrixSubjects.length*100) + 'px;border-collapse:collapse;font-size:12.5px;">' +
+            '<thead><tr style="background:var(--bg,#f8fafc);">' + dHead + '</tr></thead>' +
+            '<tbody>' + dBody + '</tbody></table>';
         }
       }
 
