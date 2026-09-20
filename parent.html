@@ -186,7 +186,9 @@
       no_homework: 'No homework or classwork recorded yet',
       classwork: 'Classwork', homework: 'Homework',
       no_scores: 'No daily scores recorded yet',
+      lesson_cancelled: 'Lesson cancelled',
       cw_label: 'Classwork', hw_label: 'Homework', disc_label: 'Discipline', comment_label: 'Comment',
+      subject_label: 'Subject', cw_abbr: 'CW', hw_abbr: 'HW', disc_abbr: 'D',
       no_marks: 'No marks recorded yet', absent: 'Absent', present: 'Present',
       no_attendance: 'No attendance records yet', absences_of: 'absences out of', lessons_recorded: 'recorded lessons',
       no_discipline: 'No discipline records — all clear!',
@@ -207,7 +209,9 @@
       no_homework: 'Домашние задания пока не записаны',
       classwork: 'Классная работа', homework: 'Домашнее задание',
       no_scores: 'Ежедневных оценок пока нет',
+      lesson_cancelled: 'Урок отменён',
       cw_label: 'Классная работа', hw_label: 'Домашняя работа', disc_label: 'Дисциплина', comment_label: 'Комментарий',
+      subject_label: 'Предмет', cw_abbr: 'КР', hw_abbr: 'ДЗ', disc_abbr: 'Д',
       no_marks: 'Оценок пока нет', absent: 'Отсутствовал', present: 'Присутствовал',
       no_attendance: 'Записей о посещаемости пока нет', absences_of: 'пропусков из', lessons_recorded: 'записанных уроков',
       no_discipline: 'Нет замечаний по дисциплине — всё в порядке!',
@@ -228,7 +232,9 @@
       no_homework: 'Hozircha uy vazifalari yozilmagan',
       classwork: 'Sinf ishi', homework: 'Uy vazifasi',
       no_scores: 'Hozircha kunlik baholar yoʻq',
+      lesson_cancelled: 'Dars bekor qilindi',
       cw_label: 'Sinf ishi', hw_label: 'Uy vazifasi', disc_label: 'Intizom', comment_label: 'Izoh',
+      subject_label: 'Fan', cw_abbr: 'SI', hw_abbr: 'UV', disc_abbr: 'I',
       no_marks: 'Hozircha baholar yoʻq', absent: 'Kelmagan', present: 'Kelgan',
       no_attendance: 'Hozircha davomat yozuvlari yoʻq', absences_of: 'ta yoʻqlik, jami', lessons_recorded: 'ta darsdan',
       no_discipline: 'Intizom holatlari yoʻq — hammasi joyida!',
@@ -514,13 +520,17 @@
     el.innerHTML = '<div class="loading">Loading…</div>';
     var names = studentFullNames();
 
-    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&limit=60&select=*', {
+    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&limit=60&select=*', {
       headers: sbHeaders()
     })
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(rows) {
       var records = [];
       (rows||[]).forEach(function(r) {
+        if (r.cancelled) {
+          records.push({ date:r.date, subject:r.subject, cancelled:true, cancel_reason:r.cancel_reason });
+          return;
+        }
         (r.students||[]).forEach(function(s) {
           if (!isMyName(s.name)) return;
           if (s.absent) { records.push({ date:r.date, subject:r.subject, absent:true }); return; }
@@ -532,34 +542,130 @@
         el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">📋</div><div class="msg">' + t('no_scores') + '</div></div></div>';
         return;
       }
+
+      // Grid: one row per subject, one column-group (CW/HW/D) per date —
+      // the same structure as the teacher-facing marking grid in the
+      // dashboard, just for this one student. Scrolls left-to-right if
+      // there are more dates than fit, same as the Attendance register.
+      var dateSet = {}, subjectSet = {};
+      var grid = {}; // grid[subject][date] = record
+      records.forEach(function(r) {
+        dateSet[r.date] = true;
+        subjectSet[r.subject] = true;
+        grid[r.subject] = grid[r.subject] || {};
+        grid[r.subject][r.date] = r;
+      });
+      var dates = Object.keys(dateSet).sort();
+      var subjects = Object.keys(subjectSet).sort();
+
+      function shortDate(dateStr) {
+        var d = new Date(dateStr + 'T00:00:00');
+        if (isNaN(d)) return dateStr;
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return d.getDate() + ' ' + months[d.getMonth()];
+      }
       function pillColor(v) {
         if (!v) return { bg:'#f1f5f9', fg:'#94a3b8' };
         return v >= 4 ? { bg:'var(--green-light)', fg:'var(--green)' } : v === 3 ? { bg:'var(--amber-light)', fg:'var(--amber)' } : { bg:'var(--red-light)', fg:'var(--red)' };
       }
-      var html = '<div class="card">';
-      records.forEach(function(r) {
-        if (r.absent) {
-          html += '<div class="item-row">' +
-            '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div><div class="item-date">' + (r.date||'') + '</div></div>' +
-            '<span class="badge" style="background:var(--red-light);color:var(--red);">' + t('absent') + '</span>' +
-          '</div>';
-          return;
-        }
-        var cwC = pillColor(r.cw), hwC = pillColor(r.hw), discC = pillColor(r.disc);
-        html += '<div class="item-row">' +
-          '<div class="item-top"><div class="item-title">' + (r.subject||'') + '</div><div class="item-date">' + (r.date||'') + '</div></div>' +
-          '<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">' +
-            '<div class="score-pill" style="background:' + cwC.bg + ';color:' + cwC.fg + ';"><span class="lbl">' + t('cw_label') + '</span><span class="val">' + (r.cw || '—') + '</span></div>' +
-            '<div class="score-pill" style="background:' + hwC.bg + ';color:' + hwC.fg + ';"><span class="lbl">' + t('hw_label') + '</span><span class="val">' + (r.hw || '—') + '</span></div>' +
-            '<div class="score-pill" style="background:' + discC.bg + ';color:' + discC.fg + ';"><span class="lbl">' + t('disc_label') + '</span><span class="val">' + (r.disc || '—') + '</span></div>' +
-          '</div>' +
-          (r.comment ? '<div class="item-detail" style="margin-top:8px;"><b>' + t('comment_label') + ':</b> ' + r.comment + '</div>' : '') +
-        '</div>';
+
+      var html = '<div class="card"><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px;">' +
+        '<table style="border-collapse:collapse;font-size:11px;">' +
+        '<thead><tr>' +
+          '<th rowspan="2" style="position:sticky;left:0;background:var(--surface,white);z-index:2;padding:5px 10px;text-align:left;border-bottom:1.5px solid var(--border,#e5e7eb);border-right:1px solid var(--border,#e5e7eb);vertical-align:bottom;">' + t('subject_label') + '</th>';
+      dates.forEach(function(d) {
+        html += '<th colspan="3" style="padding:4px 2px 1px;text-align:center;font-size:9px;color:var(--muted,#64748b);font-weight:700;white-space:nowrap;border-bottom:1px solid var(--border,#e5e7eb);border-left:1.5px solid var(--border,#e5e7eb);">' + shortDate(d) + '</th>';
       });
-      html += '</div>';
+      html += '</tr><tr>';
+      dates.forEach(function() {
+        html += '<th style="padding:1px;text-align:center;font-size:7px;color:var(--muted,#64748b);font-weight:600;border-left:1.5px solid var(--border,#e5e7eb);border-bottom:1.5px solid var(--border,#e5e7eb);">' + t('cw_abbr') + '</th>' +
+                '<th style="padding:1px;text-align:center;font-size:7px;color:var(--muted,#64748b);font-weight:600;border-bottom:1.5px solid var(--border,#e5e7eb);">' + t('hw_abbr') + '</th>' +
+                '<th style="padding:1px;text-align:center;font-size:7px;color:var(--muted,#64748b);font-weight:600;border-bottom:1.5px solid var(--border,#e5e7eb);">' + t('disc_abbr') + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      subjects.forEach(function(subj, idx) {
+        var rowBg = idx%2===0 ? 'transparent' : 'var(--surface-2,#f8fafc)';
+        var stickyBg = idx%2===0 ? 'var(--surface,white)' : 'var(--surface-2,#f8fafc)';
+        html += '<tr style="background:' + rowBg + ';">' +
+          '<td style="position:sticky;left:0;background:' + stickyBg + ';padding:5px 10px;font-weight:600;white-space:nowrap;border-right:1px solid var(--border,#e5e7eb);">' + subj + '</td>';
+        dates.forEach(function(d) {
+          var rec = grid[subj] ? grid[subj][d] : undefined;
+          if (!rec) {
+            html += '<td colspan="3" style="padding:4px 2px;text-align:center;color:#cbd5e1;border-left:1.5px solid var(--border,#e5e7eb);">·</td>';
+          } else if (rec.cancelled) {
+            html += '<td colspan="3" title="' + (rec.cancel_reason||'') + '" style="padding:4px 2px;text-align:center;color:#94a3b8;font-size:9px;border-left:1.5px solid var(--border,#e5e7eb);">🚫</td>';
+          } else if (rec.absent) {
+            html += '<td colspan="3" style="padding:4px 2px;text-align:center;border-left:1.5px solid var(--border,#e5e7eb);"><span style="display:inline-block;padding:1px 6px;border-radius:4px;background:var(--red-light);color:var(--red);font-weight:800;font-size:9px;">' + t('absent') + '</span></td>';
+          } else {
+            var hasComment = !!(rec.comment && rec.comment.trim());
+            // Escaped via a data-attribute, not inlined into an onclick string —
+            // avoids any risk of a quote or special character in a teacher's
+            // comment breaking the HTML.
+            var escapedComment = hasComment ? rec.comment.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') : '';
+            [rec.cw, rec.hw, rec.disc].forEach(function(v, i) {
+              var c = pillColor(v);
+              var cornerMarker = (hasComment && i===0)
+                ? '<span style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 7px 7px 0;border-color:transparent var(--green,#16a34a) transparent transparent;"></span>'
+                : '';
+              html += '<td class="' + (hasComment ? 'has-comment' : '') + '" ' + (hasComment ? 'data-comment="' + escapedComment + '"' : '') +
+                ' style="position:relative;padding:3px 1px;text-align:center;' + (i===0?'border-left:1.5px solid var(--border,#e5e7eb);':'') + (hasComment?'cursor:pointer;':'') + '">' +
+                cornerMarker +
+                '<span style="display:inline-block;min-width:16px;padding:1px 3px;border-radius:4px;background:' + c.bg + ';color:' + c.fg + ';font-weight:800;font-size:10px;">' + (v || '—') + '</span></td>';
+            });
+          }
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div></div>';
       el.innerHTML = html;
+      dsWireCommentTooltip(el);
     })
     .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
+  }
+
+  // Small green corner triangle on any cell with a teacher's comment —
+  // tap (or hover, on desktop) to see it, tap anywhere else to dismiss.
+  // One shared tooltip element reused across renders, and the outside-tap
+  // dismiss listener is wired only once regardless of how many times the
+  // grid gets rebuilt.
+  var _dsTooltipWired = false;
+  function dsWireCommentTooltip(container) {
+    container.querySelectorAll('.has-comment').forEach(function(cell) {
+      cell.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dsShowComment(cell);
+      });
+    });
+    if (_dsTooltipWired) return;
+    _dsTooltipWired = true;
+    document.addEventListener('click', dsHideComment);
+    document.addEventListener('scroll', dsHideComment, true);
+  }
+
+  function dsShowComment(cell) {
+    var tip = document.getElementById('ds-comment-tip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'ds-comment-tip';
+      tip.style.cssText = 'position:fixed;z-index:9000;max-width:220px;background:#0f172a;color:white;font-size:11.5px;line-height:1.4;padding:8px 11px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.25);pointer-events:none;';
+      document.body.appendChild(tip);
+    }
+    tip.textContent = cell.dataset.comment || '';
+    tip.style.display = 'block';
+    var rect = cell.getBoundingClientRect();
+    var top = rect.bottom + 6;
+    var left = Math.max(8, Math.min(window.innerWidth - 228, rect.left - 100));
+    // Flip above the cell if there isn't room below (e.g. last row on screen)
+    var tipHeight = tip.offsetHeight || 40;
+    if (top + tipHeight > window.innerHeight - 8) top = rect.top - tipHeight - 6;
+    tip.style.top = top + 'px';
+    tip.style.left = left + 'px';
+  }
+
+  function dsHideComment() {
+    var tip = document.getElementById('ds-comment-tip');
+    if (tip) tip.style.display = 'none';
   }
 
   // ── MARKS (assessments, percentage-based) ──
