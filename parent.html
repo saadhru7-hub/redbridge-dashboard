@@ -5,8 +5,43 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Redbridge Parent Portal</title>
+<meta name="application-name" content="Redbridge Parent Portal">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Redbridge Parent">
+<meta name="theme-color" content="#7367F0">
+<meta name="description" content="Redbridge International School — Parent Portal">
+<link rel="manifest" href="manifest.json">
+<!-- iOS home screen icon -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%237367F0' rx='38'/%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='100' font-family='serif'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+// Create PWA manifest dynamically — same approach as the staff dashboard
+  var manifestData = {
+    "name": "Redbridge Parent Portal",
+    "short_name": "Redbridge Parent",
+    "description": "Parent Portal — Redbridge International School, Samarkand",
+    "start_url": "/parent.html",
+    "display": "standalone",
+    "background_color": "#F8F7FA",
+    "theme_color": "#7367F0",
+    "orientation": "any",
+    "icons": [
+      {
+        "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%237367F0' rx='38'/%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='100' font-family='serif'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E",
+        "sizes": "192x192",
+        "type": "image/svg+xml",
+        "purpose": "any maskable"
+      }
+    ],
+    "categories": ["education"]
+  };
+  var manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+  var manifestUrl  = URL.createObjectURL(manifestBlob);
+  var manifestLink = document.querySelector('link[rel="manifest"]');
+  if (manifestLink) manifestLink.href = manifestUrl;
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
