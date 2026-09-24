@@ -2642,7 +2642,10 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
         headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
       }).then(function(r){ return r.ok ? r.json() : []; })
     ]).then(function(results) {
-      var lessons = results[0] || [];
+      // Military Training Instructor's PE lessons stay on the timetable
+      // and can still be marked normally if a teacher wants to — they're
+      // just not expected or counted for compliance purposes.
+      var lessons = (results[0] || []).filter(function(l) { return l.teacher_name !== 'Military Training Instructor'; });
       var reports = results[1] || [];
 
       // A report is keyed by (class, subject, date) — one shared report
@@ -6165,6 +6168,15 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     var clsEl = document.getElementById('dr-class');
     var subjEl = document.getElementById('dr-subject');
     var periodEl = document.getElementById('dr-period');
+    var dateEl = document.getElementById('dr-date');
+    // Today's Lessons / Timetable clicks always mean today — but nothing
+    // was resetting the visible date field to match, so if it had ever
+    // been changed for any reason (backfilling an older date, browser
+    // autofill), that stale value would stay displayed indefinitely,
+    // even though the grid and lesson fields underneath were correctly
+    // using today's real date the whole time. That mismatch is exactly
+    // what looked like "the date won't update no matter what I click."
+    if (dateEl) dateEl.value = localDateStr();
     if (clsEl) clsEl.value = cls;
     var hint = document.getElementById('dr-subject-blank-hint');
     subject = normalizeSubject(subject);
@@ -6674,15 +6686,12 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
 
   function drLoadFromSupabase() {
     var u = _currentUser;
-    var params = 'order=created_at.desc&limit=500';
+    var params = 'order=created_at.desc';
     // Teachers only see their own reports
     if (u && u.access !== 'all' && u.name) {
       params += '&teacher_name=eq.' + encodeURIComponent(u.name);
     }
-    fetch(_SB_URL + '/rest/v1/daily_reports?' + params, {
-      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    fetchAllPages(_SB_URL + '/rest/v1/daily_reports?' + params)
     .then(function(rows) {
       if (!rows || !rows.length) return;
       var existingIds = {};
@@ -6762,8 +6771,10 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     }
     if (fs) {
       fs.innerHTML = '<option value="">All Subjects</option>';
-      ['English','Maths','Cambridge Maths','Science','Russian Language',
-       'Physics','Chemistry','Biology','History','Geography','Economics','ICT'].forEach(function(s) {
+      ['English','Cambridge Maths','Maths-Rus','Science','CC-Science','Russian',
+       'Russian Reading','Physics','Chemistry','Biology','History','Geography',
+       'Economics','Business','Law','IELTS','Literature','PE','Art','ICT',
+       'Activity','Chess','TechDraw','Uzbek'].forEach(function(s) {
         var o = document.createElement('option'); o.value = s; o.textContent = s;
         fs.appendChild(o);
       });
@@ -7301,12 +7312,33 @@ function saveDailyReport() {
   function drBuildGrid(cls, subject) {
     subject = normalizeSubject(subject);
     var grid = document.getElementById('dr-students-wrap');
+    var subtitle = document.getElementById('dr-students-subtitle');
     if (!grid) return;
     grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Loading…</div>';
+    if (subtitle) subtitle.textContent = 'Loading…';
     drShowPrevHomework(cls, subject);
 
-    fetchClassStudents(cls).then(function(students) {
-      drRenderGrid(cls, subject, students);
+    Promise.all([
+      fetchClassStudents(cls),
+      fetch(_SB_URL + '/rest/v1/timetable?class=eq.' + encodeURIComponent(cls) + '&subject=eq.' + encodeURIComponent(subject) + '&select=day,teacher_name', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; })
+    ]).then(function(results) {
+      var students = results[0];
+      var timetableRows = results[1] || [];
+      var scheduledDays = new Set(timetableRows.map(function(r){ return r.day; }));
+
+      // "Class 3C · Maths-Rus · Nasiba Ismailovna" — so it's always clear
+      // what's currently loaded without having to remember which button
+      // was clicked to get here. Split-group subjects can have more than
+      // one teacher for the same class+subject, so dedupe and list both.
+      if (subtitle) {
+        var teacherNames = Array.from(new Set(timetableRows.map(function(r){ return r.teacher_name; }).filter(Boolean)));
+        var teacherPart = teacherNames.length ? ' · ' + teacherNames.join(' / ') : '';
+        subtitle.textContent = 'Class ' + cls + ' · ' + subject + teacherPart;
+      }
+
+      drRenderGrid(cls, subject, students, scheduledDays);
     }).catch(function(e) {
       console.error('Failed to load class roster:', e);
       grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load the class list. Check your connection, then reopen this class.</div>';
@@ -7319,7 +7351,7 @@ function saveDailyReport() {
     return v >= 4 ? '#16a34a' : v === 3 ? '#ca8a04' : '#dc2626';
   }
 
-  function drRenderGrid(cls, subject, students) {
+  function drRenderGrid(cls, subject, students, scheduledDays) {
     var grid = document.getElementById('dr-students-wrap');
     if (!grid) return;
 
@@ -7353,18 +7385,24 @@ function saveDailyReport() {
       });
     })();
 
-    var now    = new Date();
-    var year   = now.getFullYear();
-    var month  = now.getMonth();
-    var today  = now.getDate();
-    var dates  = [];
-    var daysInMonth = new Date(year, month+1, 0).getDate();
-    for (var d = 1; d <= Math.min(today, daysInMonth); d++) {
-      var dt  = new Date(year, month, d);
+    var DAY_NAMES = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    var now = new Date();
+    var dates = [];
+    // A rolling 45-day window rather than "since day 1 of this month" — the
+    // old cutoff meant every mark from before the current month simply fell
+    // outside the grid and looked like it had vanished, even though it was
+    // still safely saved. Also filtered to the weekdays this class+subject
+    // is actually scheduled on, per the timetable — previously every
+    // weekday of the month showed a column regardless of whether this
+    // teacher has a lesson that day at all.
+    for (var offset = 44; offset >= 0; offset--) {
+      var dt = new Date(now);
+      dt.setDate(dt.getDate() - offset);
       var dow = dt.getDay();
       if (dow === 0 || dow === 6) continue;
-      var ds = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-      dates.push({ day: d, dateStr: ds, isToday: d === today });
+      if (scheduledDays && scheduledDays.size > 0 && !scheduledDays.has(DAY_NAMES[dow])) continue;
+      var ds = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+      dates.push({ day: dt.getDate(), dateStr: ds, isToday: offset === 0, month: dt.getMonth() });
     }
 
     var dataMap = {};
@@ -7380,7 +7418,6 @@ function saveDailyReport() {
     }
 
     var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var monthLabel = MONTHS[month];
 
     var table = document.createElement('table');
     table.style.cssText = 'border-collapse:collapse;font-size:11px;min-width:100%;border:1px solid #94a3b8;';
@@ -7427,7 +7464,7 @@ function saveDailyReport() {
           th.style.cursor = 'pointer';
           th.title = isCancelled ? 'Cancelled' + (typeof cancelledDates[dt.dateStr]==='string' ? ': ' + cancelledDates[dt.dateStr] : '') + ' — click to open lesson info' : 'Open lesson info';
           th.addEventListener('click', function() { drOpenLessonInfoModal(); });
-          th.innerHTML = '<div style="font-size:6.5px;opacity:0.8;line-height:1.1;">' + monthLabel + '</div>' +
+          th.innerHTML = '<div style="font-size:6.5px;opacity:0.8;line-height:1.1;">' + MONTHS[dt.month] + '</div>' +
             '<div style="font-size:10.5px;font-weight:900;line-height:1.1;' + (isCancelled ? 'text-decoration:line-through;' : '') + '">' + dt.day + '</div>' +
             (isCancelled ? '<div style="font-size:6px;font-weight:800;letter-spacing:.03em;">CANCELLED</div>' : tipHtml);
         }
@@ -8097,6 +8134,33 @@ function saveDailyReport() {
     });
   }
 
+  // Fetches every row matching a query, paging past Supabase's own
+  // PostgREST max-rows cap (defaults to 1000 on most projects) rather than
+  // silently truncating. baseUrl should NOT already contain a limit or
+  // offset param — this adds and manages both itself, fetching successive
+  // pages until a page comes back shorter than requested, which signals
+  // the end of the data. Used anywhere a table has grown, or will grow,
+  // past that cap — a single-page fetch there would quietly show an
+  // incomplete picture with no error and no visible sign anything was cut.
+  function fetchAllPages(baseUrl, pageSize) {
+    pageSize = pageSize || 1000;
+    var headers = { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' };
+    var sep = baseUrl.indexOf('?') === -1 ? '?' : '&';
+    var all = [];
+    function fetchPage(offset) {
+      var url = baseUrl + sep + 'limit=' + pageSize + '&offset=' + offset;
+      return fetch(url, { headers: headers })
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(rows) {
+          rows = rows || [];
+          all = all.concat(rows);
+          if (rows.length === pageSize) return fetchPage(offset + pageSize);
+          return all;
+        });
+    }
+    return fetchPage(0).catch(function() { return all; });
+  }
+
   // Deletes a report row server-side. Local report objects carry a
   // client-generated id ('dr'+Date.now()) that has never matched the
   // database's own row id — POST/PATCH saves never captured it back — so
@@ -8656,35 +8720,49 @@ function saveDailyReport() {
       }
     });
 
-    // ── Marks: from assessments.students[].pct, aggregated per date ──
-    fetch(_SB_URL + '/rest/v1/assessments?date=gte.' + localDateStr(since30) + '&select=date,students', {
+    // ── Marks: from daily_reports.students[].cw/hw, averaged per date ──
+    // (previously pulled from assessments, which are formal tests entered
+    // only occasionally — a genuine mismatch for a day-to-day comparison,
+    // since most days have zero assessments at all and the card would show
+    // "No data" almost every day regardless of how the school is actually
+    // doing. Classwork/homework marks are entered daily, so they're what a
+    // today-vs-yesterday comparison should actually be based on.)
+    fetch(_SB_URL + '/rest/v1/daily_reports?date=gte.' + localDateStr(since30) + '&select=date,cancelled,students', {
       headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
     })
     .then(function(r){ return r.ok ? r.json() : []; })
     .then(function(rows) {
       var byDate = {};
       (rows||[]).forEach(function(a) {
+        if (a.cancelled) return;
         (a.students||[]).forEach(function(s) {
-          if (s.absent || s.pct === null || s.pct === undefined) return;
-          byDate[a.date] = byDate[a.date] || [];
-          byDate[a.date].push(s.pct);
+          if (s.absent) return;
+          [s.cw, s.hw].forEach(function(v) {
+            if (!v) return;
+            byDate[a.date] = byDate[a.date] || [];
+            byDate[a.date].push(v);
+          });
         });
       });
       var dates = Object.keys(byDate).sort();
 
+      // Marks here are on a 1-5 scale, not a percentage — averaging and
+      // showing as "x.x / 5" rather than "%" to match what these numbers
+      // actually mean (the assessments-based version showed "%", which was
+      // correct for pct scores but would have been misleading here).
       function avgFor(dateStr) {
         var arr = byDate[dateStr];
         if (!arr || !arr.length) return null;
-        return Math.round(arr.reduce(function(a,b){return a+b;},0) / arr.length);
+        return Math.round((arr.reduce(function(a,b){return a+b;},0) / arr.length) * 10) / 10;
       }
       var todayAvg = avgFor(todayStr), yestAvg = avgFor(yesterdayStr);
       var todayEl = document.getElementById('trend-marks-today');
       var diffEl = document.getElementById('trend-marks-diff');
-      if (todayEl) todayEl.textContent = todayAvg !== null ? todayAvg + '%' : 'No data yet';
+      if (todayEl) todayEl.textContent = todayAvg !== null ? todayAvg + ' / 5' : 'No data yet';
       if (diffEl) {
         if (todayAvg !== null && yestAvg !== null) {
-          var diff = todayAvg - yestAvg;
-          diffEl.textContent = (diff >= 0 ? '▲ +' : '▼ ') + diff + '% vs yesterday';
+          var diff = Math.round((todayAvg - yestAvg) * 10) / 10;
+          diffEl.textContent = (diff >= 0 ? '▲ +' : '▼ ') + diff + ' vs yesterday';
           diffEl.style.color = diff >= 0 ? '#28C76F' : '#EA5455';
         } else {
           diffEl.textContent = '';
@@ -8698,9 +8776,9 @@ function saveDailyReport() {
         if (_dashMarksChart) _dashMarksChart.destroy();
         _dashMarksChart = new Chart(ctx, {
           type: 'line',
-          data: { datasets: [{ label:'Avg Marks %', data: points, borderColor:'#7367F0', backgroundColor:'#7367F022', tension:0.3, pointRadius:3 }] },
+          data: { datasets: [{ label:'Avg Marks (CW/HW, out of 5)', data: points, borderColor:'#7367F0', backgroundColor:'#7367F022', tension:0.3, pointRadius:3 }] },
           options: { responsive:true, maintainAspectRatio:false,
-            scales: { x:{type:'time',time:{unit:'week'},grid:{display:false}}, y:{min:0,max:100,ticks:{callback:function(v){return v+'%';}}} },
+            scales: { x:{type:'time',time:{unit:'week'},grid:{display:false}}, y:{min:0,max:5,ticks:{stepSize:1}} },
             plugins: { legend:{display:false} } }
         });
       }
@@ -9550,8 +9628,10 @@ function saveDailyReport() {
     }
     var fs = document.getElementById('asm-filter-subject');
     if (fs && fs.options.length <= 1) {
-      ['English','Maths','Cambridge Maths','Science','Russian Language','Physics',
-       'Chemistry','Biology','History','Geography','Economics','ICT','Uzbek Language'].forEach(function(s) {
+      ['English','Cambridge Maths','Maths-Rus','Science','CC-Science','Russian',
+       'Russian Reading','Physics','Chemistry','Biology','History','Geography',
+       'Economics','Business','Law','IELTS','Literature','PE','Art','ICT',
+       'Activity','Chess','TechDraw','Uzbek'].forEach(function(s) {
         var o = document.createElement('option'); o.value=s; o.textContent=s; fs.appendChild(o);
       });
     }
@@ -9846,12 +9926,12 @@ function saveDailyReport() {
 
   function asmLoadFromCloud() {
     var u = _currentUser;
-    var params = 'order=created_at.desc&limit=500';
+    var params = 'order=created_at.desc';
     // Teachers only see their own assessments
     if (u && u.access !== 'all' && u.name) {
       params += '&teacher=eq.' + encodeURIComponent(u.name);
     }
-    sbFetch('assessments','GET',null,params).then(function(rows) {
+    fetchAllPages(_SB_URL + '/rest/v1/assessments?' + params).then(function(rows) {
       if (!rows) return;
       _asmAssessments = rows.map(function(r) {
         return { id:r.id, class:r.class, subject:r.subject, teacher:r.teacher,
@@ -11671,18 +11751,12 @@ function saveDailyReport() {
     }
 
     Promise.all([
-      fetch(_SB_URL + '/rest/v1/assessments?select=class,subject,date,students&limit=3000', {
-        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-      }).then(function(r){ return r.ok ? r.json() : []; }),
-      fetch(_SB_URL + '/rest/v1/daily_reports?select=class,date,students&limit=3000', {
-        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-      }).then(function(r){ return r.ok ? r.json() : []; }),
+      fetchAllPages(_SB_URL + '/rest/v1/assessments?select=class,subject,date,students'),
+      fetchAllPages(_SB_URL + '/rest/v1/daily_reports?select=class,date,students'),
       (function() {
         var since = new Date(); since.setDate(since.getDate()-15);
         var sinceStr = localDateStr(since);
-        return fetch(_SB_URL + '/rest/v1/daily_reports?select=class,subject,date,students&date=gte.' + sinceStr + '&limit=3000', {
-          headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-        }).then(function(r){ return r.ok ? r.json() : []; });
+        return fetchAllPages(_SB_URL + '/rest/v1/daily_reports?select=class,subject,date,students&date=gte.' + sinceStr);
       })()
     ]).then(function(results) {
       var assessments = results[0] || [], dailyReports = results[1] || [], dailyReports15d = results[2] || [];
@@ -11858,30 +11932,40 @@ function saveDailyReport() {
       }
 
       // ── Daily average BY SUBJECT (last 30 days) ──
-      // Previously this blended every subject into one line, which is what
-      // was missing: no way to see how a specific subject trends day to day,
-      // only the whole school blended together.
+      // Was pulling from assessments — formal tests entered only
+      // occasionally (20 total on record, most recent over a week old at
+      // any given time), so this chart looked empty almost permanently.
+      // Same underlying issue as the Today vs Yesterday widget elsewhere
+      // on this page, fixed the same way: classwork/homework marks from
+      // daily_reports are entered constantly, so that's what a genuine
+      // day-to-day trend should be based on.
       var bySubjectDate = {};
       var since = new Date(); since.setDate(since.getDate()-30);
       var sinceStr = localDateStr(since);
-      assessments.forEach(function(a) {
-        if (a.date < sinceStr) return;
-        bySubjectDate[a.subject] = bySubjectDate[a.subject] || {};
-        (a.students||[]).forEach(function(s) {
-          if (s.absent || s.pct === null || s.pct === undefined) return;
-          bySubjectDate[a.subject][a.date] = bySubjectDate[a.subject][a.date] || [];
-          bySubjectDate[a.subject][a.date].push(s.pct);
+      dailyReports.forEach(function(r) {
+        if (r.date < sinceStr || r.cancelled) return;
+        bySubjectDate[r.subject] = bySubjectDate[r.subject] || {};
+        (r.students||[]).forEach(function(s) {
+          if (s.absent) return;
+          [s.cw, s.hw].forEach(function(v) {
+            if (!v) return;
+            bySubjectDate[r.subject][r.date] = bySubjectDate[r.subject][r.date] || [];
+            bySubjectDate[r.subject][r.date].push(v);
+          });
         });
       });
       var trendSubjects = Object.keys(bySubjectDate).sort();
       var canvas = document.getElementById('acad-trend-chart');
       if (!trendSubjects.length) {
-        if (canvas) canvas.parentElement.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No assessment data in the last 30 days.</div>';
+        if (canvas) canvas.parentElement.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No Daily Report marks in the last 30 days.</div>';
       } else if (canvas && typeof Chart !== 'undefined') {
         var trendPalette = ['#7367F0','#28C76F','#FF9F43','#EA5455','#00CFE8','#8B5CF6','#F97316','#0EA5E9','#DB2777','#65A30D'];
         var datasets = trendSubjects.map(function(subj, i) {
           var dates = Object.keys(bySubjectDate[subj]).sort();
-          var points = dates.map(function(d) { return { x:d, y: Math.round(avg(bySubjectDate[subj][d])) }; });
+          // Marks here are on a 1-5 scale, not a percentage — rounding to
+          // one decimal (not a whole number) since the range is so small
+          // that whole-number rounding would flatten most of the signal.
+          var points = dates.map(function(d) { return { x:d, y: Math.round(avg(bySubjectDate[subj][d])*10)/10 }; });
           var color = trendPalette[i % trendPalette.length];
           return { label: subj, data: points, borderColor: color, backgroundColor: color+'22', tension:0.3, pointRadius:3 };
         });
