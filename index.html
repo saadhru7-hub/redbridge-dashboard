@@ -4939,6 +4939,19 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
+    'freihat.teacher': {
+      password: 'redbridge2024',
+      name: 'Mr Freihat',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'MF',
+      access: 'subject',
+      teacherSubjects: ['History','Geography'],
+      teacherClasses: ['10-11','5A','5B','5C','6A','6B','7A','7B','7C','8-ChemBio','8-Humanities','8-PhysMath','9A','9B'],
+      teacherName: 'Mr Freihat',
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
+      readonlyStats: true,
+    },
     'nargiza.teacher': {
       password: 'redbridge2024',
       name: 'Ms Nargiza',
@@ -5301,19 +5314,26 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     });
 
     // ── For class teachers: filter results class dropdown ──
-    if (u.access === 'class' && u.classes) {
+    if (u.access === 'class') {
+      // Class-teacher accounts store their actual class list in
+      // teacherClasses; `classes` is usually [] (truthy but empty), which
+      // used to hide every option below. Fall back to teacherClasses.
+      var allowedClasses = (u.classes && u.classes.length) ? u.classes : (u.teacherClasses || []);
       setTimeout(function() {
         var sel = document.getElementById('res-class');
         if (!sel) return;
         var opts = Array.from(sel.options);
         opts.forEach(function(opt) {
-          if (opt.value && u.classes.indexOf(opt.value) === -1) {
+          if (opt.value && allowedClasses.indexOf(opt.value) === -1) {
             opt.style.display = 'none';
             opt.disabled = true;
+          } else if (opt.value) {
+            opt.style.display = '';
+            opt.disabled = false;
           }
         });
         // Set default to first allowed class
-        if (u.classes[0]) sel.value = u.classes[0];
+        if (allowedClasses[0]) sel.value = allowedClasses[0];
       }, 500);
     }
 
@@ -9645,7 +9665,7 @@ function saveDailyReport() {
     if (!u) return ALL_CLASSES;
     if (u.access === 'all' || u.role === 'admin') return ALL_CLASSES;
     if (u.teacherClasses && u.teacherClasses.length) return u.teacherClasses;
-    if (u.classes) return [u.classes];
+    if (u.classes && u.classes.length) return Array.isArray(u.classes) ? u.classes : [u.classes];
     return ALL_CLASSES;
   }
 
@@ -10219,7 +10239,13 @@ function saveDailyReport() {
   }
 
   function msgFetchMessages() {
-    var url = _SB_URL + '/rest/v1/messages?channel=eq.' + encodeURIComponent(_msgChannel) + '&order=created_at.asc&limit=100';
+    // order=created_at.desc so `limit` keeps the MOST RECENT 100 messages —
+    // this used to sort ascending, which meant `limit` kept the OLDEST 100
+    // instead. Once a channel passed 100 messages total, opening it showed
+    // only the very first messages ever posted there and never any of the
+    // actual recent conversation. Reversed back to chronological order
+    // below since the render function expects oldest-first, newest-last.
+    var url = _SB_URL + '/rest/v1/messages?channel=eq.' + encodeURIComponent(_msgChannel) + '&order=created_at.desc&limit=100';
     fetch(url, {
       method: 'GET',
       headers: {
@@ -10233,7 +10259,7 @@ function saveDailyReport() {
       return r.json();
     })
     .then(function(rows) {
-      _msgMessages = rows || [];
+      _msgMessages = (rows || []).reverse();
       msgRenderMessages();
     })
     .catch(function(e) {
@@ -11979,6 +12005,19 @@ function saveDailyReport() {
             plugins: { legend:{display:true, position:'bottom', labels:{boxWidth:10, font:{size:11}}} } }
         });
       }
+    })
+    .catch(function() {
+      // Previously nothing caught a failure here, so a bad request left
+      // every "Loading…" placeholder in this panel stuck forever with no
+      // indication anything had gone wrong. Re-querying fresh here rather
+      // than closing over the .then()-scoped locals, which this catch
+      // can't see.
+      var mw = document.getElementById('acad-class-subject-wrap');
+      var st = document.getElementById('acad-subject-tbody');
+      var dw = document.getElementById('acad-daily-subject-wrap');
+      if (mw) mw.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load academic overview. Check your connection and try again.</div>';
+      if (st) st.innerHTML = '<tr><td colspan="3" style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load.</td></tr>';
+      if (dw) dw.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load.</div>';
     });
   }
 
