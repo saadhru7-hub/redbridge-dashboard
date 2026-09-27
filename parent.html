@@ -308,6 +308,43 @@
     return h;
   }
 
+  // Fetches every row of a query, not just the first page — the Scores,
+  // Attendance and Progress tabs used to cap this at limit=60/200 rows for
+  // the whole class (oldest-first, so old data lingered while anything new
+  // silently fell off the end once a class passed the cap). Paging through
+  // in fixed-size chunks removes that ceiling entirely: a parent's own
+  // child's full history is always in the response, and freshly entered
+  // marks are included the moment this re-runs, since nothing is excluded
+  // by a hard limit any more.
+  function fetchAllPages(baseUrl, pageSize) {
+    pageSize = pageSize || 1000;
+    var sep = baseUrl.indexOf('?') === -1 ? '?' : '&';
+    var all = [];
+    function fetchPage(offset) {
+      var url = baseUrl + sep + 'limit=' + pageSize + '&offset=' + offset;
+      return fetch(url, { headers: sbHeaders() })
+        .then(function(r) {
+          // A bad response (network hiccup, expired key, server error) must
+          // not be silently treated as "zero rows" — that would make a real
+          // failure look identical to a class genuinely having no records,
+          // and every caller's own .catch (which shows "Could not load")
+          // would never run. Throw so it does.
+          if (!r.ok) throw new Error('fetchAllPages: HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function(rows) {
+          rows = rows || [];
+          all = all.concat(rows);
+          if (rows.length === pageSize) return fetchPage(offset + pageSize);
+          return all;
+        });
+    }
+    // No blanket .catch here — a failure must reject so the caller's own
+    // .catch (already written for every call site) can show its error
+    // state instead of a misleading "no data" empty state.
+    return fetchPage(0);
+  }
+
   // Returns a URL that opens a file for VIEWING rather than downloading it.
   // Images and PDFs render inline in the browser natively. Word/Excel/
   // PowerPoint files can never be displayed inline by any browser, no
@@ -369,7 +406,17 @@
     document.getElementById('student-name').textContent = _student.full_name_en || _student.full_name_ru;
     document.getElementById('student-class').textContent = 'Class ' + _student.class;
 
-    loadHomework();
+    // Always land on Homework and reset every tab button back to it. Without
+    // this, logging out and back in as a different student only refreshed
+    // the header (name/avatar/class) and the Homework tab — whichever tab
+    // was left open (Marks, Daily Scores, ...) kept showing its stale,
+    // already-rendered HTML from the PREVIOUS student until someone clicked
+    // it again. That's how a student could appear to have another child's
+    // subjects/marks: the header was correct, the tab content underneath
+    // just hadn't been told to reload yet. switchTab() both hides/shows the
+    // right tab AND calls its load function, so this guarantees a fresh
+    // fetch for whichever tab the parent opens next.
+    switchTab('homework');
   }
 
   // (Notification/badge system removed along with the Message Teacher tab)
@@ -417,10 +464,7 @@
     var el = document.getElementById('tab-homework');
     el.innerHTML = '<div class="loading">Loading…</div>';
 
-    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&limit=30&select=*', {
-      headers: sbHeaders()
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    fetchAllPages(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&select=*')
     .then(function(rows) {
       rows = (rows || []).filter(function(r) { return r.topic || r.homework; });
       if (!rows.length) {
@@ -555,10 +599,7 @@
     el.innerHTML = '<div class="loading">Loading…</div>';
     var names = studentFullNames();
 
-    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&limit=60&select=*', {
-      headers: sbHeaders()
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    fetchAllPages(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&select=*')
     .then(function(rows) {
       var records = [];
       (rows||[]).forEach(function(r) {
@@ -709,10 +750,7 @@
     el.innerHTML = '<div class="loading">Loading…</div>';
     var names = studentFullNames();
 
-    fetch(_SB_URL + '/rest/v1/assessments?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&select=*', {
-      headers: sbHeaders()
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    fetchAllPages(_SB_URL + '/rest/v1/assessments?class=eq.' + encodeURIComponent(_student.class) + '&order=date.desc&select=*')
     .then(function(rows) {
       var mine = [];
       (rows||[]).forEach(function(a) {
@@ -747,10 +785,7 @@
     el.innerHTML = '<div class="loading">Loading…</div>';
     var names = studentFullNames();
 
-    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&limit=60&select=*', {
-      headers: sbHeaders()
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    fetchAllPages(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&select=*')
     .then(function(rows) {
       var records = [];
       (rows||[]).forEach(function(r) {
@@ -870,10 +905,7 @@
 
     var names = studentFullNames();
 
-    fetch(_SB_URL + '/rest/v1/assessments?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&select=*', {
-      headers: sbHeaders()
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    fetchAllPages(_SB_URL + '/rest/v1/assessments?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&select=*')
     .then(function(rows) {
       var bySubject = {};
       (rows||[]).forEach(function(a) {
@@ -904,12 +936,13 @@
             plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
         });
       }
+    })
+    .catch(function() {
+      var canvas = document.getElementById('marks-chart');
+      if (canvas) canvas.parentElement.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('could_not_load') + '</div></div>';
     });
 
-    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&limit=200&select=*', {
-      headers: sbHeaders()
-    })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    fetchAllPages(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) + '&order=date.asc&select=*')
     .then(function(rows) {
       var byDate = {};
       (rows||[]).forEach(function(r) {
@@ -942,6 +975,10 @@
             plugins: { legend: { display: false } } }
         });
       }
+    })
+    .catch(function() {
+      var canvas2 = document.getElementById('att-chart');
+      if (canvas2) canvas2.parentElement.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('could_not_load') + '</div></div>';
     });
   }
 
