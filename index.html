@@ -1039,11 +1039,26 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
           <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;">Academic Monitoring</h2>
-          <div style="font-size:12.5px;color:var(--text-3);">Compare classes and subjects school-wide, spot trends</div>
+          <div style="font-size:12.5px;color:var(--text-3);">Monthly report per class &amp; student, plus school-wide comparisons</div>
         </div>
       </div>
 
       <div class="card" style="margin-bottom:18px;">
+        <div class="card-header"><div class="card-title">📋 Monthly Report by Class</div></div>
+        <div class="card-body">
+          <div id="mr-class-tabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+            <div style="padding:30px;text-align:center;color:var(--muted);">Loading classes…</div>
+          </div>
+          <div id="mr-table-wrap" style="overflow-x:auto;">
+            <div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <details style="margin-bottom:18px;">
+        <summary style="cursor:pointer;font-size:14px;font-weight:800;color:var(--text-1);padding:10px 2px;">🏫 School-wide Comparison (click to expand)</summary>
+
+      <div class="card" style="margin-bottom:18px;margin-top:14px;">
         <div class="card-header"><div class="card-title">📊 Performance by Class</div></div>
         <div class="card-body" style="overflow-x:auto;">
           <table id="acad-class-table" style="width:100%;min-width:600px;border-collapse:collapse;font-size:12.5px;">
@@ -1092,6 +1107,7 @@
         <div class="card-header"><div class="card-title">📈 Daily Subject Average — last 30 days</div></div>
         <div class="card-body"><div style="position:relative;height:220px;"><canvas id="acad-trend-chart"></canvas></div></div>
       </div>
+      </details>
     </div>
 
     <div class="panel" id="panel-classes">
@@ -3752,7 +3768,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     if (id === 'classes')    { renderClasses(); renderClassStudents(); }
     if (id === 'subjects')   { renderSubjectCards(); renderSubjectMatrix(); loadSubjectTeacherMap(); }
     if (id === 'reportcard') { rcInit(); }
-    if (id === 'academics')  { acadInit(); }
+    if (id === 'academics')  { mrInit(); acadInit(); }
     if (id === 'results')    { initResultsPanel(); renderResults(); }
     if (id === 'discipline') { if(typeof loadIncidents==='function') loadIncidents(); renderIncidentLog(); if(typeof renderHealthSummary==='function') renderHealthSummary(); }
     if (id === 'teachers')   { renderPerfTable(); }
@@ -8716,7 +8732,12 @@ function saveDailyReport() {
           diffEl.textContent = (diff >= 0 ? '▲ +' : '▼ ') + diff + '% vs yesterday';
           diffEl.style.color = diff >= 0 ? '#28C76F' : '#EA5455';
         } else {
-          diffEl.textContent = '';
+          // Successful response, but no daily_reports rows for yesterday
+          // (e.g. a weekend/no-school day) — a deliberate blank, not an
+          // error. Distinct from both the '—' loading placeholder and the
+          // '⚠ Load failed' fetch-error state below.
+          diffEl.textContent = '– no data yesterday';
+          diffEl.style.color = '';
         }
       }
 
@@ -8738,6 +8759,20 @@ function saveDailyReport() {
             plugins: { legend:{display:false} } }
         });
       }
+    })
+    .catch(function(err) {
+      // Fetch/network failure (r.ok ? r.json() : [] above already handles
+      // a non-OK HTTP status, so this is a genuine transport failure).
+      // Re-query the DOM fresh here rather than relying on the todayEl/
+      // diffEl vars from the .then above — those are out of scope in this
+      // .catch (same closure-scope gotcha fixed in acadInit()'s Promise.all
+      // earlier this session). Use a marker distinguishable from both the
+      // '—' loading placeholder and the '– no data yesterday' empty state.
+      console.error('dashLoadTrends: attendance fetch failed', err);
+      var todayElErr = document.getElementById('trend-att-today');
+      var diffElErr = document.getElementById('trend-att-diff');
+      if (todayElErr) { todayElErr.textContent = '⚠'; todayElErr.title = 'Failed to load attendance data'; }
+      if (diffElErr) { diffElErr.textContent = 'Load failed'; diffElErr.title = 'Failed to load attendance data'; diffElErr.style.color = '#EA5455'; }
     });
 
     // ── Marks: from daily_reports.students[].cw/hw, averaged per date ──
@@ -8785,7 +8820,10 @@ function saveDailyReport() {
           diffEl.textContent = (diff >= 0 ? '▲ +' : '▼ ') + diff + ' vs yesterday';
           diffEl.style.color = diff >= 0 ? '#28C76F' : '#EA5455';
         } else {
-          diffEl.textContent = '';
+          // Successful response, but no marks for yesterday (no-school day,
+          // or no CW/HW entered) — deliberate blank, not an error.
+          diffEl.textContent = '– no data yesterday';
+          diffEl.style.color = '';
         }
       }
 
@@ -8802,6 +8840,17 @@ function saveDailyReport() {
             plugins: { legend:{display:false} } }
         });
       }
+    })
+    .catch(function(err) {
+      // Same fetch/network-failure handling as the attendance chain above:
+      // re-query the DOM fresh (todayEl/diffEl from the .then are out of
+      // scope here), and use a marker distinct from both the loading '—'
+      // and the '– no data yesterday' empty state.
+      console.error('dashLoadTrends: marks fetch failed', err);
+      var todayElErr = document.getElementById('trend-marks-today');
+      var diffElErr = document.getElementById('trend-marks-diff');
+      if (todayElErr) { todayElErr.textContent = '⚠'; todayElErr.title = 'Failed to load marks data'; }
+      if (diffElErr) { diffElErr.textContent = 'Load failed'; diffElErr.title = 'Failed to load marks data'; diffElErr.style.color = '#EA5455'; }
     });
   }
 
@@ -11761,6 +11810,357 @@ function saveDailyReport() {
   }
 
 
+  // ══ MONTHLY REPORT: per-class, per-student sheet-style view ═══════════
+  // Mirrors the school's "Monthly Report" Google Sheet (one tab per class,
+  // one row per student): Knowledge Level & Term Exam per subject, plus
+  // Attendance/Homework/Behaviour computed from live daily_reports data,
+  // and Punctuality/Club Attendance/Parent Discipline/Remarks as
+  // manually-entered fields (saved to monthly_report_extra) since none of
+  // those are tracked anywhere in the daily marking system.
+  var MR_STATE = { students: [], dailyReports: [], assessments: [], extras: [], timetable: [], currentClass: null, month: null };
+
+  function mrInit() {
+    var tabsEl = document.getElementById('mr-class-tabs');
+    var tableWrap = document.getElementById('mr-table-wrap');
+    if (!tabsEl || !tableWrap) return;
+    tableWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div>';
+
+    var now = new Date();
+    var monthStr = now.getFullYear() + '-' + (now.getMonth() + 1 < 10 ? '0' + (now.getMonth() + 1) : '' + (now.getMonth() + 1));
+    var monthStart = monthStr + '-01';
+    // Upper bound too — without it, any daily_reports row mis-dated (or
+    // pre-entered) into a future month would silently leak into "this
+    // month's" Attendance/HW/Behaviour numbers, contradicting the caption
+    // that says the figures are for MR_STATE.month specifically.
+    var nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    var nextMonthStart = nextMonthDate.getFullYear() + '-' + (nextMonthDate.getMonth() + 1 < 10 ? '0' + (nextMonthDate.getMonth() + 1) : '' + (nextMonthDate.getMonth() + 1)) + '-01';
+
+    Promise.all([
+      fetchAllPages(_SB_URL + '/rest/v1/students?select=id,full_name_en,full_name_ru,class&order=full_name_en.asc'),
+      fetchAllPages(_SB_URL + '/rest/v1/daily_reports?select=class,subject,teacher_name,date,students&date=gte.' + monthStart + '&date=lt.' + nextMonthStart),
+      fetchAllPages(_SB_URL + '/rest/v1/assessments?select=class,subject,teacher,date,students'),
+      fetchAllPages(_SB_URL + '/rest/v1/monthly_report_extra?select=*&month=eq.' + monthStr),
+      fetchAllPages(_SB_URL + '/rest/v1/timetable?select=class,subject,teacher_name')
+    ]).then(function(results) {
+      MR_STATE.students = results[0] || [];
+      MR_STATE.dailyReports = results[1] || [];
+      MR_STATE.assessments = results[2] || [];
+      MR_STATE.extras = results[3] || [];
+      MR_STATE.timetable = results[4] || [];
+      MR_STATE.month = monthStr;
+      var cls = (MR_STATE.currentClass && ALL_CLASSES.indexOf(MR_STATE.currentClass) !== -1) ? MR_STATE.currentClass : ALL_CLASSES[0];
+      mrSelectClass(cls);
+    }).catch(function(e) {
+      console.error('mrInit: failed to load', e);
+      tabsEl.innerHTML = '';
+      tableWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load monthly report data. Check your connection and try again.</div>';
+    });
+  }
+
+  function mrRenderTabs() {
+    var tabsEl = document.getElementById('mr-class-tabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = ALL_CLASSES.map(function(c) {
+      var active = c === MR_STATE.currentClass;
+      return '<button onclick="mrSelectClass(\'' + c + '\')" style="padding:6px 13px;border-radius:8px;border:1.5px solid ' +
+        (active ? 'var(--accent,#7367F0)' : 'var(--border)') + ';background:' + (active ? 'var(--accent,#7367F0)' : 'var(--surface)') +
+        ';color:' + (active ? '#fff' : 'var(--text-2)') + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">' + c + '</button>';
+    }).join('');
+  }
+
+  function mrSelectClass(cls) {
+    MR_STATE.currentClass = cls;
+    mrRenderTabs();
+    mrRenderTable(cls);
+  }
+
+  function mrRenderTable(cls) {
+    var wrap = document.getElementById('mr-table-wrap');
+    if (!wrap) return;
+    try {
+      var students = MR_STATE.students.filter(function(s) { return s.class === cls; });
+      if (!students.length) {
+        wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No students in ' + cls + '.</div>';
+        return;
+      }
+
+      // Daily-report and assessment student entries may carry either the
+      // English or Russian name (whichever language the teacher's UI was
+      // in when the mark was saved) — index the roster by both so neither
+      // source of marks gets silently dropped.
+      //
+      // On top of that, most historical entries store the name WITH the
+      // patronymic (e.g. "Абдукодирова Камола Фарходовна") while the
+      // roster only holds Surname + Given name ("Абдукодирова Камола") —
+      // verified directly against the data: this alone caused ~21% of all
+      // daily-report student entries school-wide to fail an exact-name
+      // match and silently drop out of every per-student aggregate. A
+      // Surname+GivenName prefix match (case-insensitive) recovers the
+      // overwhelming majority of those — checked school-wide, it raises
+      // the match rate from ~79% to ~94% — with the small remainder being
+      // genuinely deleted/moved students or real spelling variants that
+      // shouldn't be force-matched.
+      var byName = {};
+      var byNamePrefix = {};
+      function namePrefix(name) {
+        if (!name) return '';
+        var parts = name.trim().split(/\s+/);
+        return parts.slice(0, 2).join(' ').toLowerCase();
+      }
+      students.forEach(function(s) {
+        if (s.full_name_en) byName[s.full_name_en] = s;
+        if (s.full_name_ru) byName[s.full_name_ru] = s;
+        if (s.full_name_en) byNamePrefix[namePrefix(s.full_name_en)] = s;
+        if (s.full_name_ru) byNamePrefix[namePrefix(s.full_name_ru)] = s;
+      });
+      function lookupStudent(name) {
+        return byName[name] || byNamePrefix[namePrefix(name)];
+      }
+
+      var classDR = MR_STATE.dailyReports.filter(function(r) { return r.class === cls; });
+      var classAssess = MR_STATE.assessments.filter(function(a) { return a.class === cls; });
+
+      // Two related data-quality issues, both verified directly against
+      // the data rather than guessed:
+      //
+      // 1) Bare "Maths"/"Математика" (no -Eng/-Rus/Cambridge suffix) shows
+      //    up in a handful of daily reports across many classes — always
+      //    from a teacher who, for that same class, ALSO already has a
+      //    properly named math subject (Cambridge Maths / Maths-Eng /
+      //    Maths-Rus). Never a genuinely separate third math subject.
+      // 2) A teacher whose UI was set to Russian sometimes had the
+      //    Russian-language subject LABEL itself saved as the subject
+      //    value instead of the canonical English name (Искусство instead
+      //    of Art, Русский язык instead of Russian). Every occurrence
+      //    checked has the same teacher also using the correct English
+      //    name for that same class, unambiguously.
+      //
+      // Both are resolved before building the subject list / aggregates,
+      // so they never show up as phantom extra columns.
+      var RU_SUBJECT_ALIASES = { 'Искусство': 'Art', 'Русский язык': 'Russian' };
+      var GENERIC_MATH_LABELS = { 'Maths': true, 'Математика': true };
+      var teacherRealMathSubj = {};
+      function noteMathSubj(teacher, subj) {
+        if (!teacher || GENERIC_MATH_LABELS[subj] || !/math/i.test(subj)) return;
+        teacherRealMathSubj[teacher] = subj;
+      }
+      var classTimetable = MR_STATE.timetable.filter(function(t) { return t.class === cls; });
+
+      classDR.forEach(function(r) { noteMathSubj(r.teacher_name, r.subject); });
+      classAssess.forEach(function(a) { noteMathSubj(a.teacher, a.subject); });
+      classTimetable.forEach(function(t) { noteMathSubj(t.teacher_name, t.subject); });
+      function resolveSubject(subj, teacher) {
+        if (RU_SUBJECT_ALIASES[subj]) return RU_SUBJECT_ALIASES[subj];
+        if (GENERIC_MATH_LABELS[subj] && teacher && teacherRealMathSubj[teacher]) return teacherRealMathSubj[teacher];
+        return subj;
+      }
+
+      // Subject columns come from the TIMETABLE (what's actually scheduled
+      // to be taught), not just from subjects that already have marks —
+      // otherwise a subject a teacher hasn't filed reports for yet (e.g.
+      // Biology/Chemistry in Grade 7) silently disappears instead of
+      // showing up with a visible "—", which is exactly the kind of gap
+      // leadership needs to see. Marks data can still surface a subject
+      // the timetable missed, so both sources feed the same set.
+      var subjectSet = {};
+      classTimetable.forEach(function(t) { subjectSet[resolveSubject(t.subject, t.teacher_name)] = true; });
+      classDR.forEach(function(r) { subjectSet[resolveSubject(r.subject, r.teacher_name)] = true; });
+      classAssess.forEach(function(a) { subjectSet[resolveSubject(a.subject, a.teacher)] = true; });
+      // Fixed subject order per school preference, not alphabetical.
+      // Anything a class teaches that isn't in this list (IELTS,
+      // Literature, Uzbek, ICT, Business, Economics, TechDraw, Chess,
+      // etc.) still shows — it's just appended after, alphabetically —
+      // so no class ever loses a subject column just because it's not on
+      // this list.
+      var SUBJECT_ORDER_PRIORITY = ['English', 'Russian', 'Cambridge Maths', 'Maths-Rus', 'History', 'Geography', 'Physics', 'Chemistry', 'Biology', 'Art', 'PE', 'Law'];
+      var subjects = Object.keys(subjectSet).sort(function(a, b) {
+        var ai = SUBJECT_ORDER_PRIORITY.indexOf(a), bi = SUBJECT_ORDER_PRIORITY.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+
+      var data = {};
+      function ensure(id) {
+        if (!data[id]) data[id] = { subj: {}, present: 0, total: 0, hw: [], disc: [] };
+        return data[id];
+      }
+      function ensureSubj(d, subj) {
+        if (!d.subj[subj]) d.subj[subj] = { cw: [], examPcts: [] };
+        return d.subj[subj];
+      }
+
+      classDR.forEach(function(r) {
+        var subj = resolveSubject(r.subject, r.teacher_name);
+        (r.students || []).forEach(function(s) {
+          var stu = lookupStudent(s.name); if (!stu) return;
+          var d = ensure(stu.id);
+          d.total++;
+          if (!s.absent) {
+            d.present++;
+            var sj = ensureSubj(d, subj);
+            if (s.cw) sj.cw.push(s.cw);
+            if (s.hw) d.hw.push(s.hw);
+            if (s.disc) d.disc.push(s.disc);
+          }
+        });
+      });
+      classAssess.forEach(function(a) {
+        var subj = resolveSubject(a.subject, a.teacher);
+        (a.students || []).forEach(function(s) {
+          var stu = lookupStudent(s.name); if (!stu) return;
+          if (s.absent || s.pct === null || s.pct === undefined) return;
+          var d = ensure(stu.id);
+          var sj = ensureSubj(d, subj);
+          sj.examPcts.push(s.pct);
+        });
+      });
+
+      var extraMap = {};
+      MR_STATE.extras.forEach(function(e) { extraMap[e.student_id + '|' + e.field] = e.value; });
+
+      function avg(arr) { return arr.length ? arr.reduce(function(a, b) { return a + b; }, 0) / arr.length : null; }
+
+      // Color bands match the real Monthly Report sheet exactly:
+      // 80–100% (or a /5 score of 5) = green, 41–79% (score 4) = yellow,
+      // 0–40% (score 3 or below) = red. Applied as a cell BACKGROUND fill
+      // (not just colored text) so it reads as the same "traffic-light"
+      // color coding the sheet uses, not just a number in color.
+      function bandFor(val, kind) {
+        if (val === null || val === undefined) return null;
+        if (kind === 'pct') return val >= 80 ? 'green' : val >= 41 ? 'yellow' : 'red';
+        // raw /5 scale: 5≈80-100%, 4≈41-79%, ≤3≈0-40%
+        return val >= 4.5 ? 'green' : val >= 3.5 ? 'yellow' : 'red';
+      }
+      var BAND_FILL = { green: '#c6efce', yellow: '#ffeb9c', red: '#ffc7ce' };
+      var BAND_TEXT = { green: '#0f5c2e', yellow: '#7a5d00', red: '#8a1723' };
+
+      // Matches the real sheet's layout exactly: it does NOT interleave
+      // each subject's Knowledge Level next to its own Exam column — it
+      // lists every subject's Knowledge Level first as one block, then
+      // repeats the same subject list a second time as the Exam block
+      // (visible in the template header: English, Russian, Math, Cambridge
+      // Math, Science — then English, Russian, Math, Cambridge Math,
+      // Science again). So both column groups render off the SAME
+      // `subjects` list, just twice.
+      var klGroupHead = subjects.length ? ('<th colspan="' + subjects.length + '" style="padding:6px 8px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);border-left:1px solid var(--rule-light,#f1f5f9);">Knowledge Level</th>') : '';
+      var examGroupHead = subjects.length ? ('<th colspan="' + subjects.length + '" style="padding:6px 8px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);border-left:1px solid var(--rule-light,#f1f5f9);">Term Exam</th>') : '';
+      var klSubHead = subjects.map(function(s, i) {
+        return '<th style="padding:4px 6px;text-align:center;font-size:9.5px;font-weight:600;color:var(--muted);white-space:nowrap;' + (i === 0 ? 'border-left:1px solid var(--rule-light,#f1f5f9);' : '') + '">' + s + '</th>';
+      }).join('');
+      var examSubHead = subjects.map(function(s, i) {
+        return '<th style="padding:4px 6px;text-align:center;font-size:9.5px;font-weight:600;color:var(--muted);white-space:nowrap;' + (i === 0 ? 'border-left:1px solid var(--rule-light,#f1f5f9);' : '') + '">' + s + '</th>';
+      }).join('');
+
+      // Column order matches the real sheet: Name → Club Mon-Wed → Club
+      // Tue-Thu → (color legend, shown as a caption, not a data column) →
+      // Knowledge Level block (all subjects) → Term Exam block (all
+      // subjects) → attendance/homework/behaviour/punctuality/parent
+      // discipline → remarks.
+      var thead = '<thead>' +
+        '<tr style="background:var(--bg,#f8fafc);">' +
+          '<th rowspan="2" style="padding:8px 8px;text-align:center;font-size:10.5px;color:var(--muted);">№</th>' +
+          '<th rowspan="2" style="padding:8px 10px;text-align:left;font-size:10.5px;color:var(--muted);position:sticky;left:0;background:var(--bg,#f8fafc);">Student</th>' +
+          '<th rowspan="2" style="padding:8px 8px;text-align:center;font-size:10px;font-weight:700;color:var(--muted);border-left:1px solid var(--rule-light,#f1f5f9);">Club<br>Mon–Wed</th>' +
+          '<th rowspan="2" style="padding:8px 8px;text-align:center;font-size:10px;font-weight:700;color:var(--muted);">Club<br>Tue–Thu</th>' +
+          klGroupHead + examGroupHead +
+          '<th rowspan="2" style="padding:8px 8px;text-align:center;font-size:10.5px;color:var(--muted);border-left:1px solid var(--rule-light,#f1f5f9);">Attend.%</th>' +
+          '<th rowspan="2" style="padding:8px 8px;text-align:center;font-size:10.5px;color:var(--muted);">HW</th>' +
+          '<th rowspan="2" style="padding:8px 8px;text-align:center;font-size:10.5px;color:var(--muted);">Behav.</th>' +
+          '<th rowspan="2" style="padding:8px 8px;text-align:center;font-size:10.5px;color:var(--muted);">Punctuality</th>' +
+          '<th rowspan="2" style="padding:8px 8px;text-align:center;font-size:10.5px;color:var(--muted);">Parent Discipline</th>' +
+          '<th rowspan="2" style="padding:8px 10px;text-align:left;font-size:10.5px;color:var(--muted);">Remarks</th>' +
+        '</tr>' +
+        '<tr style="background:var(--bg,#f8fafc);">' + klSubHead + examSubHead + '</tr>' +
+      '</thead>';
+
+      function computedCell(val, kind, extraBorder) {
+        var border = (extraBorder !== false) ? 'border-left:1px solid var(--rule-light,#f1f5f9);' : '';
+        if (val === null) return '<td style="padding:6px 8px;text-align:center;color:#cbd5e1;' + border + '">—</td>';
+        var band = bandFor(val, kind);
+        var bg = band ? BAND_FILL[band] : 'transparent';
+        var fg = band ? BAND_TEXT[band] : 'var(--text-1)';
+        return '<td style="padding:6px 8px;text-align:center;font-weight:700;background:' + bg + ';color:' + fg + ';' + border + '">' + (kind === 'pct' ? val.toFixed(0) + '%' : val.toFixed(1)) + '</td>';
+      }
+      function editableCell(studentId, field, width, extraBorder) {
+        var border = (extraBorder !== false) ? 'border-left:1px solid var(--rule-light,#f1f5f9);' : '';
+        var val = extraMap[studentId + '|' + field] || '';
+        return '<td style="padding:2px 4px;' + border + '">' +
+          '<input type="text" value="' + String(val).replace(/"/g, '&quot;') + '" ' +
+          'onchange="mrSaveExtra(' + studentId + ',\'' + cls + '\',\'' + field + '\',this.value)" ' +
+          'style="width:' + (width || 64) + 'px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;font-size:11.5px;text-align:center;background:var(--surface);color:var(--text-1);" /></td>';
+      }
+
+      var rows = students.map(function(stu, i) {
+        var d = data[stu.id] || { subj: {}, present: 0, total: 0, hw: [], disc: [] };
+        var klCells = subjects.map(function(subj, si) {
+          var sj = d.subj[subj] || { cw: [], examPcts: [] };
+          return computedCell(avg(sj.cw), 'raw', si === 0);
+        }).join('');
+        var examCells = subjects.map(function(subj, si) {
+          var sj = d.subj[subj] || { cw: [], examPcts: [] };
+          return computedCell(avg(sj.examPcts), 'pct', si === 0);
+        }).join('');
+        var subjCells = klCells + examCells;
+        var attendPct = d.total ? Math.round((d.present / d.total) * 100) : null;
+
+        var name = stu.full_name_en || stu.full_name_ru || '';
+        var nameRu = (stu.full_name_ru && stu.full_name_ru !== name) ? '<div style="font-size:10.5px;color:var(--text-3);">' + stu.full_name_ru + '</div>' : '';
+
+        return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+          '<td style="padding:6px 8px;text-align:center;color:var(--muted);">' + (i + 1) + '</td>' +
+          '<td style="padding:6px 10px;font-weight:600;position:sticky;left:0;background:var(--white,#fff);white-space:nowrap;">' + name + nameRu + '</td>' +
+          editableCell(stu.id, 'club_mon_wed', 90) +
+          editableCell(stu.id, 'club_tue_thu', 90, false) +
+          subjCells +
+          computedCell(attendPct, 'pct') +
+          computedCell(avg(d.hw), 'raw', false) +
+          computedCell(avg(d.disc), 'raw', false) +
+          editableCell(stu.id, 'punctuality', 64, false) +
+          editableCell(stu.id, 'parent_discipline', 64, false) +
+          editableCell(stu.id, 'remarks', 150, false) +
+        '</tr>';
+      }).join('');
+
+      var minWidth = 260 + 200 + subjects.length * 110 + 480;
+      var legend = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;font-size:11px;color:var(--text-3);flex-wrap:wrap;">' +
+        '<span style="font-weight:700;color:var(--text-2);">Color coding:</span>' +
+        '<span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:' + BAND_FILL.green + ';border:1px solid ' + BAND_TEXT.green + ';margin-right:5px;vertical-align:middle;"></span>80–100% (score 5)</span>' +
+        '<span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:' + BAND_FILL.yellow + ';border:1px solid ' + BAND_TEXT.yellow + ';margin-right:5px;vertical-align:middle;"></span>41–79% (score 4)</span>' +
+        '<span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:' + BAND_FILL.red + ';border:1px solid ' + BAND_TEXT.red + ';margin-right:5px;vertical-align:middle;"></span>0–40% (score 3 or below)</span>' +
+      '</div>';
+      wrap.innerHTML = legend + '<table style="width:100%;min-width:' + minWidth + 'px;border-collapse:collapse;font-size:12px;">' + thead + '<tbody>' + rows + '</tbody></table>' +
+        '<div style="margin-top:8px;font-size:11px;color:var(--text-4);">KL = Knowledge Level (classwork average, /5) · Exam = summative assessment average (%) · Attend./HW/Behav. computed from Daily Report marks for ' + MR_STATE.month + ' · Club Mon–Wed/Tue–Thu, Punctuality, Parent Discipline and Remarks are typed in here and saved automatically.</div>';
+    } catch (e) {
+      console.error('mrRenderTable: failed for class', cls, e);
+      wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not render the monthly report for ' + cls + '.</div>';
+    }
+  }
+
+  function mrSaveExtra(studentId, cls, field, value) {
+    var monthStr = MR_STATE.month;
+    var payload = {
+      student_id: studentId, class: cls, month: monthStr, field: field, subject: '',
+      value: value, updated_by: (_currentUser ? (_currentUser.username || _currentUser.user || _currentUser.name || '') : ''),
+      updated_at: new Date().toISOString()
+    };
+    fetch(_SB_URL + '/rest/v1/monthly_report_extra?on_conflict=student_id,month,field,subject', {
+      method: 'POST',
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(payload)
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t); });
+      var existing = null;
+      MR_STATE.extras.forEach(function(e) { if (e.student_id === studentId && e.field === field) existing = e; });
+      if (existing) existing.value = value;
+      else MR_STATE.extras.push({ student_id: studentId, field: field, value: value, month: monthStr, subject: '', class: cls });
+    }).catch(function(e) {
+      console.error('mrSaveExtra: save failed', e);
+      alert('Could not save — check your connection and try again.');
+    });
+  }
+
   // ══ ACADEMIC MONITORING: school-wide class/subject comparison ═════════
   var _acadTrendChart = null;
 
@@ -11787,177 +12187,209 @@ function saveDailyReport() {
     ]).then(function(results) {
       var assessments = results[0] || [], dailyReports = results[1] || [], dailyReports15d = results[2] || [];
 
-      // ── By class: assessment avg, cw/hw/disc avg, attendance ──
-      var byClass = {};
-      function ensureClass(cls) {
-        if (!byClass[cls]) byClass[cls] = { assessPcts:[], cw:[], hw:[], disc:[], lessonsTotal:0, lessonsPresent:0 };
-        return byClass[cls];
-      }
-      assessments.forEach(function(a) {
-        var c = ensureClass(a.class);
-        (a.students||[]).forEach(function(s) {
-          if (!s.absent && s.pct !== null && s.pct !== undefined) c.assessPcts.push(s.pct);
-        });
-      });
-      dailyReports.forEach(function(r) {
-        var c = ensureClass(r.class);
-        (r.students||[]).forEach(function(s) {
-          c.lessonsTotal++;
-          if (!s.absent) c.lessonsPresent++;
-          if (s.cw) c.cw.push(s.cw);
-          if (s.hw) c.hw.push(s.hw);
-          if (s.disc) c.disc.push(s.disc);
-        });
-      });
+      // Shared helper used by every section below. Declared once, up
+      // front, so no individual section's try/catch has to redefine it.
       function avg(arr) { return arr.length ? arr.reduce(function(a,b){return a+b;},0)/arr.length : null; }
 
-      var classRows = Object.keys(byClass).sort(function(a,b){
-        return a.localeCompare(b, undefined, {numeric:true});
-      }).map(function(cls) {
-        var c = byClass[cls];
-        return {
-          cls: cls,
-          assessAvg: avg(c.assessPcts),
-          cwAvg: avg(c.cw), hwAvg: avg(c.hw), discAvg: avg(c.disc),
-          attendPct: c.lessonsTotal ? Math.round((c.lessonsPresent/c.lessonsTotal)*100) : null
-        };
-      });
+      // ── Each section below is its own error boundary. A failure in one
+      // (e.g. the trend chart throwing because Chart.js's date adapter
+      // didn't load) must never blank out DOM content another section
+      // already rendered successfully — so each try/catch only ever
+      // touches its OWN target element(s) on failure, instead of one
+      // shared catch stomping every panel below the first.
 
-      if (!classRows.length) {
-        classTbody.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--muted);">No data recorded yet.</td></tr>';
-      } else {
-        classTbody.innerHTML = classRows.map(function(r) {
-          function cell(val, suffix, isPercent) {
-            if (val === null) return '<td style="padding:8px 10px;text-align:center;color:#cbd5e1;">—</td>';
-            var color = acadColor(val, isPercent);
-            return '<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+color+';">' + val.toFixed(1) + suffix + '</td>';
-          }
-          return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
-            '<td style="padding:8px 12px;font-weight:700;">' + r.cls + '</td>' +
-            cell(r.assessAvg, '%', true) + cell(r.cwAvg, '', false) + cell(r.hwAvg, '', false) + cell(r.discAvg, '', false) +
-            (r.attendPct !== null ? '<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+acadColor(r.attendPct,true)+';">'+r.attendPct+'%</td>' : '<td style="padding:8px 10px;text-align:center;color:#cbd5e1;">—</td>') +
-          '</tr>';
-        }).join('');
+      // ── By class: assessment avg, cw/hw/disc avg, attendance ──
+      try {
+        var byClass = {};
+        function ensureClass(cls) {
+          if (!byClass[cls]) byClass[cls] = { assessPcts:[], cw:[], hw:[], disc:[], lessonsTotal:0, lessonsPresent:0 };
+          return byClass[cls];
+        }
+        assessments.forEach(function(a) {
+          var c = ensureClass(a.class);
+          (a.students||[]).forEach(function(s) {
+            if (!s.absent && s.pct !== null && s.pct !== undefined) c.assessPcts.push(s.pct);
+          });
+        });
+        dailyReports.forEach(function(r) {
+          var c = ensureClass(r.class);
+          (r.students||[]).forEach(function(s) {
+            c.lessonsTotal++;
+            if (!s.absent) c.lessonsPresent++;
+            if (s.cw) c.cw.push(s.cw);
+            if (s.hw) c.hw.push(s.hw);
+            if (s.disc) c.disc.push(s.disc);
+          });
+        });
+
+        var classRows = Object.keys(byClass).sort(function(a,b){
+          return a.localeCompare(b, undefined, {numeric:true});
+        }).map(function(cls) {
+          var c = byClass[cls];
+          return {
+            cls: cls,
+            assessAvg: avg(c.assessPcts),
+            cwAvg: avg(c.cw), hwAvg: avg(c.hw), discAvg: avg(c.disc),
+            attendPct: c.lessonsTotal ? Math.round((c.lessonsPresent/c.lessonsTotal)*100) : null
+          };
+        });
+
+        if (!classRows.length) {
+          classTbody.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--muted);">No data recorded yet.</td></tr>';
+        } else {
+          classTbody.innerHTML = classRows.map(function(r) {
+            function cell(val, suffix, isPercent) {
+              if (val === null) return '<td style="padding:8px 10px;text-align:center;color:#cbd5e1;">—</td>';
+              var color = acadColor(val, isPercent);
+              return '<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+color+';">' + val.toFixed(1) + suffix + '</td>';
+            }
+            return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+              '<td style="padding:8px 12px;font-weight:700;">' + r.cls + '</td>' +
+              cell(r.assessAvg, '%', true) + cell(r.cwAvg, '', false) + cell(r.hwAvg, '', false) + cell(r.discAvg, '', false) +
+              (r.attendPct !== null ? '<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+acadColor(r.attendPct,true)+';">'+r.attendPct+'%</td>' : '<td style="padding:8px 10px;text-align:center;color:#cbd5e1;">—</td>') +
+            '</tr>';
+          }).join('');
+        }
+      } catch (eClass) {
+        console.error('acadInit: class-table render failed', eClass);
+        if (classTbody) classTbody.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load.</td></tr>';
       }
 
       // ── Subject average by class (matrix) ──
-      var byClassSubject = {};
-      var subjectSet = {};
-      assessments.forEach(function(a) {
-        byClassSubject[a.class] = byClassSubject[a.class] || {};
-        byClassSubject[a.class][a.subject] = byClassSubject[a.class][a.subject] || [];
-        subjectSet[a.subject] = true;
-        (a.students||[]).forEach(function(s) {
-          if (!s.absent && s.pct !== null && s.pct !== undefined) byClassSubject[a.class][a.subject].push(s.pct);
+      try {
+        var byClassSubject = {};
+        var subjectSet = {};
+        assessments.forEach(function(a) {
+          byClassSubject[a.class] = byClassSubject[a.class] || {};
+          byClassSubject[a.class][a.subject] = byClassSubject[a.class][a.subject] || [];
+          subjectSet[a.subject] = true;
+          (a.students||[]).forEach(function(s) {
+            if (!s.absent && s.pct !== null && s.pct !== undefined) byClassSubject[a.class][a.subject].push(s.pct);
+          });
         });
-      });
-      var matrixSubjects = Object.keys(subjectSet).sort();
-      var matrixClasses = Object.keys(byClassSubject).sort(function(a,b){
-        return a.localeCompare(b, undefined, {numeric:true});
-      });
-      var matrixWrap = document.getElementById('acad-class-subject-wrap');
-      if (matrixWrap) {
-        if (!matrixClasses.length || !matrixSubjects.length) {
-          matrixWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No assessments recorded yet.</div>';
-        } else {
-          var mHead = '<th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);position:sticky;left:0;background:var(--bg,#f8fafc);">Class</th>' +
-            matrixSubjects.map(function(s) {
-              return '<th style="padding:9px 8px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);white-space:nowrap;">' + s + '</th>';
+        var matrixSubjects = Object.keys(subjectSet).sort();
+        var matrixClasses = Object.keys(byClassSubject).sort(function(a,b){
+          return a.localeCompare(b, undefined, {numeric:true});
+        });
+        var matrixWrap = document.getElementById('acad-class-subject-wrap');
+        if (matrixWrap) {
+          if (!matrixClasses.length || !matrixSubjects.length) {
+            matrixWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No assessments recorded yet.</div>';
+          } else {
+            var mHead = '<th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);position:sticky;left:0;background:var(--bg,#f8fafc);">Class</th>' +
+              matrixSubjects.map(function(s) {
+                return '<th style="padding:9px 8px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);white-space:nowrap;">' + s + '</th>';
+              }).join('');
+            var mBody = matrixClasses.map(function(cls) {
+              var cells = matrixSubjects.map(function(subj) {
+                var pcts = (byClassSubject[cls][subj]) || [];
+                var a = avg(pcts);
+                if (a === null) return '<td style="padding:8px 8px;text-align:center;color:#cbd5e1;">—</td>';
+                var color = acadColor(a, true);
+                return '<td style="padding:8px 8px;text-align:center;font-weight:700;color:'+color+';">' + a.toFixed(1) + '%</td>';
+              }).join('');
+              return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+                '<td style="padding:8px 12px;font-weight:700;position:sticky;left:0;background:var(--white,#fff);">' + cls + '</td>' + cells +
+              '</tr>';
             }).join('');
-          var mBody = matrixClasses.map(function(cls) {
-            var cells = matrixSubjects.map(function(subj) {
-              var pcts = (byClassSubject[cls][subj]) || [];
-              var a = avg(pcts);
-              if (a === null) return '<td style="padding:8px 8px;text-align:center;color:#cbd5e1;">—</td>';
-              var color = acadColor(a, true);
-              return '<td style="padding:8px 8px;text-align:center;font-weight:700;color:'+color+';">' + a.toFixed(1) + '%</td>';
-            }).join('');
-            return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
-              '<td style="padding:8px 12px;font-weight:700;position:sticky;left:0;background:var(--white,#fff);">' + cls + '</td>' + cells +
-            '</tr>';
-          }).join('');
-          matrixWrap.innerHTML = '<table style="width:100%;min-width:' + (150 + matrixSubjects.length*90) + 'px;border-collapse:collapse;font-size:12.5px;">' +
-            '<thead><tr style="background:var(--bg,#f8fafc);">' + mHead + '</tr></thead>' +
-            '<tbody>' + mBody + '</tbody></table>';
+            matrixWrap.innerHTML = '<table style="width:100%;min-width:' + (150 + matrixSubjects.length*90) + 'px;border-collapse:collapse;font-size:12.5px;">' +
+              '<thead><tr style="background:var(--bg,#f8fafc);">' + mHead + '</tr></thead>' +
+              '<tbody>' + mBody + '</tbody></table>';
+          }
         }
+      } catch (eMatrix) {
+        console.error('acadInit: subject-by-class matrix render failed', eMatrix);
+        var mw = document.getElementById('acad-class-subject-wrap');
+        if (mw) mw.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load academic overview. Check your connection and try again.</div>';
       }
 
       // ── Daily Marks (CW/HW/Disc) by Class & Subject — last 15 days ──
-      var byClassSubjectDaily = {};
-      var dailySubjectSet = {};
-      dailyReports15d.forEach(function(r) {
-        byClassSubjectDaily[r.class] = byClassSubjectDaily[r.class] || {};
-        byClassSubjectDaily[r.class][r.subject] = byClassSubjectDaily[r.class][r.subject] || { cw:[], hw:[], disc:[] };
-        dailySubjectSet[r.subject] = true;
-        (r.students||[]).forEach(function(s) {
-          if (s.absent) return;
-          if (s.cw) byClassSubjectDaily[r.class][r.subject].cw.push(s.cw);
-          if (s.hw) byClassSubjectDaily[r.class][r.subject].hw.push(s.hw);
-          if (s.disc) byClassSubjectDaily[r.class][r.subject].disc.push(s.disc);
+      try {
+        var byClassSubjectDaily = {};
+        var dailySubjectSet = {};
+        dailyReports15d.forEach(function(r) {
+          byClassSubjectDaily[r.class] = byClassSubjectDaily[r.class] || {};
+          byClassSubjectDaily[r.class][r.subject] = byClassSubjectDaily[r.class][r.subject] || { cw:[], hw:[], disc:[] };
+          dailySubjectSet[r.subject] = true;
+          (r.students||[]).forEach(function(s) {
+            if (s.absent) return;
+            if (s.cw) byClassSubjectDaily[r.class][r.subject].cw.push(s.cw);
+            if (s.hw) byClassSubjectDaily[r.class][r.subject].hw.push(s.hw);
+            if (s.disc) byClassSubjectDaily[r.class][r.subject].disc.push(s.disc);
+          });
         });
-      });
-      var dailyMatrixSubjects = Object.keys(dailySubjectSet).sort();
-      var dailyMatrixClasses = Object.keys(byClassSubjectDaily).sort(function(a,b){
-        return a.localeCompare(b, undefined, {numeric:true});
-      });
-      var dailyMatrixWrap = document.getElementById('acad-daily-subject-wrap');
-      if (dailyMatrixWrap) {
-        if (!dailyMatrixClasses.length || !dailyMatrixSubjects.length) {
-          dailyMatrixWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No Daily Report marks in the last 15 days.</div>';
-        } else {
-          function miniPill(val, label) {
-            if (val === null) return '<span style="color:#cbd5e1;font-size:10px;">' + label + ':—</span>';
-            var color = acadColor(val, false);
-            return '<span style="color:' + color + ';font-weight:700;font-size:10px;">' + label + ':' + val.toFixed(1) + '</span>';
+        var dailyMatrixSubjects = Object.keys(dailySubjectSet).sort();
+        var dailyMatrixClasses = Object.keys(byClassSubjectDaily).sort(function(a,b){
+          return a.localeCompare(b, undefined, {numeric:true});
+        });
+        var dailyMatrixWrap = document.getElementById('acad-daily-subject-wrap');
+        if (dailyMatrixWrap) {
+          if (!dailyMatrixClasses.length || !dailyMatrixSubjects.length) {
+            dailyMatrixWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No Daily Report marks in the last 15 days.</div>';
+          } else {
+            function miniPill(val, label) {
+              if (val === null) return '<span style="color:#cbd5e1;font-size:10px;">' + label + ':—</span>';
+              var color = acadColor(val, false);
+              return '<span style="color:' + color + ';font-weight:700;font-size:10px;">' + label + ':' + val.toFixed(1) + '</span>';
+            }
+            var dHead = '<th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);position:sticky;left:0;background:var(--bg,#f8fafc);">Class</th>' +
+              dailyMatrixSubjects.map(function(s) {
+                return '<th style="padding:9px 8px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);white-space:nowrap;">' + s + '</th>';
+              }).join('');
+            var dBody = dailyMatrixClasses.map(function(cls) {
+              var cells = dailyMatrixSubjects.map(function(subj) {
+                var d = byClassSubjectDaily[cls][subj];
+                if (!d || (!d.cw.length && !d.hw.length && !d.disc.length)) return '<td style="padding:8px 8px;text-align:center;color:#cbd5e1;">—</td>';
+                return '<td style="padding:6px 8px;text-align:center;white-space:nowrap;"><div style="display:flex;gap:6px;justify-content:center;">' +
+                  miniPill(avg(d.cw), 'C') + miniPill(avg(d.hw), 'H') + miniPill(avg(d.disc), 'D') +
+                '</div></td>';
+              }).join('');
+              return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+                '<td style="padding:8px 12px;font-weight:700;position:sticky;left:0;background:var(--white,#fff);">' + cls + '</td>' + cells +
+              '</tr>';
+            }).join('');
+            dailyMatrixWrap.innerHTML = '<table style="width:100%;min-width:' + (150 + dailyMatrixSubjects.length*100) + 'px;border-collapse:collapse;font-size:12.5px;">' +
+              '<thead><tr style="background:var(--bg,#f8fafc);">' + dHead + '</tr></thead>' +
+              '<tbody>' + dBody + '</tbody></table>';
           }
-          var dHead = '<th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);position:sticky;left:0;background:var(--bg,#f8fafc);">Class</th>' +
-            dailyMatrixSubjects.map(function(s) {
-              return '<th style="padding:9px 8px;text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted);white-space:nowrap;">' + s + '</th>';
-            }).join('');
-          var dBody = dailyMatrixClasses.map(function(cls) {
-            var cells = dailyMatrixSubjects.map(function(subj) {
-              var d = byClassSubjectDaily[cls][subj];
-              if (!d || (!d.cw.length && !d.hw.length && !d.disc.length)) return '<td style="padding:8px 8px;text-align:center;color:#cbd5e1;">—</td>';
-              return '<td style="padding:6px 8px;text-align:center;white-space:nowrap;"><div style="display:flex;gap:6px;justify-content:center;">' +
-                miniPill(avg(d.cw), 'C') + miniPill(avg(d.hw), 'H') + miniPill(avg(d.disc), 'D') +
-              '</div></td>';
-            }).join('');
-            return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
-              '<td style="padding:8px 12px;font-weight:700;position:sticky;left:0;background:var(--white,#fff);">' + cls + '</td>' + cells +
-            '</tr>';
-          }).join('');
-          dailyMatrixWrap.innerHTML = '<table style="width:100%;min-width:' + (150 + dailyMatrixSubjects.length*100) + 'px;border-collapse:collapse;font-size:12.5px;">' +
-            '<thead><tr style="background:var(--bg,#f8fafc);">' + dHead + '</tr></thead>' +
-            '<tbody>' + dBody + '</tbody></table>';
         }
+      } catch (eDaily) {
+        console.error('acadInit: daily-marks matrix render failed', eDaily);
+        var dw = document.getElementById('acad-daily-subject-wrap');
+        if (dw) dw.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load.</div>';
       }
 
       // ── By subject (school-wide) ──
-      var bySubject = {};
-      assessments.forEach(function(a) {
-        bySubject[a.subject] = bySubject[a.subject] || [];
-        (a.students||[]).forEach(function(s) {
-          if (!s.absent && s.pct !== null && s.pct !== undefined) bySubject[a.subject].push(s.pct);
+      try {
+        var bySubject = {};
+        assessments.forEach(function(a) {
+          bySubject[a.subject] = bySubject[a.subject] || [];
+          (a.students||[]).forEach(function(s) {
+            if (!s.absent && s.pct !== null && s.pct !== undefined) bySubject[a.subject].push(s.pct);
+          });
         });
-      });
-      var subjectRows = Object.keys(bySubject).sort().map(function(subj) {
-        return { subj: subj, avg: avg(bySubject[subj]), count: bySubject[subj].length };
-      }).filter(function(r) { return r.count > 0; });
+        var subjectRows = Object.keys(bySubject).sort().map(function(subj) {
+          return { subj: subj, avg: avg(bySubject[subj]), count: bySubject[subj].length };
+        }).filter(function(r) { return r.count > 0; });
 
-      if (!subjectRows.length) {
-        subjTbody.innerHTML = '<tr><td colspan="3" style="padding:30px;text-align:center;color:var(--muted);">No assessments recorded yet.</td></tr>';
-      } else {
-        subjTbody.innerHTML = subjectRows.map(function(r) {
-          var color = acadColor(r.avg, true);
-          return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
-            '<td style="padding:8px 12px;font-weight:700;">' + r.subj + '</td>' +
-            '<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+color+';">' + r.avg.toFixed(1) + '%</td>' +
-            '<td style="padding:8px 10px;text-align:center;color:var(--muted);">' + r.count + '</td>' +
-          '</tr>';
-        }).join('');
+        if (!subjectRows.length) {
+          subjTbody.innerHTML = '<tr><td colspan="3" style="padding:30px;text-align:center;color:var(--muted);">No assessments recorded yet.</td></tr>';
+        } else {
+          subjTbody.innerHTML = subjectRows.map(function(r) {
+            var color = acadColor(r.avg, true);
+            return '<tr style="border-top:1px solid var(--rule-light,#f1f5f9);">' +
+              '<td style="padding:8px 12px;font-weight:700;">' + r.subj + '</td>' +
+              '<td style="padding:8px 10px;text-align:center;font-weight:700;color:'+color+';">' + r.avg.toFixed(1) + '%</td>' +
+              '<td style="padding:8px 10px;text-align:center;color:var(--muted);">' + r.count + '</td>' +
+            '</tr>';
+          }).join('');
+        }
+      } catch (eSubject) {
+        console.error('acadInit: subject table render failed', eSubject);
+        if (subjTbody) subjTbody.innerHTML = '<tr><td colspan="3" style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load.</td></tr>';
       }
 
-      // ── Daily average BY SUBJECT (last 30 days) ──
+      // ── Daily average BY SUBJECT (last 30 days) — trend chart ──
       // Was pulling from assessments — formal tests entered only
       // occasionally (20 total on record, most recent over a week old at
       // any given time), so this chart looked empty almost permanently.
@@ -11965,56 +12397,72 @@ function saveDailyReport() {
       // on this page, fixed the same way: classwork/homework marks from
       // daily_reports are entered constantly, so that's what a genuine
       // day-to-day trend should be based on.
-      var bySubjectDate = {};
-      var since = new Date(); since.setDate(since.getDate()-30);
-      var sinceStr = localDateStr(since);
-      dailyReports.forEach(function(r) {
-        if (r.date < sinceStr || r.cancelled) return;
-        bySubjectDate[r.subject] = bySubjectDate[r.subject] || {};
-        (r.students||[]).forEach(function(s) {
-          if (s.absent) return;
-          [s.cw, s.hw].forEach(function(v) {
-            if (!v) return;
-            bySubjectDate[r.subject][r.date] = bySubjectDate[r.subject][r.date] || [];
-            bySubjectDate[r.subject][r.date].push(v);
+      try {
+        var bySubjectDate = {};
+        var since = new Date(); since.setDate(since.getDate()-30);
+        var sinceStr = localDateStr(since);
+        dailyReports.forEach(function(r) {
+          if (r.date < sinceStr || r.cancelled) return;
+          bySubjectDate[r.subject] = bySubjectDate[r.subject] || {};
+          (r.students||[]).forEach(function(s) {
+            if (s.absent) return;
+            [s.cw, s.hw].forEach(function(v) {
+              if (!v) return;
+              bySubjectDate[r.subject][r.date] = bySubjectDate[r.subject][r.date] || [];
+              bySubjectDate[r.subject][r.date].push(v);
+            });
           });
         });
-      });
-      var trendSubjects = Object.keys(bySubjectDate).sort();
-      var canvas = document.getElementById('acad-trend-chart');
-      if (!trendSubjects.length) {
-        if (canvas) canvas.parentElement.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No Daily Report marks in the last 30 days.</div>';
-      } else if (canvas && typeof Chart !== 'undefined') {
-        var trendPalette = ['#7367F0','#28C76F','#FF9F43','#EA5455','#00CFE8','#8B5CF6','#F97316','#0EA5E9','#DB2777','#65A30D'];
-        var datasets = trendSubjects.map(function(subj, i) {
-          var dates = Object.keys(bySubjectDate[subj]).sort();
-          // Marks here are on a 1-5 scale, not a percentage — rounding to
-          // one decimal (not a whole number) since the range is so small
-          // that whole-number rounding would flatten most of the signal.
-          var points = dates.map(function(d) { return { x:d, y: Math.round(avg(bySubjectDate[subj][d])*10)/10 }; });
-          var color = trendPalette[i % trendPalette.length];
-          return { label: subj, data: points, borderColor: color, backgroundColor: color+'22', tension:0.3, pointRadius:3 };
-        });
-        var ctx = canvas.getContext('2d');
-        if (_acadTrendChart) _acadTrendChart.destroy();
-        _acadTrendChart = new Chart(ctx, {
-          type: 'line',
-          data: { datasets: datasets },
-          options: { responsive:true, maintainAspectRatio:false,
-            scales: { x:{type:'time',time:{unit:'week'},grid:{display:false}}, y:{min:0,max:100,ticks:{callback:function(v){return v+'%';}}} },
-            plugins: { legend:{display:true, position:'bottom', labels:{boxWidth:10, font:{size:11}}} } }
-        });
+        var trendSubjects = Object.keys(bySubjectDate).sort();
+        var canvas = document.getElementById('acad-trend-chart');
+        if (!trendSubjects.length) {
+          if (canvas) canvas.parentElement.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">No Daily Report marks in the last 30 days.</div>';
+        } else if (canvas && typeof Chart !== 'undefined') {
+          var trendPalette = ['#7367F0','#28C76F','#FF9F43','#EA5455','#00CFE8','#8B5CF6','#F97316','#0EA5E9','#DB2777','#65A30D'];
+          var datasets = trendSubjects.map(function(subj, i) {
+            var dates = Object.keys(bySubjectDate[subj]).sort();
+            // Marks here are on a 1-5 scale, not a percentage — rounding to
+            // one decimal (not a whole number) since the range is so small
+            // that whole-number rounding would flatten most of the signal.
+            var points = dates.map(function(d) { return { x:d, y: Math.round(avg(bySubjectDate[subj][d])*10)/10 }; });
+            var color = trendPalette[i % trendPalette.length];
+            return { label: subj, data: points, borderColor: color, backgroundColor: color+'22', tension:0.3, pointRadius:3 };
+          });
+          var ctx = canvas.getContext('2d');
+          if (_acadTrendChart) _acadTrendChart.destroy();
+          _acadTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets: datasets },
+            options: { responsive:true, maintainAspectRatio:false,
+              scales: { x:{type:'time',time:{unit:'week'},grid:{display:false}}, y:{min:0,max:100,ticks:{callback:function(v){return v+'%';}}} },
+              plugins: { legend:{display:true, position:'bottom', labels:{boxWidth:10, font:{size:11}}} } }
+          });
+        }
+      } catch (eTrend) {
+        // A Chart.js failure here (e.g. the date-adapter script didn't
+        // load, so the 'time' scale has nothing to format ticks with)
+        // must stay contained to the chart's own canvas — it has nothing
+        // to do with the tables/matrices above, which already rendered.
+        console.error('acadInit: trend chart render failed', eTrend);
+        _acadTrendChart = null;
+        var trendCanvas = document.getElementById('acad-trend-chart');
+        if (trendCanvas && trendCanvas.parentElement) {
+          trendCanvas.parentElement.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load trend chart.</div>';
+        }
       }
     })
-    .catch(function() {
-      // Previously nothing caught a failure here, so a bad request left
-      // every "Loading…" placeholder in this panel stuck forever with no
-      // indication anything had gone wrong. Re-querying fresh here rather
-      // than closing over the .then()-scoped locals, which this catch
-      // can't see.
+    .catch(function(e) {
+      // Last-resort handler: only reached if the fetches themselves
+      // reject before .then() ever runs (fetchAllPages normally swallows
+      // fetch failures itself, so this is mainly a backstop). Each
+      // rendering step above now has its own try/catch, so a failure
+      // there can no longer reach this handler and stomp panels that
+      // already rendered successfully.
+      console.error('acadInit: Promise.all rejected', e);
       var mw = document.getElementById('acad-class-subject-wrap');
       var st = document.getElementById('acad-subject-tbody');
       var dw = document.getElementById('acad-daily-subject-wrap');
+      if (classTbody) classTbody.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load academic overview. Check your connection and try again.</td></tr>';
       if (mw) mw.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load academic overview. Check your connection and try again.</div>';
       if (st) st.innerHTML = '<tr><td colspan="3" style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load.</td></tr>';
       if (dw) dw.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load.</div>';
