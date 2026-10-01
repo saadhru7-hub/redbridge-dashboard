@@ -664,7 +664,7 @@
         var rowBg = idx%2===0 ? 'transparent' : 'var(--surface-2,#f8fafc)';
         var stickyBg = idx%2===0 ? 'var(--surface,white)' : 'var(--surface-2,#f8fafc)';
         html += '<tr style="background:' + rowBg + ';">' +
-          '<td style="position:sticky;left:0;background:' + stickyBg + ';padding:5px 10px;font-weight:600;white-space:nowrap;border-right:1px solid var(--border,#e5e7eb);">' + subj + '</td>';
+          '<td style="position:sticky;left:0;z-index:1;background:' + stickyBg + ';padding:5px 10px;font-weight:600;white-space:nowrap;border-right:1px solid var(--border,#e5e7eb);">' + subj + '</td>';
         dates.forEach(function(d) {
           var rec = grid[subj] ? grid[subj][d] : undefined;
           if (!rec) {
@@ -837,7 +837,7 @@
 
       subjects.forEach(function(subj, idx) {
         html += '<tr style="background:' + (idx%2===0?'transparent':'var(--surface-2,#f8fafc)') + ';">' +
-          '<td style="position:sticky;left:0;background:' + (idx%2===0?'var(--surface,white)':'var(--surface-2,#f8fafc)') + ';padding:5px 10px;font-weight:600;white-space:nowrap;border-right:1px solid var(--border,#e5e7eb);">' + subj + '</td>';
+          '<td style="position:sticky;left:0;z-index:1;background:' + (idx%2===0?'var(--surface,white)':'var(--surface-2,#f8fafc)') + ';padding:5px 10px;font-weight:600;white-space:nowrap;border-right:1px solid var(--border,#e5e7eb);">' + subj + '</td>';
         dates.forEach(function(d) {
           var absentHere = grid[subj] ? grid[subj][d] : undefined;
           if (absentHere === undefined) {
@@ -921,20 +921,31 @@
         if (canvas) canvas.parentElement.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('no_marks') + '</div></div>';
         return;
       }
-      var palette = ['#7367F0','#28C76F','#FF9F43','#EA5455','#00CFE8','#8B5CF6'];
-      var datasets = subjects.map(function(subj, i) {
-        return { label: subj, data: bySubject[subj], borderColor: palette[i % palette.length],
-          backgroundColor: palette[i % palette.length] + '22', tension: 0.3, pointRadius: 4 };
-      });
-      if (canvas && typeof Chart !== 'undefined') {
-        var ctx = canvas.getContext('2d');
-        if (_marksChart) _marksChart.destroy();
-        _marksChart = new Chart(ctx, {
-          type: 'line', data: { datasets: datasets },
-          options: { responsive: true, maintainAspectRatio: false,
-            scales: { x: { type: 'time', time: { unit: 'week' }, grid: { display:false } }, y: { min:0, max:100, ticks: { callback: function(v){return v+'%';} } } },
-            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+      // Chart rendering isolated in its own try/catch — a Chart.js failure
+      // here (e.g. the date-adapter script not yet loaded) must never be
+      // mistaken for a fetch failure and overwrite data that loaded fine.
+      try {
+        var palette = ['#7367F0','#28C76F','#FF9F43','#EA5455','#00CFE8','#8B5CF6'];
+        var datasets = subjects.map(function(subj, i) {
+          return { label: subj, data: bySubject[subj], borderColor: palette[i % palette.length],
+            backgroundColor: palette[i % palette.length] + '22', tension: 0.3, pointRadius: 4 };
         });
+        if (canvas && typeof Chart !== 'undefined') {
+          var ctx = canvas.getContext('2d');
+          if (_marksChart) _marksChart.destroy();
+          _marksChart = new Chart(ctx, {
+            type: 'line', data: { datasets: datasets },
+            options: { responsive: true, maintainAspectRatio: false,
+              scales: { x: { type: 'time', time: { unit: 'week' }, grid: { display:false } }, y: { min:0, max:100, ticks: { callback: function(v){return v+'%';} } } },
+              plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+          });
+        }
+      } catch (eChart) {
+        console.error('loadProgress: marks chart render failed', eChart);
+        _marksChart = null;
+        if (canvas && canvas.parentElement) {
+          canvas.parentElement.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('could_not_load') + '</div></div>';
+        }
       }
     })
     .catch(function() {
@@ -959,21 +970,31 @@
         if (canvas2) canvas2.parentElement.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('no_attendance') + '</div></div>';
         return;
       }
-      var points = dates.map(function(d) {
-        var v = byDate[d];
-        return { x: d, y: Math.round((v.present / v.total) * 100) };
-      });
-      if (canvas2 && typeof Chart !== 'undefined') {
-        var ctx2 = canvas2.getContext('2d');
-        if (_attChart) _attChart.destroy();
-        _attChart = new Chart(ctx2, {
-          type: 'bar',
-          data: { datasets: [{ label: t('tab_attendance'), data: points,
-            backgroundColor: points.map(function(p){ return p.y >= 90 ? '#28C76F' : p.y >= 75 ? '#FF9F43' : '#EA5455'; }) }] },
-          options: { responsive: true, maintainAspectRatio: false,
-            scales: { x: { type: 'time', time: { unit: 'day' }, grid: { display:false } }, y: { min:0, max:100, ticks: { callback: function(v){return v+'%';} } } },
-            plugins: { legend: { display: false } } }
+      // Same isolation as the marks chart above — a chart-render failure
+      // must not clobber attendance data that already loaded correctly.
+      try {
+        var points = dates.map(function(d) {
+          var v = byDate[d];
+          return { x: d, y: Math.round((v.present / v.total) * 100) };
         });
+        if (canvas2 && typeof Chart !== 'undefined') {
+          var ctx2 = canvas2.getContext('2d');
+          if (_attChart) _attChart.destroy();
+          _attChart = new Chart(ctx2, {
+            type: 'bar',
+            data: { datasets: [{ label: t('tab_attendance'), data: points,
+              backgroundColor: points.map(function(p){ return p.y >= 90 ? '#28C76F' : p.y >= 75 ? '#FF9F43' : '#EA5455'; }) }] },
+            options: { responsive: true, maintainAspectRatio: false,
+              scales: { x: { type: 'time', time: { unit: 'day' }, grid: { display:false } }, y: { min:0, max:100, ticks: { callback: function(v){return v+'%';} } } },
+              plugins: { legend: { display: false } } }
+          });
+        }
+      } catch (eChart2) {
+        console.error('loadProgress: attendance chart render failed', eChart2);
+        _attChart = null;
+        if (canvas2 && canvas2.parentElement) {
+          canvas2.parentElement.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="msg">' + t('could_not_load') + '</div></div>';
+        }
       }
     })
     .catch(function() {
