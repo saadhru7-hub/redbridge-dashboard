@@ -1044,7 +1044,15 @@
       </div>
 
       <div class="card" style="margin-bottom:18px;">
-        <div class="card-header"><div class="card-title">📋 Monthly Report by Class</div></div>
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div class="card-title">📋 Monthly Report by Class</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="mrChangeMonth(-1)" title="Previous month" style="width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:14px;font-weight:700;">‹</button>
+            <div id="mr-month-label" style="font-size:13.5px;font-weight:700;min-width:120px;text-align:center;">—</div>
+            <button onclick="mrChangeMonth(1)" title="Next month" style="width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:14px;font-weight:700;">›</button>
+            <button onclick="mrGoToCurrentMonth()" title="Jump back to the current month" style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:11.5px;font-weight:700;color:var(--text-2);">Today</button>
+          </div>
+        </div>
         <div class="card-body">
           <div id="mr-class-tabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
             <div style="padding:30px;text-align:center;color:var(--muted);">Loading classes…</div>
@@ -1274,7 +1282,6 @@
                 <th>Gender</th>
                 <th>Admission No.</th>
                 <th>Parent</th>
-                <th>Phone</th>
                 <th style="width:90px;">Actions</th>
               </tr>
             </thead>
@@ -1348,10 +1355,6 @@
               <input id="stu-father-ru" type="text" placeholder="напр. Алиев Рустам">
             </div>
             <div>
-              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Father's Phone</label>
-              <input id="stu-father-phone" type="text" placeholder="+998 90 000 00 00">
-            </div>
-            <div>
               <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Mother's Name — English</label>
               <input id="stu-mother-en" type="text" placeholder="e.g. Aliyeva Nodira">
             </div>
@@ -1359,11 +1362,6 @@
               <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Mother's Name — Russian (Имя матери)</label>
               <input id="stu-mother-ru" type="text" placeholder="напр. Алиева Нодира">
             </div>
-            <div>
-              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Mother's Phone</label>
-              <input id="stu-mother-phone" type="text" placeholder="+998 90 000 00 00">
-            </div>
-
             <div style="border-top:1.5px solid var(--border);padding-top:14px;margin-top:2px;">
               <div style="font-size:11.5px;font-weight:700;color:var(--text-2);margin-bottom:10px;">Guardian (if different from parents)</div>
             </div>
@@ -1378,10 +1376,6 @@
             <div>
               <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Relationship</label>
               <input id="stu-guardian-rel" type="text" placeholder="e.g. Uncle, Grandmother">
-            </div>
-            <div>
-              <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Guardian's Phone</label>
-              <input id="stu-guardian-phone" type="text" placeholder="+998 90 000 00 00">
             </div>
             <div>
               <label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Notes (optional)</label>
@@ -1699,6 +1693,16 @@ id="panel-timetable">
         <button class="btn btn-outline" style="font-size:11.5px;padding:5px 10px;" onclick="drSyncPendingReports()">Retry Now</button>
       </div>
 
+      <!-- Holiday notice — shown when the selected report date (defaults to
+           today) is marked as a holiday in the Calendar, so a teacher
+           opening this screen on a day off isn't left wondering whether
+           they're expected to file anything. Doesn't block submission —
+           some schools still want attendance or something logged on a
+           partial day — it's informational only. -->
+      <div id="dr-holiday-banner" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:9px;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;font-size:12.5px;font-weight:600;">
+        <span id="dr-holiday-banner-text"></span>
+      </div>
+
       <!-- Header row -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div>
@@ -1797,7 +1801,7 @@ id="panel-timetable">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div>
                   <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_date">Date</div>
-                  <input id="dr-date" type="date" onchange="drShowExistingAttachments()" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
+                  <input id="dr-date" type="date" onchange="drShowExistingAttachments(); drCheckHolidayBanner();" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid var(--rule);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:var(--white);">
                 </div>
                 <div>
                   <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;" data-i18n="dr_period">Lesson Period</div>
@@ -2650,6 +2654,45 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       return;
     }
 
+    // Check the school Calendar for a holiday covering this date before
+    // treating a quiet day as a compliance problem — a holiday (e.g.
+    // Teacher's Day) means no lessons were expected at all, which is a
+    // different thing from teachers failing to file reports. Reuses
+    // whatever holidays are already entered in the Calendar feature
+    // (calendar_events, type='holiday'), so marking a day there is the
+    // one place staff need to do this — nothing else to maintain.
+    fetch(_SB_URL + '/rest/v1/calendar_events?type=eq.holiday&date=lte.' + date + '&select=title,date,end_date', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(allHolidays) {
+      // end_date is only saved when the admin filled in an end date on the
+      // Calendar form — a single-day holiday added without one has a null
+      // end_date, so a single-day match (h.date === date) has to be
+      // checked separately from a multi-day range match.
+      var holidays = (allHolidays || []).filter(function(h) {
+        return h.end_date ? h.end_date >= date : h.date === date;
+      });
+      if (holidays && holidays.length) {
+        if (body) body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">🎉 No lessons expected — ' + date + ' is marked as a school holiday (' + escapeHtml(holidays[0].title || 'Holiday') + ').</div>';
+        return;
+      }
+      cmplLoadComplianceForDate(date, body, summary);
+    })
+    .catch(function() {
+      // Holiday lookup itself failing shouldn't block compliance checking —
+      // fall through and check lessons/reports as normal.
+      cmplLoadComplianceForDate(date, body, summary);
+    });
+  }
+
+  function cmplLoadComplianceForDate(date, body, summary) {
+    // Recomputed here rather than passed in from cmplLoadCompliance — this
+    // function is a sibling, not a nested closure, so the caller's local
+    // `dayName` isn't visible here.
+    var DAY_NAMES = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    var dayName = DAY_NAMES[new Date(date + 'T12:00:00').getDay()];
+
     Promise.all([
       fetch(_SB_URL + '/rest/v1/timetable?day=eq.' + dayName + '&select=class,subject,period,teacher_name', {
         headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
@@ -3126,12 +3169,12 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       var sc = stageColor[inc.stage]||'#6b7280';
       var sl = stageLabel[inc.stage]||'Stage '+inc.stage;
       var bd = 'border-bottom:1px solid #f1f5f9;';
-      var studentClassLabel = inc.student + (inc.class ? ' <span style="color:#94a3b8;font-weight:500;">— ' + inc.class + '</span>' : '');
+      var studentClassLabel = escapeHtml(inc.student) + (inc.class ? ' <span style="color:#94a3b8;font-weight:500;">— ' + escapeHtml(inc.class) + '</span>' : '');
       row.innerHTML = '<td style="padding:9px 14px;font-weight:600;'+bd+'">'+studentClassLabel+'</td>'
-        +'<td style="padding:9px 12px;'+bd+'">'+inc.type+(inc.subject?' <span style="color:#94a3b8;font-size:11px;">('+inc.subject+')</span>':'')+'</td>'
-        +'<td style="padding:9px 8px;text-align:center;'+bd+'"><span style="background:'+sc+'22;color:'+sc+';font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;">'+sl+'</span></td>'
-        +'<td style="padding:9px 8px;text-align:center;font-size:11.5px;color:#6b7280;'+bd+'">'+(inc.date||'')+(inc.time?'<br><span style="font-size:10px;">'+inc.time+'</span>':'')+'</td>'
-        +'<td style="padding:9px 12px;font-size:12px;color:#6b7280;'+bd+'">'+(inc.notes||'—')+'</td>'
+        +'<td style="padding:9px 12px;'+bd+'">'+escapeHtml(inc.type)+(inc.subject?' <span style="color:#94a3b8;font-size:11px;">('+escapeHtml(inc.subject)+')</span>':'')+'</td>'
+        +'<td style="padding:9px 8px;text-align:center;'+bd+'"><span style="background:'+sc+'22;color:'+sc+';font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;">'+escapeHtml(sl)+'</span></td>'
+        +'<td style="padding:9px 8px;text-align:center;font-size:11.5px;color:#6b7280;'+bd+'">'+escapeHtml(inc.date||'')+(inc.time?'<br><span style="font-size:10px;">'+escapeHtml(inc.time)+'</span>':'')+'</td>'
+        +'<td style="padding:9px 12px;font-size:12px;color:#6b7280;'+bd+'">'+escapeHtml(inc.notes||'—')+'</td>'
         +'<td style="padding:9px 8px;text-align:center;'+bd+'"></td>';
       // Add status update dropdown + button
       var btnCell = row.cells[5];
@@ -6022,6 +6065,21 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
 
+  // Shared HTML-escaping helper. Anywhere user/staff-entered text (names,
+  // notes, remarks, messages) is concatenated into an innerHTML string
+  // instead of set via textContent, it must go through this first —
+  // otherwise HTML/script embedded in that text would execute for whoever
+  // views the rendered table (stored XSS).
+  function escapeHtml(s) {
+    if (s === null || s === undefined) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // ALL classes in school
   var ALL_CLASSES = ['1A','1B','1C','2A','2B','2C','3A','3B','3C',
     '4A','4B','4C','5A','5B','5C','6A','6B','7A','7B','7C',
@@ -6715,9 +6773,45 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     drBuildTodaySchedule();
     drPopulateFilters(drGetAllowedClasses());
     drFilterReports(); // show localStorage data immediately
+    drCheckHolidayBanner();
 
     // Then load from Supabase and merge
     drLoadFromSupabase();
+  }
+
+  // Checks whether the currently-selected report date (dr-date, defaults
+  // to today) is marked as a holiday in the Calendar (calendar_events,
+  // type='holiday' — the same entries Report Compliance and the Dashboard
+  // Trends card already check), and shows/hides the banner accordingly.
+  // Informational only — teachers can still file a report on a holiday if
+  // they genuinely need to (e.g. a partial makeup day).
+  function drCheckHolidayBanner() {
+    var banner = document.getElementById('dr-holiday-banner');
+    var bannerText = document.getElementById('dr-holiday-banner-text');
+    if (!banner || !bannerText) return;
+    var dateEl = document.getElementById('dr-date');
+    var date = (dateEl && dateEl.value) ? dateEl.value : localDateStr();
+
+    fetch(_SB_URL + '/rest/v1/calendar_events?type=eq.holiday&date=lte.' + date + '&select=title,date,end_date', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(allHolidays) {
+      var matches = (allHolidays || []).filter(function(h) {
+        return h.end_date ? h.end_date >= date : h.date === date;
+      });
+      if (matches.length) {
+        bannerText.textContent = '🎉 ' + date + ' is marked as a school holiday (' + (matches[0].title || 'Holiday') + ') — no lesson reports are expected, but you can still file one if needed.';
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    })
+    .catch(function() {
+      // Holiday check failing shouldn't block or alarm anyone filing a
+      // normal report — just leave the banner hidden.
+      banner.style.display = 'none';
+    });
   }
 
   function drLoadFromSupabase() {
@@ -7076,7 +7170,7 @@ function saveDailyReport() {
       if (rep.topic || rep.topic_file_url || rep.homework || rep.homework_file_url || rep.remark) {
         lessonInfo += '<div style="background:#f8fafc;border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12.5px;">';
         if (rep.topic) {
-          lessonInfo += '<div style="margin-bottom:6px;"><b>Topic:</b> ' + rep.topic + '</div>';
+          lessonInfo += '<div style="margin-bottom:6px;"><b>Topic:</b> ' + escapeHtml(rep.topic) + '</div>';
         }
         if (rep.topic_file_url || rep.topicFileUrl) {
           var tUrl = rep.topic_file_url || rep.topicFileUrl;
@@ -7084,7 +7178,7 @@ function saveDailyReport() {
           lessonInfo += '<div style="margin-bottom:6px;"><a href="' + fileViewUrl(tUrl, tName) + '" target="_blank" style="color:var(--navy,var(--blue));font-weight:700;text-decoration:none;">📎 ' + tName + ' ↗</a></div>';
         }
         if (rep.homework) {
-          lessonInfo += '<div style="margin-bottom:6px;"><b>Homework:</b> ' + rep.homework + '</div>';
+          lessonInfo += '<div style="margin-bottom:6px;"><b>Homework:</b> ' + escapeHtml(rep.homework) + '</div>';
         }
         if (rep.homework_file_url || rep.homeworkFileUrl) {
           var hUrl = rep.homework_file_url || rep.homeworkFileUrl;
@@ -7092,7 +7186,7 @@ function saveDailyReport() {
           lessonInfo += '<div style="margin-bottom:6px;"><a href="' + fileViewUrl(hUrl, hName) + '" target="_blank" style="color:var(--navy,var(--blue));font-weight:700;text-decoration:none;">📎 ' + hName + ' ↗</a></div>';
         }
         if (rep.remark) {
-          lessonInfo += '<div><b>Remark:</b> ' + rep.remark + '</div>';
+          lessonInfo += '<div><b>Remark:</b> ' + escapeHtml(rep.remark) + '</div>';
         }
         lessonInfo += '</div>';
       }
@@ -8704,6 +8798,34 @@ function saveDailyReport() {
     var since14 = new Date(today); since14.setDate(since14.getDate()-14);
     var since30 = new Date(today); since30.setDate(since30.getDate()-30);
 
+    // Holiday lookup (date -> title), from the same Calendar entries used
+    // elsewhere (calendar_events, type='holiday'). A quiet today/yesterday
+    // because of a holiday like Teacher's Day is a different story from a
+    // quiet day with no explanation, so this is checked BEFORE either card
+    // decides what "no data" should say. Fetched once, up front, and both
+    // chains below wait on it so neither has to duplicate the lookup.
+    var holidayMap = {};
+    var holidaysReady = fetch(_SB_URL + '/rest/v1/calendar_events?type=eq.holiday&date=lte.' + todayStr + '&select=title,date,end_date', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(holidays) {
+      (holidays||[]).forEach(function(h) {
+        if (!h.date) return;
+        var d = new Date(h.date + 'T12:00:00');
+        var end = new Date((h.end_date || h.date) + 'T12:00:00');
+        // Expand multi-day holidays (e.g. a school-wide break) across every
+        // date in the range, not just its start date.
+        while (d <= end) {
+          holidayMap[localDateStr(d)] = h.title || 'Holiday';
+          d.setDate(d.getDate() + 1);
+        }
+      });
+    })
+    .catch(function() { /* holiday lookup failing silently falls back to plain "no data" wording below */ });
+
+    holidaysReady.then(function() {
+
     // ── Attendance: from daily_reports.students[].absent, aggregated per date ──
     fetch(_SB_URL + '/rest/v1/daily_reports?date=gte.' + localDateStr(since14) + '&select=date,students', {
       headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
@@ -8725,12 +8847,26 @@ function saveDailyReport() {
       var yestPct = byDate[yesterdayStr] ? Math.round((byDate[yesterdayStr].present/byDate[yesterdayStr].total)*100) : null;
       var todayEl = document.getElementById('trend-att-today');
       var diffEl = document.getElementById('trend-att-diff');
-      if (todayEl) todayEl.textContent = todayPct !== null ? todayPct + '%' : 'No data yet';
+      if (todayEl) {
+        if (holidayMap[todayStr]) {
+          todayEl.textContent = '🎉 Holiday';
+          todayEl.title = holidayMap[todayStr];
+        } else {
+          todayEl.textContent = todayPct !== null ? todayPct + '%' : 'No data yet';
+          todayEl.title = '';
+        }
+      }
       if (diffEl) {
         if (todayPct !== null && yestPct !== null) {
           var diff = todayPct - yestPct;
           diffEl.textContent = (diff >= 0 ? '▲ +' : '▼ ') + diff + '% vs yesterday';
           diffEl.style.color = diff >= 0 ? '#28C76F' : '#EA5455';
+        } else if (holidayMap[todayStr] || holidayMap[yesterdayStr]) {
+          // A holiday explains the missing data better than a generic
+          // "no data" message — e.g. Teacher's Day, a school break.
+          var holidayToday = holidayMap[todayStr];
+          diffEl.textContent = '🎉 ' + (holidayToday || holidayMap[yesterdayStr]) + (holidayToday ? ' (today)' : ' (yesterday)');
+          diffEl.style.color = '';
         } else {
           // Successful response, but no daily_reports rows for yesterday
           // (e.g. a weekend/no-school day) — a deliberate blank, not an
@@ -8741,23 +8877,36 @@ function saveDailyReport() {
         }
       }
 
-      // 14-day chart
-      var points = dates.map(function(d) {
-        var v = byDate[d];
-        return { x: d, y: Math.round((v.present/v.total)*100) };
-      });
-      var canvas = document.getElementById('dash-att-trend-chart');
-      if (canvas && typeof Chart !== 'undefined') {
-        var ctx = canvas.getContext('2d');
-        if (_dashAttChart) _dashAttChart.destroy();
-        _dashAttChart = new Chart(ctx, {
-          type: 'bar',
-          data: { datasets: [{ label:'Attendance %', data: points,
-            backgroundColor: points.map(function(p){ return p.y>=90?'#28C76F':p.y>=75?'#FF9F43':'#EA5455'; }) }] },
-          options: { responsive:true, maintainAspectRatio:false,
-            scales: { x:{type:'time',time:{unit:'day'},grid:{display:false}}, y:{min:0,max:100,ticks:{callback:function(v){return v+'%';}}} },
-            plugins: { legend:{display:false} } }
+      // 14-day chart — isolated in its own try/catch (same fix as
+      // acadInit()'s trend chart): a Chart.js render failure here (e.g.
+      // the date-adapter script hadn't finished loading yet) must never
+      // wipe out the today/yesterday stat text above, which was already
+      // computed successfully and has nothing to do with the chart.
+      try {
+        var points = dates.map(function(d) {
+          var v = byDate[d];
+          return { x: d, y: Math.round((v.present/v.total)*100) };
         });
+        var canvas = document.getElementById('dash-att-trend-chart');
+        if (canvas && typeof Chart !== 'undefined') {
+          var ctx = canvas.getContext('2d');
+          if (_dashAttChart) _dashAttChart.destroy();
+          _dashAttChart = new Chart(ctx, {
+            type: 'bar',
+            data: { datasets: [{ label:'Attendance %', data: points,
+              backgroundColor: points.map(function(p){ return p.y>=90?'#28C76F':p.y>=75?'#FF9F43':'#EA5455'; }) }] },
+            options: { responsive:true, maintainAspectRatio:false,
+              scales: { x:{type:'time',time:{unit:'day'},grid:{display:false}}, y:{min:0,max:100,ticks:{callback:function(v){return v+'%';}}} },
+              plugins: { legend:{display:false} } }
+          });
+        }
+      } catch (eChart) {
+        console.error('dashLoadTrends: attendance chart render failed', eChart);
+        _dashAttChart = null;
+        var attCanvas = document.getElementById('dash-att-trend-chart');
+        if (attCanvas && attCanvas.parentElement) {
+          attCanvas.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load trend chart.</div>';
+        }
       }
     })
     .catch(function(err) {
@@ -8813,12 +8962,24 @@ function saveDailyReport() {
       var todayAvg = avgFor(todayStr), yestAvg = avgFor(yesterdayStr);
       var todayEl = document.getElementById('trend-marks-today');
       var diffEl = document.getElementById('trend-marks-diff');
-      if (todayEl) todayEl.textContent = todayAvg !== null ? todayAvg + ' / 5' : 'No data yet';
+      if (todayEl) {
+        if (holidayMap[todayStr]) {
+          todayEl.textContent = '🎉 Holiday';
+          todayEl.title = holidayMap[todayStr];
+        } else {
+          todayEl.textContent = todayAvg !== null ? todayAvg + ' / 5' : 'No data yet';
+          todayEl.title = '';
+        }
+      }
       if (diffEl) {
         if (todayAvg !== null && yestAvg !== null) {
           var diff = Math.round((todayAvg - yestAvg) * 10) / 10;
           diffEl.textContent = (diff >= 0 ? '▲ +' : '▼ ') + diff + ' vs yesterday';
           diffEl.style.color = diff >= 0 ? '#28C76F' : '#EA5455';
+        } else if (holidayMap[todayStr] || holidayMap[yesterdayStr]) {
+          var holidayToday2 = holidayMap[todayStr];
+          diffEl.textContent = '🎉 ' + (holidayToday2 || holidayMap[yesterdayStr]) + (holidayToday2 ? ' (today)' : ' (yesterday)');
+          diffEl.style.color = '';
         } else {
           // Successful response, but no marks for yesterday (no-school day,
           // or no CW/HW entered) — deliberate blank, not an error.
@@ -8827,18 +8988,30 @@ function saveDailyReport() {
         }
       }
 
-      var points = dates.map(function(d) { return { x:d, y:avgFor(d) }; });
-      var canvas = document.getElementById('dash-marks-trend-chart');
-      if (canvas && typeof Chart !== 'undefined') {
-        var ctx = canvas.getContext('2d');
-        if (_dashMarksChart) _dashMarksChart.destroy();
-        _dashMarksChart = new Chart(ctx, {
-          type: 'line',
-          data: { datasets: [{ label:'Avg Marks (CW/HW, out of 5)', data: points, borderColor:'#7367F0', backgroundColor:'#7367F022', tension:0.3, pointRadius:3 }] },
-          options: { responsive:true, maintainAspectRatio:false,
-            scales: { x:{type:'time',time:{unit:'week'},grid:{display:false}}, y:{min:0,max:5,ticks:{stepSize:1}} },
-            plugins: { legend:{display:false} } }
-        });
+      // Chart rendering isolated the same way as the attendance chart
+      // above — a Chart.js failure here must not wipe out the
+      // already-computed today/yesterday marks average text.
+      try {
+        var points = dates.map(function(d) { return { x:d, y:avgFor(d) }; });
+        var canvas = document.getElementById('dash-marks-trend-chart');
+        if (canvas && typeof Chart !== 'undefined') {
+          var ctx = canvas.getContext('2d');
+          if (_dashMarksChart) _dashMarksChart.destroy();
+          _dashMarksChart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets: [{ label:'Avg Marks (CW/HW, out of 5)', data: points, borderColor:'#7367F0', backgroundColor:'#7367F022', tension:0.3, pointRadius:3 }] },
+            options: { responsive:true, maintainAspectRatio:false,
+              scales: { x:{type:'time',time:{unit:'week'},grid:{display:false}}, y:{min:0,max:5,ticks:{stepSize:1}} },
+              plugins: { legend:{display:false} } }
+          });
+        }
+      } catch (eChart) {
+        console.error('dashLoadTrends: marks chart render failed', eChart);
+        _dashMarksChart = null;
+        var marksCanvas = document.getElementById('dash-marks-trend-chart');
+        if (marksCanvas && marksCanvas.parentElement) {
+          marksCanvas.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load trend chart.</div>';
+        }
       }
     })
     .catch(function(err) {
@@ -8852,6 +9025,10 @@ function saveDailyReport() {
       if (todayElErr) { todayElErr.textContent = '⚠'; todayElErr.title = 'Failed to load marks data'; }
       if (diffElErr) { diffElErr.textContent = 'Load failed'; diffElErr.title = 'Failed to load marks data'; diffElErr.style.color = '#EA5455'; }
     });
+
+    }); // end holidaysReady.then — the holiday lookup's own .catch above
+        // already guarantees this always resolves (never rejects), so the
+        // attendance/marks fetches below it are never skipped.
   }
 
 
@@ -10387,8 +10564,8 @@ function saveDailyReport() {
       if (showHeader) {
         var nameRow = document.createElement('div');
         nameRow.style.cssText = 'display:flex;align-items:baseline;gap:6px;margin-bottom:3px;';
-        nameRow.innerHTML = '<span style="font-size:12px;font-weight:700;color:#0f172a;">' + (msg.sender_name||msg.sender) + '</span>' +
-          '<span style="font-size:10.5px;color:#94a3b8;">' + timeStr + '</span>';
+        nameRow.innerHTML = '<span style="font-size:12px;font-weight:700;color:#0f172a;">' + escapeHtml(msg.sender_name||msg.sender) + '</span>' +
+          '<span style="font-size:10.5px;color:#94a3b8;">' + escapeHtml(timeStr) + '</span>';
         bubble.appendChild(nameRow);
       }
 
@@ -10720,10 +10897,6 @@ function saveDailyReport() {
            s.guardian_name_en || s.guardian_name_ru || '';
   }
 
-  function stuParentPhoneDisplay(s) {
-    return s.father_phone || s.mother_phone || s.guardian_phone || '';
-  }
-
   function stuRenderRoster(cls) {
     var students = _studentsCache.filter(function(s){ return s.class === cls; });
     document.getElementById('roster-class-title').textContent = 'Class ' + cls;
@@ -10742,7 +10915,7 @@ function saveDailyReport() {
     tbody.innerHTML = '';
 
     if (!students.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-4);">No students in this class yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-4);">No students in this class yet.</td></tr>';
       return;
     }
 
@@ -10756,7 +10929,6 @@ function saveDailyReport() {
         '<td>' + (s.gender||'—') + '</td>' +
         '<td class="mono" style="font-size:12px;">' + (s.admission_no||'—') + '</td>' +
         '<td>' + (stuParentDisplay(s)||'—') + '</td>' +
-        '<td class="mono" style="font-size:12px;">' + (stuParentPhoneDisplay(s)||'—') + '</td>' +
         '<td></td>';
       var actionsTd = tr.lastElementChild;
       var editBtn = document.createElement('button');
@@ -10840,14 +11012,11 @@ function saveDailyReport() {
     document.getElementById('stu-admission').value = '';
     document.getElementById('stu-father-en').value = '';
     document.getElementById('stu-father-ru').value = '';
-    document.getElementById('stu-father-phone').value = '';
     document.getElementById('stu-mother-en').value = '';
     document.getElementById('stu-mother-ru').value = '';
-    document.getElementById('stu-mother-phone').value = '';
     document.getElementById('stu-guardian-en').value = '';
     document.getElementById('stu-guardian-ru').value = '';
     document.getElementById('stu-guardian-rel').value = '';
-    document.getElementById('stu-guardian-phone').value = '';
     document.getElementById('stu-notes').value = '';
     stuPopulateClassDropdown();
     if (_selectedClass) document.getElementById('stu-class').value = _selectedClass;
@@ -10873,14 +11042,11 @@ function saveDailyReport() {
     }
     document.getElementById('stu-father-en').value = s.father_name_en || '';
     document.getElementById('stu-father-ru').value = s.father_name_ru || '';
-    document.getElementById('stu-father-phone').value = s.father_phone || '';
     document.getElementById('stu-mother-en').value = s.mother_name_en || '';
     document.getElementById('stu-mother-ru').value = s.mother_name_ru || '';
-    document.getElementById('stu-mother-phone').value = s.mother_phone || '';
     document.getElementById('stu-guardian-en').value = s.guardian_name_en || '';
     document.getElementById('stu-guardian-ru').value = s.guardian_name_ru || '';
     document.getElementById('stu-guardian-rel').value = s.guardian_relationship || '';
-    document.getElementById('stu-guardian-phone').value = s.guardian_phone || '';
     document.getElementById('stu-notes').value = s.notes || '';
     document.getElementById('student-modal').style.display = 'flex';
   }
@@ -10908,14 +11074,11 @@ function saveDailyReport() {
       admission_no:  document.getElementById('stu-admission').value.trim() || null,
       father_name_en: document.getElementById('stu-father-en').value.trim() || null,
       father_name_ru: document.getElementById('stu-father-ru').value.trim() || null,
-      father_phone:   document.getElementById('stu-father-phone').value.trim() || null,
       mother_name_en: document.getElementById('stu-mother-en').value.trim() || null,
       mother_name_ru: document.getElementById('stu-mother-ru').value.trim() || null,
-      mother_phone:   document.getElementById('stu-mother-phone').value.trim() || null,
       guardian_name_en: document.getElementById('stu-guardian-en').value.trim() || null,
       guardian_name_ru: document.getElementById('stu-guardian-ru').value.trim() || null,
       guardian_relationship: document.getElementById('stu-guardian-rel').value.trim() || null,
-      guardian_phone: document.getElementById('stu-guardian-phone').value.trim() || null,
       notes:         document.getElementById('stu-notes').value.trim() || null
     };
 
@@ -11819,26 +11982,39 @@ function saveDailyReport() {
   // those are tracked anywhere in the daily marking system.
   var MR_STATE = { students: [], dailyReports: [], assessments: [], extras: [], timetable: [], currentClass: null, month: null };
 
-  function mrInit() {
+  var MR_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // monthStr is 'YYYY-MM'. Omit it (or call mrInit() with no args) to load
+  // the current calendar month — that's still the default on first opening
+  // the panel. Passing a month lets mrChangeMonth()/mrGoToCurrentMonth()
+  // reload a different month in place without touching the current-month
+  // default itself.
+  function mrInit(monthStr) {
     var tabsEl = document.getElementById('mr-class-tabs');
     var tableWrap = document.getElementById('mr-table-wrap');
     if (!tabsEl || !tableWrap) return;
     tableWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div>';
 
     var now = new Date();
-    var monthStr = now.getFullYear() + '-' + (now.getMonth() + 1 < 10 ? '0' + (now.getMonth() + 1) : '' + (now.getMonth() + 1));
+    if (!monthStr) {
+      monthStr = now.getFullYear() + '-' + (now.getMonth() + 1 < 10 ? '0' + (now.getMonth() + 1) : '' + (now.getMonth() + 1));
+    }
     var monthStart = monthStr + '-01';
     // Upper bound too — without it, any daily_reports row mis-dated (or
     // pre-entered) into a future month would silently leak into "this
     // month's" Attendance/HW/Behaviour numbers, contradicting the caption
     // that says the figures are for MR_STATE.month specifically.
-    var nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    var monthParts = monthStr.split('-');
+    var nextMonthDate = new Date(parseInt(monthParts[0], 10), parseInt(monthParts[1], 10), 1);
     var nextMonthStart = nextMonthDate.getFullYear() + '-' + (nextMonthDate.getMonth() + 1 < 10 ? '0' + (nextMonthDate.getMonth() + 1) : '' + (nextMonthDate.getMonth() + 1)) + '-01';
+
+    var labelEl = document.getElementById('mr-month-label');
+    if (labelEl) labelEl.textContent = MR_MONTH_NAMES[parseInt(monthParts[1], 10) - 1] + ' ' + monthParts[0];
 
     Promise.all([
       fetchAllPages(_SB_URL + '/rest/v1/students?select=id,full_name_en,full_name_ru,class&order=full_name_en.asc'),
       fetchAllPages(_SB_URL + '/rest/v1/daily_reports?select=class,subject,teacher_name,date,students&date=gte.' + monthStart + '&date=lt.' + nextMonthStart),
-      fetchAllPages(_SB_URL + '/rest/v1/assessments?select=class,subject,teacher,date,students'),
+      fetchAllPages(_SB_URL + '/rest/v1/assessments?select=class,subject,teacher,date,students&date=gte.' + monthStart + '&date=lt.' + nextMonthStart),
       fetchAllPages(_SB_URL + '/rest/v1/monthly_report_extra?select=*&month=eq.' + monthStr),
       fetchAllPages(_SB_URL + '/rest/v1/timetable?select=class,subject,teacher_name')
     ]).then(function(results) {
@@ -11855,6 +12031,19 @@ function saveDailyReport() {
       tabsEl.innerHTML = '';
       tableWrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load monthly report data. Check your connection and try again.</div>';
     });
+  }
+
+  function mrChangeMonth(delta) {
+    var cur = MR_STATE.month; // 'YYYY-MM' of whatever is currently shown
+    if (!cur) return;
+    var parts = cur.split('-');
+    var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1 + delta, 1);
+    var newMonthStr = d.getFullYear() + '-' + (d.getMonth() + 1 < 10 ? '0' + (d.getMonth() + 1) : '' + (d.getMonth() + 1));
+    mrInit(newMonthStr);
+  }
+
+  function mrGoToCurrentMonth() {
+    mrInit(); // no arg = current calendar month, same as the panel's first load
   }
 
   function mrRenderTabs() {
