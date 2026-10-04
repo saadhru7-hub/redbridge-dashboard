@@ -230,6 +230,7 @@
       marks_trend: 'Marks over time', attendance_trend: 'Attendance over time',
       no_events: 'No upcoming events yet',
       could_not_load: 'Could not load. Please try again.',
+      hw_modal_last_lesson: 'Last lesson:', hw_modal_none: 'No homework was assigned for the most recent lesson.',
     },
     ru: {
       login_title: 'Родительский портал Redbridge', login_sub: 'Введите код доступа, полученный от школы',
@@ -253,6 +254,7 @@
       marks_trend: 'Оценки по времени', attendance_trend: 'Посещаемость по времени',
       no_events: 'Пока нет предстоящих событий',
       could_not_load: 'Не удалось загрузить. Попробуйте снова.',
+      hw_modal_last_lesson: 'Последний урок:', hw_modal_none: 'На последнем уроке домашнее задание не было задано.',
     },
     uz: {
       login_title: 'Redbridge ota-onalar portali', login_sub: 'Maktab tomonidan berilgan kirish kodini kiriting',
@@ -276,6 +278,7 @@
       marks_trend: 'Vaqt boʻyicha baholar', attendance_trend: 'Vaqt boʻyicha davomat',
       no_events: 'Hozircha rejalashtirilgan tadbirlar yoʻq',
       could_not_load: 'Yuklab boʻlmadi. Qayta urinib koʻring.',
+      hw_modal_last_lesson: 'Oxirgi dars:', hw_modal_none: 'Oxirgi darsga uy vazifasi berilmagan.',
     }
   };
 
@@ -372,7 +375,16 @@
     fetch(_SB_URL + '/rest/v1/students?access_code=eq.' + encodeURIComponent(code) + '&select=*', {
       headers: sbHeaders()
     })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(r) {
+      // A failed request (500, rate-limit, a rotated key, a blip that still
+      // returns a response) used to silently become [], which told a parent
+      // with a perfectly valid code "Code not recognized" — misdirecting
+      // them into doubting/retyping a correct code instead of just
+      // retrying. Throwing here routes it to the .catch below instead,
+      // which correctly says it's a connection problem.
+      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP '+r.status+': '+t); });
+      return r.json();
+    })
     .then(function(rows) {
       document.getElementById('login-btn').textContent = t('login_btn');
       if (!rows || !rows.length) {
@@ -523,7 +535,7 @@
     fetch(_SB_URL + '/rest/v1/timetable?class=eq.' + encodeURIComponent(_student.class) + '&select=day,period,subject,teacher_name', {
       headers: sbHeaders()
     })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(rows) {
       if (!rows || !rows.length) {
         el.innerHTML = '<div class="card"><div class="empty-state"><div class="icon">🗓</div><div class="msg">' + t('no_timetable') + '</div></div></div>';
@@ -541,6 +553,13 @@
       function colorFor(subj) {
         if (!colorOf[subj]) { colorOf[subj] = SUBJ_COLORS[nextColor % SUBJ_COLORS.length]; nextColor++; }
         return colorOf[subj];
+      }
+      // Safely embeds a subject name as a single-quoted JS string literal
+      // inside a double-quoted onclick="" HTML attribute — JSON.stringify
+      // would produce double quotes and break out of the attribute early.
+      function jsAttrString(s) {
+        s = String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        return "'" + s + "'";
       }
 
       // grid[period][day] = {subject, teacher}
@@ -576,7 +595,7 @@
           if (cell) {
             var c = colorFor(cell.subject);
             html += '<td style="padding:3px;vertical-align:top;">' +
-              '<div style="background:' + c + '18;border-left:2.5px solid ' + c + ';border-radius:5px;padding:4px 5px;min-height:34px;">' +
+              '<div onclick="showLessonHomework(' + jsAttrString(cell.subject) + ')" style="cursor:pointer;background:' + c + '18;border-left:2.5px solid ' + c + ';border-radius:5px;padding:4px 5px;min-height:34px;">' +
                 '<div style="font-weight:700;font-size:10.5px;color:' + c + ';line-height:1.2;">' + (cell.subject||'') + '</div>' +
                 (cell.teacher ? '<div style="font-size:8.5px;color:var(--muted,#64748b);line-height:1.2;">' + cell.teacher + '</div>' : '') +
               '</div>' +
@@ -591,6 +610,70 @@
       el.innerHTML = html;
     })
     .catch(function() { el.innerHTML = '<div class="card"><div class="empty-state"><div class="msg">' + t('could_not_load') + '</div></div></div>'; });
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // ── Tapping a lesson on the Timetable tab shows the homework from the
+  // most recent recorded lesson for that subject in this child's class —
+  // the same `daily_reports.homework` text teachers enter in the dashboard.
+  // The timetable itself has no date (it's the recurring weekly pattern),
+  // so this looks up the latest actual lesson record for that subject
+  // rather than trying to match "today's" slot, which would miss homework
+  // posted after the lesson or show nothing on a day the lesson didn't run.
+  function showLessonHomework(subject) {
+    var overlay = document.createElement('div');
+    overlay.id = 'hw-lesson-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
+    overlay.innerHTML =
+      '<div style="background:var(--surface);border-radius:16px;max-width:360px;width:100%;padding:20px;box-shadow:var(--shadow-2);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+          '<div style="font-weight:800;font-size:15px;color:var(--ink);">' + escapeHtml(subject) + ' · ' + t('tab_homework') + '</div>' +
+          '<div onclick="closeLessonHomework()" style="cursor:pointer;font-size:22px;color:var(--text-3);line-height:1;padding:0 4px;">&times;</div>' +
+        '</div>' +
+        '<div id="hw-lesson-body" style="font-size:13px;color:var(--text-2);">' + t('checking') + '</div>' +
+      '</div>';
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeLessonHomework(); });
+    document.body.appendChild(overlay);
+
+    fetch(_SB_URL + '/rest/v1/daily_reports?class=eq.' + encodeURIComponent(_student.class) +
+          '&subject=eq.' + encodeURIComponent(subject) +
+          '&order=date.desc&limit=1&select=date,homework,cancelled', { headers: sbHeaders() })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(rows) {
+      var body = document.getElementById('hw-lesson-body');
+      if (!body) return; // modal was closed before this resolved
+      if (!rows || !rows.length) {
+        body.innerHTML = '<div style="color:var(--text-3);">' + t('hw_modal_none') + '</div>';
+        return;
+      }
+      var rep = rows[0];
+      var d = new Date(rep.date + 'T00:00:00');
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var dateLabel = isNaN(d) ? rep.date : (d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear());
+      var html = '<div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">' + t('hw_modal_last_lesson') + ' ' + dateLabel + '</div>';
+      if (rep.cancelled) {
+        html += '<div style="color:var(--red);font-weight:700;">' + t('lesson_cancelled') + '</div>';
+      } else if (rep.homework) {
+        html += '<div style="background:var(--amber-light);border-left:3px solid var(--amber);border-radius:8px;padding:10px 12px;color:var(--ink);line-height:1.5;white-space:pre-wrap;">' + escapeHtml(rep.homework) + '</div>';
+      } else {
+        html += '<div style="color:var(--text-3);">' + t('hw_modal_none') + '</div>';
+      }
+      body.innerHTML = html;
+    })
+    .catch(function() {
+      var body = document.getElementById('hw-lesson-body');
+      if (body) body.innerHTML = '<div style="color:var(--red);">' + t('could_not_load') + '</div>';
+    });
+  }
+
+  function closeLessonHomework() {
+    var overlay = document.getElementById('hw-lesson-modal');
+    if (overlay) overlay.remove();
   }
 
 
@@ -642,7 +725,7 @@
       }
       function pillColor(v) {
         if (!v) return { bg:'#f1f5f9', fg:'#94a3b8' };
-        return v >= 4 ? { bg:'var(--green-light)', fg:'var(--green)' } : v === 3 ? { bg:'var(--amber-light)', fg:'var(--amber)' } : { bg:'var(--red-light)', fg:'var(--red)' };
+        return v >= 4.5 ? { bg:'var(--green-light)', fg:'var(--green)' } : v >= 4 ? { bg:'var(--amber-light)', fg:'var(--amber)' } : { bg:'var(--red-light)', fg:'var(--red)' };
       }
 
       var html = '<div class="card"><div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px;">' +
@@ -870,7 +953,7 @@
     fetch(_SB_URL + '/rest/v1/incidents?' + nameFilter + '&order=created_at.desc&select=*', {
       headers: sbHeaders()
     })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(rows) {
       var mine = (rows||[]).filter(function(r) { return isMyName(r.student); });
       if (!mine.length) {
@@ -1017,7 +1100,7 @@
     fetch(_SB_URL + '/rest/v1/calendar_events?date=gte.' + today + '&order=date.asc&select=*', {
       headers: sbHeaders()
     })
-    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(rows) {
       rows = rows || [];
       if (!rows.length) {
@@ -1073,6 +1156,11 @@
           method: 'POST',
           headers: sbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
           body: JSON.stringify({ owner_type: ownerType, owner_id: String(ownerId), subscription: subscription.toJSON() })
+        }).then(function(r) {
+          // fetch() only rejects on a network failure — an HTTP error status
+          // (e.g. the insert being rejected server-side) would otherwise
+          // resolve here and let handleEnablePush report false success.
+          if (!r.ok) return r.text().then(function(t) { throw new Error('Could not save your subscription: ' + t); });
         });
       });
   }
