@@ -584,8 +584,20 @@
   var manifestLink = document.querySelector('link[rel="manifest"]');
   if (manifestLink) manifestLink.href = manifestUrl;
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" onerror="
+  // Chart.js is loaded from an external CDN — on a slow/flaky connection
+  // (common on mobile data) that single request can simply fail, after
+  // which EVERY chart on the page would show its 'Could not load' fallback
+  // for the rest of the session, with no way to recover short of a full
+  // page reload. This falls back to a second CDN automatically so a single
+  // failed download doesn't permanently disable every chart. Doesn't
+  // change anything on a normal connection — this only runs if the first
+  // request actually failed.
+  var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'; document.head.appendChild(s);
+"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-date-fns/3.0.0/chartjs-adapter-date-fns.bundle.min.js" onerror="
+  var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js'; document.head.appendChild(s);
+"></script>
 
 </head>
 <body>
@@ -3355,8 +3367,17 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     saveIncidents();
     // Save to Supabase, then reload from cloud to pick up the real
     // database-assigned ID (needed so resolving this incident later
-    // can correctly find and update the right record).
-    saveIncidentToCloud(newInc).then(function() { loadIncidents(); });
+    // can correctly find and update the right record). Reloading only
+    // happens on a CONFIRMED save — reloading unconditionally used to mean
+    // a failed save still triggered a reload from the cloud, which doesn't
+    // have this incident yet, silently wiping it back out of the list
+    // right after the "Incident logged" toast claimed it was saved.
+    saveIncidentToCloud(newInc).then(function() {
+      loadIncidents();
+    }).catch(function(e) {
+      console.error('saveIncidentToCloud:', e);
+      showToast('⚠ Saved on this device, but could not reach the cloud — it will sync automatically once reconnected.');
+    });
     showToast('Incident logged: ' + student.trim());
   }
 
@@ -5217,6 +5238,48 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
         if (typeof sbSyncPendingWrites === 'function') sbSyncPendingWrites();
       }, 45000);
     }
+    // The Connected/Disconnected badge only ever reflected the outcome of
+    // whatever Supabase call happened MOST RECENTLY, anywhere in the app —
+    // it was never an actual live connection check. If that last call was a
+    // failed READ (not a queued write — those already get retried above),
+    // nothing would ever run again to clear it: a single blip (a slow
+    // network moment, a request firing a beat before the connection was
+    // ready) left the badge stuck on "Disconnected" indefinitely, even once
+    // the connection was completely fine again, until some unrelated action
+    // happened to succeed. This is a genuine heartbeat: a cheap, tiny
+    // request that runs on its own schedule regardless of what else
+    // succeeded or failed, so the badge actually self-heals.
+    if (!window._sbHeartbeatInterval) {
+      // _sbHeartbeatMisses requires TWO consecutive failures before flipping
+      // the badge to "Disconnected" — a single dropped request (a normal,
+      // harmless blip on any mobile connection) no longer visibly flickers
+      // the badge. One success immediately clears the miss count and shows
+      // "Connected" right away, since a real recovery should feel instant.
+      window._sbHeartbeatMisses = 0;
+      var sbHeartbeat = function() {
+        // The bare /rest/v1/ root (no table) just returns PostgREST's small
+        // OpenAPI document with a valid key — cheapest possible "is
+        // Supabase actually reachable right now" check.
+        fetch(_SB_URL + '/rest/v1/', { headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY } })
+          .then(function(r) {
+            if (r.ok) { window._sbHeartbeatMisses = 0; updateCloudStatus('saved'); }
+            else { window._sbHeartbeatMisses++; if (window._sbHeartbeatMisses >= 2) updateCloudStatus('error'); }
+          })
+          .catch(function() {
+            window._sbHeartbeatMisses++;
+            if (window._sbHeartbeatMisses >= 2) updateCloudStatus('error');
+          });
+      };
+      // Deliberately NOT run immediately on load — right at page load, a
+      // dozen other fetches (students, timetable, daily reports, etc.) are
+      // already racing in and will set the badge themselves as they land.
+      // Running the heartbeat at that exact moment too just adds one more
+      // voice to that scramble and was the actual cause of the badge
+      // visibly flickering between Connected/Disconnected/Connected right
+      // after opening the app. Waiting for the first real interval tick
+      // lets that initial burst settle first.
+      window._sbHeartbeatInterval = setInterval(sbHeartbeat, 20000);
+    }
 
     // Hide login, show app
     var loginScreen = document.getElementById('login-screen');
@@ -5565,7 +5628,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       function scoreColor(avg) {
         if (avg === null) return '#94a3b8';
         var n = parseFloat(avg);
-        return n >= 4 ? '#15803d' : n >= 3 ? '#a16207' : '#b91c1c';
+        return n >= 4.5 ? '#15803d' : n >= 4 ? '#a16207' : '#b91c1c';
       }
 
       var html = '';
@@ -6389,7 +6452,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
             btn.type = 'button';
             btn.textContent = n;
             var active = saved[sec] === n;
-            var mc = n>=4?'#16a34a':n===3?'#ca8a04':'#dc2626';
+            var mc = n>=4.5?'#16a34a':n>=4?'#ca8a04':'#dc2626';
             btn.style.cssText = 'width:24px;height:24px;border-radius:6px;border:1.5px solid ' + (active?mc:'#e2e8f0') + ';' +
               'background:' + (active?mc:'white') + ';color:' + (active?'white':mc) + ';font-size:11px;font-weight:800;cursor:pointer;padding:0;';
             btn.setAttribute('data-mark-btn', sec + '_' + n);
@@ -6443,7 +6506,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     btns.forEach(function(b) {
       var n = parseInt(b.getAttribute('data-mark-btn').split('_')[1]);
       var active = (!isDeselecting && n === val);
-      var mc = n>=4?'#16a34a':n===3?'#ca8a04':'#dc2626';
+      var mc = n>=4.5?'#16a34a':n>=4?'#ca8a04':'#dc2626';
       b.style.background = active ? mc : 'white';
       b.style.color = active ? 'white' : mc;
       b.style.borderColor = active ? mc : '#e2e8f0';
@@ -6933,7 +6996,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       cell.style.borderColor = '#e2e8f0'; cell.style.color = '#94a3b8';
       cell.dataset.mark = '0'; return;
     }
-    var col = val >= 4 ? '#16a34a' : val === 3 ? '#ca8a04' : '#dc2626';
+    var col = val >= 4.5 ? '#16a34a' : val >= 4 ? '#ca8a04' : '#dc2626';
     cell.textContent = val; cell.style.background = col;
     cell.style.borderColor = col; cell.style.color = 'white';
     cell.dataset.mark = val;
@@ -7250,7 +7313,7 @@ function saveDailyReport() {
 
   function drRenderStudentRows(rep) {
     if (!rep.students || !rep.students.length) return '<div style="color:var(--muted);font-size:12px;">No student data.</div>';
-    var mkCol = function(v) { return !v||v===0 ? '#94a3b8' : v>=4 ? '#16a34a' : v===3 ? '#ca8a04' : '#dc2626'; };
+    var mkCol = function(v) { return !v||v===0 ? '#94a3b8' : v>=4.5 ? '#16a34a' : v>=4 ? '#ca8a04' : '#dc2626'; };
     return '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
       '<thead><tr style="background:var(--cream);">' +
         '<th style="padding:6px 10px;text-align:left;font-weight:700;">Student</th>' +
@@ -7478,7 +7541,7 @@ function saveDailyReport() {
   function markColor(v) {
     v = parseInt(v);
     if (!v) return null;
-    return v >= 4 ? '#16a34a' : v === 3 ? '#ca8a04' : '#dc2626';
+    return v >= 4.5 ? '#16a34a' : v >= 4 ? '#ca8a04' : '#dc2626';
   }
 
   function drRenderGrid(cls, subject, students, scheduledDays) {
@@ -7634,19 +7697,23 @@ function saveDailyReport() {
       tr.addEventListener('mouseenter', function(){ if(!this.dataset.selected) this.style.background='#dbeafe'; });
       tr.addEventListener('mouseleave', function(){ if(!this.dataset.selected) this.style.background=bg; });
 
+      // Average badge next to the student's name is CLASSWORK ONLY — per
+      // school policy, homework and discipline marks are tracked (still
+      // visible in their own HW/D columns per date below) but must not be
+      // blended into this average.
       var allMarks = [];
       if (typeof dailyReports !== 'undefined') {
         dailyReports.forEach(function(rep) {
           if (rep.cls !== cls || rep.subject !== subject) return;
           (rep.students||[]).forEach(function(s2) {
             if (s2.name === matchKey && !s2.absent) {
-              [s2.cw, s2.hw, s2.disc].forEach(function(v) { if (v && parseInt(v) > 0) allMarks.push(parseInt(v)); });
+              if (s2.cw && parseInt(s2.cw) > 0) allMarks.push(parseInt(s2.cw));
             }
           });
         });
       }
       var overallAvg = allMarks.length ? allMarks.reduce(function(a,b){return a+b;},0)/allMarks.length : null;
-      var avgColor = overallAvg === null ? '#94a3b8' : overallAvg>=4 ? '#16a34a' : overallAvg===3 ? '#ca8a04' : '#dc2626';
+      var avgColor = overallAvg === null ? '#94a3b8' : overallAvg>=4.5 ? '#16a34a' : overallAvg>=4 ? '#ca8a04' : '#dc2626';
       var avgBadge = overallAvg !== null
         ? '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:15px;border-radius:4px;background:'+avgColor+';color:white;font-size:9px;font-weight:800;padding:0 3px;flex-shrink:0;">' + (overallAvg%1===0?overallAvg.toFixed(0):overallAvg.toFixed(2)) + '</span>'
         : '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:15px;border-radius:4px;background:#e2e8f0;color:#94a3b8;font-size:9px;font-weight:700;padding:0 3px;flex-shrink:0;">—</span>';
@@ -7789,7 +7856,7 @@ function saveDailyReport() {
         '<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:' + color + ';margin-bottom:3px;">' + label + '</div>' +
         '<div style="display:flex;gap:4px;" id="popup-sec-' + sec + '">';
       [1,2,3,4,5].forEach(function(n) {
-        var mc = n>=4 ? '#16a34a' : n===3 ? '#ca8a04' : '#dc2626';
+        var mc = n>=4.5 ? '#16a34a' : n>=4 ? '#ca8a04' : '#dc2626';
         var active = (parseInt(cur) === n);
         var bd = active ? mc : '#e2e8f0';
         var bg = active ? mc : 'white';
@@ -7880,7 +7947,7 @@ function saveDailyReport() {
     btns.forEach(function(b) {
       var n = parseInt(b.dataset.grade);
       var active = (!isDeselecting && n === val);
-      var bmc = n>=4?'#16a34a':n===3?'#ca8a04':'#dc2626';
+      var bmc = n>=4.5?'#16a34a':n>=4?'#ca8a04':'#dc2626';
       b.style.background   = active ? bmc : 'white';
       b.style.color        = active ? 'white' : bmc;
       b.style.borderColor  = active ? bmc : '#e2e8f0';
@@ -8280,7 +8347,19 @@ function saveDailyReport() {
     function fetchPage(offset) {
       var url = baseUrl + sep + 'limit=' + pageSize + '&offset=' + offset;
       return fetch(url, { headers: headers })
-        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(r) {
+          // A failed page used to silently become [], which stopped the
+          // pagination loop (a short page always means "last page") and
+          // handed back whatever pages DID succeed as if that were the
+          // complete, correct dataset — no error, no sign anything was
+          // missing. A mid-pagination outage could silently undercount a
+          // large table (students/daily_reports/assessments) with nobody
+          // the wiser. Now a bad page throws, so the rejection reaches the
+          // caller's own .catch — every caller already has one (several
+          // explicitly written as a "backstop" for exactly this case).
+          if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP '+r.status+' fetching '+baseUrl+': '+t); });
+          return r.json();
+        })
         .then(function(rows) {
           rows = rows || [];
           all = all.concat(rows);
@@ -8288,7 +8367,7 @@ function saveDailyReport() {
           return all;
         });
     }
-    return fetchPage(0).catch(function() { return all; });
+    return fetchPage(0);
   }
 
   // Deletes a report row server-side. Local report objects carry a
@@ -8425,6 +8504,22 @@ function saveDailyReport() {
     var pending = sbLoadPendingWrites();
     sbUpdateGlobalSyncBanner();
     if (!pending.length) return;
+    // One-time repair for items queued BEFORE the incidents-id fix below:
+    // an incidents POST saved locally while that bug was live has no `id`
+    // in its stored body, so it would keep retrying the exact same broken
+    // payload forever — a 400 is permanent, not transient, so no amount of
+    // automatic retrying could ever have fixed it on its own. Patch a
+    // stable id onto it once, save that back to the queue immediately (so
+    // every subsequent retry of this same item reuses the SAME id instead
+    // of minting a new one each attempt), then let it retry normally.
+    var repaired = false;
+    pending.forEach(function(item) {
+      if (item.table === 'incidents' && item.method === 'POST' && item.body && !item.body.id) {
+        item.body.id = 'i' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        repaired = true;
+      }
+    });
+    if (repaired) sbSavePendingWrites(pending);
     pending.forEach(function(item) {
       sbFetch(item.table, item.method, item.body, item.params).then(function() {
         sbSavePendingWrites(sbLoadPendingWrites().filter(function(p) { return p.key !== item.key; }));
@@ -8477,7 +8572,20 @@ function saveDailyReport() {
 
   // ══ SUPABASE — INCIDENTS ═══════════════════════════════════════════════
   function sbSaveIncident(inc) {
+    // incidents.id is TEXT, NOT NULL, with no database default — unlike
+    // most other tables here, the database does not generate this id
+    // itself, so the client MUST supply one. This was being omitted
+    // entirely: every single incident-log save, from any teacher, has been
+    // failing with "null value in column id violates not-null constraint"
+    // (HTTP 400) since this feature existed — confirmed against the live
+    // database, which has exactly 2 incidents ever saved, both from
+    // 2026-08-19, nothing since. Every incident logged after that date was
+    // silently stuck in the local "not yet confirmed" queue forever (a 400
+    // is permanent — retrying the identical payload fails identically every
+    // time), which is also why the Discipline Tracker could look confusingly
+    // empty: the local record never had a real chance of reaching the cloud.
     return sbQueueWrite('incidents', 'POST', {
+      id: inc.id,
       student: inc.student, class: inc.class, subject: inc.subject || '', type: inc.type,
       stage: inc.stage || 1, date: inc.date, status: inc.status || 'open',
       notes: inc.notes || '', resolution: inc.resolution || '',
@@ -8563,9 +8671,15 @@ function saveDailyReport() {
   }
 
   function saveIncidentToCloud(inc) {
+    // Updates the cloud-status indicator either way, but still lets the
+    // failure propagate to the caller — swallowing it here used to let
+    // callers chain a `.then()` that assumed success unconditionally (see
+    // the log-new-incident flow, which reloaded from the cloud regardless
+    // of whether the save actually went through, silently making a
+    // just-logged incident disappear from the list on a failed save).
     return sbSaveIncident(inc)
       .then(function(){ updateCloudStatus('saved'); })
-      .catch(function(){ updateCloudStatus('error'); });
+      .catch(function(e){ updateCloudStatus('error'); throw e; });
   }
 
   function updateIncidentStatus(id, newStatus, badgeEl, selEl) {
@@ -9788,6 +9902,28 @@ function saveDailyReport() {
   // mid-request leaves it recoverable), retry automatically, and surface a
   // banner that only clears once every pending record is actually confirmed
   // saved to Supabase.
+  // Root cause of records getting permanently stuck in "not yet confirmed":
+  // the save used a plain POST with a client-generated id (assessments'
+  // only constraint is a PRIMARY KEY on id). If that POST actually reached
+  // Supabase and succeeded, but the success response never made it back to
+  // the browser (dropped connection, backgrounded tab, flaky wifi), the
+  // record stayed in the local pending queue — and every automatic retry
+  // resent the SAME id, which now already exists in the table, so Postgres
+  // rejected it with 409 Conflict forever. The data was always safe in the
+  // cloud; only the banner was stuck. on_conflict=id + merge-duplicates
+  // makes a retry of an already-saved id a harmless no-op update instead of
+  // a conflict, so it reports success and clears from the pending queue —
+  // same fix already applied to daily_reports.
+  function asmUpsert(payload) {
+    return fetch(_SB_URL + '/rest/v1/assessments?on_conflict=id', {
+      method: 'POST',
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(payload)
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP '+r.status+' on assessments: '+t); });
+      return {};
+    });
+  }
   function asmLoadPending() {
     try { var d = localStorage.getItem('redbridge_pending_assessments'); return d ? JSON.parse(d) : []; }
     catch(e) { return []; }
@@ -9812,7 +9948,7 @@ function saveDailyReport() {
     var stillPending = [];
     var remaining = pending.length;
     pending.forEach(function(rec) {
-      sbFetch('assessments', 'POST', rec)
+      asmUpsert(rec)
         .catch(function() { stillPending.push(rec); })
         .then(function() {
           remaining--;
@@ -10151,7 +10287,7 @@ function saveDailyReport() {
 
     // Save to Supabase
     updateCloudStatus('saving');
-    sbFetch('assessments','POST', payload).then(function() {
+    asmUpsert(payload).then(function() {
       _asmAssessments.unshift(rec);
       var stillPending = asmLoadPending().filter(function(p) { return p.id !== payload.id; });
       asmSavePending(stillPending);
@@ -10471,7 +10607,15 @@ function saveDailyReport() {
     // only the very first messages ever posted there and never any of the
     // actual recent conversation. Reversed back to chronological order
     // below since the render function expects oldest-first, newest-last.
-    var url = _SB_URL + '/rest/v1/messages?channel=eq.' + encodeURIComponent(_msgChannel) + '&order=created_at.desc&limit=100';
+    //
+    // requestedChannel captures which channel THIS call is for. If the user
+    // switches channels again before this resolves, _msgChannel will have
+    // moved on by the time the response arrives — without this guard, a
+    // slow, stale response for the channel they already left could land
+    // AFTER the fast response for the channel they're now looking at and
+    // silently overwrite it with the wrong channel's messages.
+    var requestedChannel = _msgChannel;
+    var url = _SB_URL + '/rest/v1/messages?channel=eq.' + encodeURIComponent(requestedChannel) + '&order=created_at.desc&limit=100';
     fetch(url, {
       method: 'GET',
       headers: {
@@ -10485,10 +10629,12 @@ function saveDailyReport() {
       return r.json();
     })
     .then(function(rows) {
+      if (_msgChannel !== requestedChannel) return; // stale — user has switched channels since
       _msgMessages = (rows || []).reverse();
       msgRenderMessages();
     })
     .catch(function(e) {
+      if (_msgChannel !== requestedChannel) return; // stale — don't show an error over the channel now open
       console.error('msgFetch error:', e.message);
       // Show error in chat area so user can see it
       var el = document.getElementById('msg-messages');
@@ -10498,15 +10644,26 @@ function saveDailyReport() {
 
   function msgPoll() {
     if (!_msgOnPanel) return;
+    var polledChannel = _msgChannel; // guard against the user switching channels mid-poll
     var lastMsg = _msgMessages.length ? _msgMessages[_msgMessages.length-1] : null;
     var since = lastMsg ? '&created_at=gt.' + encodeURIComponent(lastMsg.created_at) : '';
-    fetch(_SB_URL+'/rest/v1/messages?channel=eq.'+encodeURIComponent(_msgChannel)+'&order=created_at.asc'+since+'&limit=50', {
+    fetch(_SB_URL+'/rest/v1/messages?channel=eq.'+encodeURIComponent(polledChannel)+'&order=created_at.asc'+since+'&limit=50', {
       method:'GET', headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Accept':'application/json'}
     }).then(function(r){ return r.ok?r.json():[]; })
       .then(function(rows) {
+        if (_msgChannel !== polledChannel) return; // stale — a different channel is open now
         if (!rows || !rows.length) return;
         _msgMessages = _msgMessages.concat(rows);
         msgRenderMessages(true);
+      })
+      .catch(function(e) {
+        // Silent on purpose — this is a background poll on a timer, so a
+        // single missed tick just means the next tick (a few seconds later)
+        // tries again. Logged so it's visible in diagnostics without
+        // bothering the user with an error for a transient blip, but it
+        // must still be caught — an uncaught rejection here would otherwise
+        // show up as a console error on every single failed poll.
+        console.error('msgPoll:', e);
       });
 
     // Also check other channels for unread badge
@@ -12219,8 +12376,8 @@ function saveDailyReport() {
       function bandFor(val, kind) {
         if (val === null || val === undefined) return null;
         if (kind === 'pct') return val >= 80 ? 'green' : val >= 41 ? 'yellow' : 'red';
-        // raw /5 scale: 5≈80-100%, 4≈41-79%, ≤3≈0-40%
-        return val >= 4.5 ? 'green' : val >= 3.5 ? 'yellow' : 'red';
+        // raw /5 scale, per school's color markup: 4.5–5 = green, 4–4.49 = yellow, below 4 = red
+        return val >= 4.5 ? 'green' : val >= 4 ? 'yellow' : 'red';
       }
       var BAND_FILL = { green: '#c6efce', yellow: '#ffeb9c', red: '#ffc7ce' };
       var BAND_TEXT = { green: '#0f5c2e', yellow: '#7a5d00', red: '#8a1723' };
@@ -12361,7 +12518,7 @@ function saveDailyReport() {
 
     function acadColor(pct, isPercent) {
       if (pct === null) return '#94a3b8';
-      var threshold = isPercent ? [70,50] : [4,3];
+      var threshold = isPercent ? [70,50] : [4.5,4];
       return pct >= threshold[0] ? '#16a34a' : pct >= threshold[1] ? '#ca8a04' : '#dc2626';
     }
 
@@ -12688,9 +12845,17 @@ function ttInitPanel() {
     var loadPromise = _ttCache ? Promise.resolve(_ttCache) :
       fetch(_SB_URL + '/rest/v1/timetable?select=*', {
         headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-      }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; });
+      }).then(function(r) {
+        // A failed fetch used to resolve to [], which rendered as a fully
+        // empty "+ Add" grid for every slot — indistinguishable from a
+        // class that genuinely has no timetable yet. Throwing instead lets
+        // the .catch below show an honest connection-error message.
+        if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP '+r.status+': '+t); });
+        return r.json();
+      });
 
     loadPromise.then(function(all) {
+      try {
       _ttCache = all;
       var days = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'];
       var dayLabels = {MONDAY:'Monday',TUESDAY:'Tuesday',WEDNESDAY:'Wednesday',THURSDAY:'Thursday',FRIDAY:'Friday'};
@@ -12743,6 +12908,13 @@ function ttInitPanel() {
       });
       html += '</tbody></table>';
       body.innerHTML = html;
+      } catch (eRender) {
+        console.error('ttRenderGrid: render failed', eRender);
+        body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--red,#dc2626);">⚠ Could not display the timetable. Please try again.</div>';
+      }
+    }).catch(function(e) {
+      console.error('ttRenderGrid: load failed', e);
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load timetable. Check your connection and try again.</div>';
     });
   }
 
@@ -12791,11 +12963,15 @@ function ttInitPanel() {
     fetch(_SB_URL + '/rest/v1/timetable?id=eq.' + id, {
       method: 'DELETE',
       headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY }
-    }).then(function() {
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP '+r.status+': '+t); });
       showToast('Lesson cleared');
       document.getElementById('tt-edit-modal').style.display = 'none';
       _ttCache = null;
       ttRenderGrid();
+    }).catch(function(e) {
+      console.error('ttClearLesson:', e);
+      showToast('⚠ Could not clear lesson — check your connection and try again.');
     });
   }
 
