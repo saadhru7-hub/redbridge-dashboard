@@ -695,6 +695,9 @@
 
   <div class="nav-section">
     <div class="nav-label">Tools</div>
+    <a class="nav-item" data-panel="gate" onclick="showPanel('gate', this)">
+      <span class="nav-icon">🚪</span> Gate Attendance
+    </a>
     <a class="nav-item" data-panel="timetable" onclick="showPanel('timetable', this)">
       <span class="nav-icon">🗒️</span> Timetable
     </a>
@@ -1692,6 +1695,51 @@ id="panel-timetable">
 
     </div>
 
+    <!-- ── GATE ATTENDANCE PANEL ── -->
+    <div class="panel" id="panel-gate">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;">Gate Attendance</h2>
+          <div style="font-size:12.5px;color:var(--text-3);" id="gate-date-label">Today</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-primary" id="gate-tab-checkin" onclick="gateSwitchTab('checkin')">Check-in</button>
+          <button class="btn btn-outline" id="gate-tab-report" onclick="gateSwitchTab('report')">Daily Report</button>
+        </div>
+      </div>
+
+      <div id="gate-checkin-view">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+          <button class="btn btn-outline" onclick="gateLoadAll()">↻ Refresh</button>
+        </div>
+        <div id="gate-school-totals" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;"></div>
+        <div class="card">
+          <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+            <input id="gate-search" type="text" placeholder="Search any student by name…" oninput="gateRenderList()" style="padding:11px 14px;font-size:14px;">
+            <div id="gate-class-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            <div id="gate-class-summary" style="font-size:12.5px;color:var(--text-2);font-weight:600;"></div>
+          </div>
+          <div id="gate-list" style="border-top:1px solid var(--border);">
+            <div style="padding:30px;text-align:center;color:var(--text-4);">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gate-report-view" style="display:none;">
+        <div class="card">
+          <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:5px;">Date</label>
+              <input type="date" id="gate-report-date" onchange="gateLoadReport()" style="width:auto;">
+            </div>
+            <button class="btn btn-outline" onclick="gateLoadReport()">↻ Refresh</button>
+            <button class="btn btn-primary" onclick="gatePrintReport()">🖨 Print</button>
+          </div>
+        </div>
+        <div id="gate-report-body"><div style="padding:30px;text-align:center;color:var(--text-4);">Loading…</div></div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-dailyreport">
 
       <!-- Persistent unsynced-data warning — stays visible (does not
@@ -2095,12 +2143,13 @@ id="panel-timetable">
     calendar: 'School Calendar',
     assessments: 'Assessments',
     messenger: 'Messages',
+    gate: 'Gate Attendance',
     ai: 'AI Assistant'
   };
 
   var panelIcons = {
     dashboard:'🏠', teachers:'👨‍🏫', discipline:'🛡️', academics:'🎯',
-    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', assessments:'📋', messenger:'💬', ai:'✨'
+    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', assessments:'📋', messenger:'💬', gate:'🚪', ai:'✨'
   };
 
   function toggleMobileSidebar() {
@@ -2159,6 +2208,7 @@ id="panel-timetable">
     var iconEl = document.getElementById('panel-icon');
     if (iconEl) iconEl.textContent = panelIcons[id] || '◈';
     if (id === 'dailyreport') { if(typeof drInitPanel==='function') drInitPanel(); }
+    if (id === 'gate')        { if(typeof gateInit==='function') gateInit(); }
     if (id === 'discipline')  { if(typeof loadIncidents==='function') { loadIncidents(); renderIncidentLog(); } if(typeof obsLoad==='function') obsLoad(); }
     if (id === 'calendar')    { if(typeof calInit==='function') calInit(); }
     if (id === 'timetable')   { if(typeof ttInitPanel==='function') ttInitPanel(); }
@@ -4546,7 +4596,29 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Administration',
       avatar: 'AD',
       access: 'limited',
-      panels: ['dashboard','calendar','classes','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','gate','calendar','classes','ai','dailyreport','assessments','messenger'],
+      readonlyStats: true,
+    },
+
+    // ── GATE ATTENDANCE (nurses) ──
+    'hilola.nurse': {
+      password: 'fci3DbaT',
+      name: 'Ms Hilola',
+      role: 'attendance',
+      title: 'Nurse · Gate Attendance',
+      avatar: 'MH',
+      access: 'limited',
+      panels: ['gate'],
+      readonlyStats: true,
+    },
+    'nurse2.gate': {
+      password: 'HplRG60q',
+      name: 'Nurse 2',
+      role: 'attendance',
+      title: 'Nurse · Gate Attendance',
+      avatar: 'N2',
+      access: 'limited',
+      panels: ['gate'],
       readonlyStats: true,
     },
 
@@ -4732,8 +4804,8 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Subject Teacher',
       avatar: 'BU',
       access: 'subject',
-      teacherSubjects: ['Science'],
-      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
+      teacherSubjects: [],
+      teacherClasses: [],
       teacherName: 'Banu Umera',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
@@ -4964,6 +5036,19 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       teacherSubjects: ['CC-Science','Science'],
       teacherClasses: ['5B','5C','6A','6B','7A','7B','7C','8-PhysMath','8-ChemBio','8-Humanities','9A','9B'],
       teacherName: 'Ms Stephanie',
+      panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
+      readonlyStats: true,
+    },
+    'abdurehman.teacher': {
+      password: 'redbridge2024',
+      name: 'Mr Abdurehman',
+      role: 'teacher',
+      title: 'Subject Teacher',
+      avatar: 'MA',
+      access: 'subject',
+      teacherSubjects: ['Science'],
+      teacherClasses: ['2A','2B','2C','3A','3B','3C','4A','4B','4C','5A'],
+      teacherName: 'Mr Abdurehman',
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
@@ -5260,14 +5345,14 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
         // The bare /rest/v1/ root (no table) just returns PostgREST's small
         // OpenAPI document with a valid key — cheapest possible "is
         // Supabase actually reachable right now" check.
-        fetch(_SB_URL + '/rest/v1/', { headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY } })
+        fetch(_SB_URL + '/rest/v1/students?select=id&limit=1', { headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY } })
           .then(function(r) {
-            if (r.ok) { window._sbHeartbeatMisses = 0; updateCloudStatus('saved'); }
-            else { window._sbHeartbeatMisses++; if (window._sbHeartbeatMisses >= 2) updateCloudStatus('error'); }
+            if (r.ok) { window._sbHeartbeatMisses = 0; updateCloudStatus('saved', true); }
+            else { window._sbHeartbeatMisses++; if (window._sbHeartbeatMisses >= 2) updateCloudStatus('error', true); }
           })
           .catch(function() {
             window._sbHeartbeatMisses++;
-            if (window._sbHeartbeatMisses >= 2) updateCloudStatus('error');
+            if (window._sbHeartbeatMisses >= 2) updateCloudStatus('error', true);
           });
       };
       // Deliberately NOT run immediately on load — right at page load, a
@@ -7016,7 +7101,506 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   }
 
   // ── SAVE DAILY REPORT ─────────────────────────────────────────────────────
-    // ══ DAILY REPORT FILE ATTACHMENTS ═══════════════════════════════════════
+    // ══ GATE ATTENDANCE ═════════════════════════════════════════════════════
+  // Morning check-in at the school gate. One row per student per day in
+  // gate_attendance. The register reads it to pre-fill absences and show a
+  // Late badge; a teacher's own marks always take priority over it.
+  var GATE_PERIOD_END = {1:540, 2:635, 3:690, 4:745, 5:875, 6:930, 7:985}; // minutes since midnight
+  var GATE_ON_TIME_UNTIL = 490; // 08:10 — a tap at or before this minute is on time, after it is late
+  var _gate = { students: [], rows: {}, cls: null, loaded: false };
+
+  function gateTimeLabel(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+  function gateMinutes(iso) {
+    var d = new Date(iso);
+    return d.getHours() * 60 + d.getMinutes();
+  }
+
+  // Register helpers ----------------------------------------------------------
+  var GATE_PERIOD_START = {1:490, 2:585, 3:640, 4:695, 5:825, 6:880, 7:935};
+  function drCurrentLessonStartMinutes() {
+    var p = parseInt((document.getElementById('dr-period') || {}).value, 10);
+    return GATE_PERIOD_START[p] || null;
+  }
+  function drCurrentLessonEndMinutes() {
+    var p = parseInt((document.getElementById('dr-period') || {}).value, 10);
+    return GATE_PERIOD_END[p] || null;
+  }
+
+  // Only entries the teacher hasn't touched are changed. "Touched" means any
+  // mark, a comment, or an absent tick the teacher set themselves. Gate-set
+  // absences carry gateSet:true so they can be updated if the gate changes
+  // (e.g. absent → late), and are dropped the moment the teacher edits.
+  // gateActive: true once at least one student in this class has been tapped
+  // at the gate today. Until then nobody is auto-absented, so a register
+  // opened on a day the gate isn't used (or before marking starts) stays blank.
+  function drApplyGateToEntry(entry, g, lessonEnd, gateActive) {
+    if (!entry) return;
+    var touched = (entry.cw > 0) || (entry.hw > 0) || (entry.disc > 0) ||
+      (entry.comment && entry.comment.trim()) || (entry.absent && !entry.gateSet);
+    if (touched) return;
+    var shouldBeAbsent = false;
+    if (!g && gateActive) shouldBeAbsent = true;
+    if (g && g.status === 'absent') shouldBeAbsent = true;
+    // Arrived after this lesson had already finished → missed it.
+    if (g && g.status === 'late' && g.arrived_at && lessonEnd && gateMinutes(g.arrived_at) > lessonEnd) shouldBeAbsent = true;
+    // Left school before this lesson started → not in it.
+    var lessonStart = drCurrentLessonStartMinutes();
+    if (g && g.departed_at && lessonStart && gateMinutes(g.departed_at) <= lessonStart) shouldBeAbsent = true;
+    if (shouldBeAbsent) { entry.absent = true; entry.gateSet = true; }
+    else if (entry.gateSet) { entry.absent = false; delete entry.gateSet; }
+  }
+
+  function drGateBadge(g) {
+    var base = 'display:inline-flex;align-items:center;height:15px;border-radius:4px;font-size:9px;font-weight:700;padding:0 5px;margin-left:4px;flex-shrink:0;';
+    var gateActive = Object.keys(drRenderGrid._gate || {}).length > 0;
+    if (!g && gateActive) return '<span title="Not tapped in at the gate" style="' + base + 'background:#FDEAEA;color:#C53A3B;">Not arrived</span>';
+    if (!g) return '<span title="Gate marking has not started for this class today" style="' + base + 'background:#f1f5f9;color:#94a3b8;">not checked in</span>';
+    var out = '';
+    if (g.status === 'late') out += '<span title="Arrived late" style="' + base + 'background:#FFF3E8;color:#E07E1F;">Late ' + gateTimeLabel(g.arrived_at) + '</span>';
+    if (g.status === 'absent') out += '<span title="Marked absent at the gate" style="' + base + 'background:#FDEAEA;color:#C53A3B;">Gate: absent</span>';
+    if (g.departed_at) out += '<span title="Left school" style="' + base + 'background:#EDECFD;color:#5E50EE;">Left ' + gateTimeLabel(g.departed_at) + '</span>';
+    return out;
+  }
+
+  // Re-reads gate taps every minute while a register is open, so students who
+  // arrive after the teacher opened the class flip from absent to present
+  // without the teacher reopening it.
+  function drStartGateRefresh() {
+    if (window._drGateTimer) return;
+    window._drGateTimer = setInterval(drRefreshGate, 60000);
+  }
+
+  function drRefreshGate() {
+    var panel = document.getElementById('panel-dailyreport');
+    var cls = drRenderGrid._cls, subject = drRenderGrid._subject;
+    if (!panel || !panel.classList.contains('active') || !cls || !drRenderGrid._roster) return;
+    if (document.getElementById('dr-mark-popup')) return; // don't disturb an open mark popup
+    fetch(_SB_URL + '/rest/v1/gate_attendance?class=eq.' + encodeURIComponent(cls) + '&date=eq.' + localDateStr() + '&select=student_id,status,arrived_at,departed_at', {
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+    }).then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(rows) {
+      if (!rows) return;
+      if (drRenderGrid._cls !== cls || drRenderGrid._subject !== subject) return; // class changed meanwhile
+      var map = {};
+      rows.forEach(function(g) { map[g.student_id] = g; });
+      var sig = function(m) { return Object.keys(m).sort().map(function(k) { return k + m[k].status + (m[k].arrived_at || '') + (m[k].departed_at || ''); }).join('|'); };
+      if (sig(map) === sig(drRenderGrid._gate || {})) return; // nothing new
+      drRenderGrid._gate = map;
+      var wrap = document.getElementById('dr-students-wrap');
+      var top = wrap ? wrap.scrollTop : 0, left = wrap ? wrap.scrollLeft : 0;
+      drRenderGrid(cls, subject, drRenderGrid._roster, drRenderGrid._sched);
+      if (wrap) { wrap.scrollTop = top; wrap.scrollLeft = left; }
+    }).catch(function() { /* next tick retries */ });
+  }
+
+  // Gate panel ----------------------------------------------------------------
+  // gateInit can be reached while the page is still starting up (a nurse who
+  // is already signed in lands straight on this panel), before the gate
+  // variables further down the script exist. Deferring one tick lets the
+  // whole script finish loading first.
+  function gateInit() {
+    setTimeout(gateInitNow, 0);
+  }
+
+  function gateInitNow() {
+    var lbl = document.getElementById('gate-date-label');
+    if (lbl) lbl.textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) + ' · tap Present on arrival (after 08:10 is late), Depart when they leave';
+    if (!_gate.cls) _gate.cls = ALL_CLASSES[0];
+    var rd = document.getElementById('gate-report-date');
+    if (rd && !rd.value) rd.value = localDateStr();
+    gateLoadAll();
+    if (_gate.tab === 'report') gateLoadReport();
+  }
+
+  function gateSwitchTab(tab) {
+    _gate.tab = tab;
+    document.getElementById('gate-checkin-view').style.display = tab === 'checkin' ? '' : 'none';
+    document.getElementById('gate-report-view').style.display = tab === 'report' ? '' : 'none';
+    document.getElementById('gate-tab-checkin').className = 'btn ' + (tab === 'checkin' ? 'btn-primary' : 'btn-outline');
+    document.getElementById('gate-tab-report').className = 'btn ' + (tab === 'report' ? 'btn-primary' : 'btn-outline');
+    if (tab === 'report') gateLoadReport();
+  }
+
+  function gateLoadAll() {
+    var list = document.getElementById('gate-list');
+    if (list && !_gate.loaded) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4);">Loading…</div>';
+    Promise.all([
+      fetchAllPages(_SB_URL + '/rest/v1/students?select=id,full_name_en,full_name_ru,class&order=full_name_en.asc'),
+      fetchAllPages(_SB_URL + '/rest/v1/gate_attendance?date=eq.' + localDateStr() + '&select=student_id,class,date,status,arrived_at,departed_at,marked_by')
+    ]).then(function(res) {
+      _gate.students = res[0] || [];
+      _gate.rows = {};
+      (res[1] || []).forEach(function(r) { _gate.rows[r.student_id] = r; });
+      _gate.loaded = true;
+      gateRenderAll();
+    }).catch(function(e) {
+      console.error('gateLoadAll:', e);
+      if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red);">⚠ Could not load students. Check your connection and tap Refresh.</div>';
+    });
+  }
+
+  function gateRenderAll() {
+    gateRenderTotals();
+    gateRenderChips();
+    gateRenderList();
+  }
+
+  function gateCounts(students) {
+    var c = { present:0, late:0, absent:0, unmarked:0, departed:0 };
+    students.forEach(function(s) {
+      var r = _gate.rows[s.id];
+      if (!r) c.unmarked++; else c[r.status]++;
+      if (r && r.departed_at) c.departed++;
+    });
+    return c;
+  }
+
+  function gateTile(label, val, color, bg) {
+    return '<div style="background:' + bg + ';border-radius:12px;padding:12px;text-align:center;">' +
+      '<div style="font-size:22px;font-weight:800;color:' + color + ';">' + val + '</div>' +
+      '<div style="font-size:11px;font-weight:600;color:' + color + ';">' + label + '</div></div>';
+  }
+
+  function gateRenderTotals() {
+    var el = document.getElementById('gate-school-totals');
+    if (!el) return;
+    var c = gateCounts(_gate.students);
+    el.innerHTML =
+      gateTile('On time', c.present, 'var(--success-dark)', 'var(--green-light)') +
+      gateTile('Late', c.late, 'var(--warning-dark)', 'var(--amber-light)') +
+      gateTile('Not arrived', c.unmarked + c.absent, 'var(--danger-dark)', 'var(--red-light)') +
+      gateTile('Departed', c.departed, 'var(--primary-dark)', 'var(--blue-light)');
+  }
+
+  function gateRenderChips() {
+    var el = document.getElementById('gate-class-chips');
+    if (!el) return;
+    el.innerHTML = ALL_CLASSES.map(function(c) {
+      var students = _gate.students.filter(function(s) { return s.class === c; });
+      var done = students.length - gateCounts(students).unmarked;
+      var active = c === _gate.cls;
+      var complete = students.length && done === students.length;
+      return '<button onclick="gateSelectClass(\'' + c + '\')" style="padding:7px 11px;border-radius:9px;border:1.5px solid ' +
+        (active ? 'var(--blue)' : 'var(--border)') + ';background:' + (active ? 'var(--blue)' : (complete ? 'var(--green-light)' : 'var(--surface)')) +
+        ';color:' + (active ? '#fff' : 'var(--text-2)') + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">' +
+        c + ' <span style="font-weight:500;opacity:0.8;">' + done + '/' + students.length + '</span></button>';
+    }).join('');
+  }
+
+  function gateSelectClass(cls) {
+    _gate.cls = cls;
+    var search = document.getElementById('gate-search');
+    if (search) search.value = '';
+    gateRenderChips();
+    gateRenderList();
+  }
+
+  function gateRenderList() {
+    var list = document.getElementById('gate-list');
+    var summary = document.getElementById('gate-class-summary');
+    if (!list || !_gate.loaded) return;
+    var q = ((document.getElementById('gate-search') || {}).value || '').trim().toLowerCase();
+    var students = q
+      ? _gate.students.filter(function(s) {
+          return (s.full_name_en || '').toLowerCase().indexOf(q) !== -1 || (s.full_name_ru || '').toLowerCase().indexOf(q) !== -1;
+        }).slice(0, 40)
+      : _gate.students.filter(function(s) { return s.class === _gate.cls; });
+
+    if (summary) {
+      if (q) {
+        summary.textContent = students.length + ' match' + (students.length === 1 ? '' : 'es') + ' across all classes';
+      } else {
+        var c = gateCounts(students);
+        summary.textContent = 'Class ' + _gate.cls + ' · ' + students.length + ' students · ' +
+          c.present + ' on time · ' + c.late + ' late · ' + (c.unmarked + c.absent) + ' not arrived · ' + c.departed + ' departed';
+      }
+    }
+
+    if (!students.length) {
+      list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4);">' + (q ? 'No student found.' : 'No students in this class.') + '</div>';
+      return;
+    }
+
+    var btnBase = 'padding:11px 10px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;';
+    list.innerHTML = students.map(function(s) {
+      var r = _gate.rows[s.id];
+      var arrived = r && r.status !== 'absent';
+      var isLate = r && r.status === 'late';
+      var color = isLate ? '#E07E1F' : '#1F9D57';
+      var label = arrived ? ((isLate ? 'Late · ' : '✓ ') + gateTimeLabel(r.arrived_at)) : 'Present';
+      var presentBtn = '<button onclick="gateMark(' + s.id + ')" style="' + btnBase + 'min-width:104px;border:1.5px solid ' +
+        (arrived ? color : 'var(--border)') + ';background:' + (arrived ? color : 'var(--surface)') + ';color:' + (arrived ? '#fff' : '#1F9D57') + ';">' + label + '</button>';
+      var departBtn = '';
+      if (arrived) {
+        var left = !!r.departed_at;
+        departBtn = '<button onclick="gateDepart(' + s.id + ')" style="' + btnBase + 'min-width:96px;border:1.5px solid ' +
+          (left ? '#5E50EE' : 'var(--border)') + ';background:' + (left ? '#5E50EE' : 'var(--surface)') + ';color:' + (left ? '#fff' : '#5E50EE') + ';">' +
+          (left ? 'Left ' + gateTimeLabel(r.departed_at) : 'Depart') + '</button>';
+      }
+      var meta = (r && r.marked_by) ? 'by ' + escapeHtml(r.marked_by) + ' · tap again to undo' : '';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;border-bottom:1px solid var(--rule-light);">' +
+        '<div style="min-width:0;">' +
+          '<div style="font-size:13.5px;font-weight:700;color:var(--text-1);">' + escapeHtml(stuDisplayName(s)) +
+            (q ? ' <span style="font-size:11px;color:var(--text-3);font-weight:600;">· ' + escapeHtml(s.class) + '</span>' : '') + '</div>' +
+          (meta ? '<div style="font-size:10.5px;color:var(--text-4);margin-top:2px;">' + meta + '</div>' : '') +
+        '</div><div style="display:flex;gap:6px;flex-shrink:0;">' + presentBtn + departBtn + '</div></div>';
+    }).join('');
+  }
+
+  function gateSaveRow(studentId, row, prev, stu) {
+    _gate.rows[studentId] = row;
+    gateRenderAll();
+    fetch(_SB_URL + '/rest/v1/gate_attendance?on_conflict=student_id,date', {
+      method: 'POST',
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(row)
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t); });
+    }).catch(function(e) {
+      console.error('gateSaveRow:', e);
+      if (prev) _gate.rows[studentId] = prev; else delete _gate.rows[studentId];
+      gateRenderAll();
+      showToast('⚠ Not saved for ' + stuDisplayName(stu) + ' — check the connection and tap again.');
+    });
+  }
+
+  function gateFindStudent(studentId) {
+    var stu = null;
+    _gate.students.forEach(function(s) { if (s.id === studentId) stu = s; });
+    return stu;
+  }
+
+  // Present: the tap time decides on time vs late. Tapping again undoes it.
+  function gateMark(studentId) {
+    var stu = gateFindStudent(studentId);
+    if (!stu) return;
+    var prev = _gate.rows[studentId];
+    if (prev && prev.status !== 'absent') {
+      if (prev.departed_at) { showToast('Undo the departure first, then the arrival.'); return; }
+      gateClear(studentId, prev); return;
+    }
+    var nowDate = new Date();
+    var now = nowDate.toISOString();
+    var status = (nowDate.getHours() * 60 + nowDate.getMinutes()) <= GATE_ON_TIME_UNTIL ? 'present' : 'late';
+    var markedBy = _currentUser ? _currentUser.name : '';
+    gateSaveRow(studentId, { student_id: studentId, class: stu.class, date: localDateStr(), status: status,
+      arrived_at: now, departed_at: null, marked_by: markedBy, updated_at: now }, prev, stu);
+  }
+
+  // Depart: records the time the student leaves, whenever that is. Tapping again undoes it.
+  function gateDepart(studentId) {
+    var stu = gateFindStudent(studentId);
+    var prev = _gate.rows[studentId];
+    if (!stu || !prev || prev.status === 'absent') return;
+    var now = new Date().toISOString();
+    var row = {};
+    for (var k in prev) row[k] = prev[k];
+    row.student_id = studentId; row.class = stu.class; row.date = localDateStr();
+    row.departed_at = prev.departed_at ? null : now;
+    row.updated_at = now;
+    gateSaveRow(studentId, row, prev, stu);
+  }
+
+  function gateClear(studentId, prev) {
+    delete _gate.rows[studentId];
+    gateRenderAll();
+    fetch(_SB_URL + '/rest/v1/gate_attendance?student_id=eq.' + studentId + '&date=eq.' + localDateStr(), {
+      method: 'DELETE',
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Prefer': 'return=minimal' }
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    }).catch(function(e) {
+      console.error('gateClear:', e);
+      _gate.rows[studentId] = prev;
+      gateRenderAll();
+      showToast('⚠ Could not clear — check the connection and try again.');
+    });
+  }
+
+  // ── Daily Report ────────────────────────────────────────────────────────────
+  // A day only counts for a class if the gate tapped at least one student of
+  // that class that day — weekends, holidays and days the gate wasn't used are
+  // skipped, so they never turn into absences or break a streak.
+  var GATE_ABSENT_FLAG_DAYS = 2;
+  var GATE_LATE_FLAG_DAYS = 3;
+  var GATE_EARLY_LEAVE_BEFORE = 960; // 16:00
+
+  function gateAddDays(dateStr, n) {
+    var d = new Date(dateStr + 'T12:00:00');
+    d.setDate(d.getDate() + n);
+    return localDateStr(d);
+  }
+
+  function gateLoadReport() {
+    var body = document.getElementById('gate-report-body');
+    var dateEl = document.getElementById('gate-report-date');
+    if (!body || !dateEl) return;
+    if (!dateEl.value) dateEl.value = localDateStr();
+    var date = dateEl.value;
+    var since = gateAddDays(date, -45);
+    body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4);">Loading…</div>';
+
+    Promise.all([
+      _gate.students.length ? Promise.resolve(_gate.students)
+        : fetchAllPages(_SB_URL + '/rest/v1/students?select=id,full_name_en,full_name_ru,class&order=full_name_en.asc'),
+      fetchAllPages(_SB_URL + '/rest/v1/gate_attendance?date=gte.' + since + '&date=lte.' + date + '&select=student_id,class,date,status,arrived_at,departed_at'),
+      fetchAllPages(_SB_URL + '/rest/v1/attendance_alerts?date=eq.' + date + '&select=student_id,kind,shown_at,acknowledged_at')
+    ]).then(function(res) {
+      if (!_gate.students.length) _gate.students = res[0] || [];
+      _gate.report = gateBuildReport(date, res[0] || [], res[1] || [], res[2] || []);
+      body.innerHTML = gateReportHtml(_gate.report, false);
+    }).catch(function(e) {
+      console.error('gateLoadReport:', e);
+      body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red);">⚠ Could not load the report. Check your connection and tap Refresh.</div>';
+    });
+  }
+
+  function gateBuildReport(date, students, rows, alerts) {
+    var byDate = {};          // date -> student_id -> row
+    var classDays = {};       // class -> {date:true} (days the gate was used for that class)
+    rows.forEach(function(r) {
+      byDate[r.date] = byDate[r.date] || {};
+      byDate[r.date][r.student_id] = r;
+      classDays[r.class] = classDays[r.class] || {};
+      classDays[r.class][r.date] = true;
+    });
+    var alertMap = {};
+    alerts.forEach(function(a) { alertMap[a.student_id + '|' + a.kind] = a; });
+    var today = byDate[date] || {};
+
+    var rep = { date: date, totals: { onTime:0, late:0, absent:0, left:0, notMarked:0 }, classes: [],
+      absent: [], late: [], departures: [], notOut: [], flagsAbsent: [], flagsLate: [], alertMap: alertMap };
+
+    ALL_CLASSES.forEach(function(cls) {
+      var list = students.filter(function(s) { return s.class === cls; });
+      var active = !!(classDays[cls] && classDays[cls][date]);
+      var c = { cls: cls, total: list.length, active: active, onTime:0, late:0, absent:0, left:0 };
+      var activeDays = Object.keys(classDays[cls] || {}).filter(function(d) { return d <= date; }).sort().reverse();
+
+      list.forEach(function(s) {
+        var r = today[s.id];
+        if (active) {
+          if (!r || r.status === 'absent') { c.absent++; rep.absent.push({ s: s, r: r }); }
+          else if (r.status === 'late') { c.late++; rep.late.push({ s: s, r: r }); }
+          else c.onTime++;
+          if (r && r.departed_at) { c.left++; rep.departures.push({ s: s, r: r }); }
+          else if (r && r.status !== 'absent') rep.notOut.push({ s: s, r: r });
+        }
+        // Streaks, counted back from the report date over this class's gate days.
+        var absStreak = 0, lateStreak = 0, lateBroken = false, absBroken = false;
+        activeDays.forEach(function(d) {
+          var x = (byDate[d] || {})[s.id];
+          var isAbs = !x || x.status === 'absent';
+          if (!absBroken) { if (isAbs) absStreak++; else absBroken = true; }
+          if (!lateBroken) { if (x && x.status === 'late') lateStreak++; else lateBroken = true; }
+        });
+        if (absStreak >= GATE_ABSENT_FLAG_DAYS) rep.flagsAbsent.push({ s: s, n: absStreak });
+        if (lateStreak >= GATE_LATE_FLAG_DAYS) rep.flagsLate.push({ s: s, n: lateStreak });
+      });
+
+      if (active) {
+        rep.totals.onTime += c.onTime; rep.totals.late += c.late; rep.totals.absent += c.absent; rep.totals.left += c.left;
+      } else {
+        rep.totals.notMarked += list.length;
+      }
+      rep.classes.push(c);
+    });
+
+    function byName(a, b) { return (a.s.class + stuDisplayName(a.s)).localeCompare(b.s.class + stuDisplayName(b.s), undefined, { numeric: true }); }
+    rep.absent.sort(byName); rep.late.sort(byName); rep.notOut.sort(byName);
+    rep.departures.sort(function(a, b) { return (a.r.departed_at || '').localeCompare(b.r.departed_at || ''); });
+    rep.flagsAbsent.sort(function(a, b) { return b.n - a.n; });
+    rep.flagsLate.sort(function(a, b) { return b.n - a.n; });
+    return rep;
+  }
+
+  function gateReportHtml(rep, forPrint) {
+    var e = escapeHtml;
+    var dateLabel = new Date(rep.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    var card = forPrint ? 'border:1px solid #ccc;border-radius:8px;margin-bottom:14px;padding:12px;' : 'background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;padding:16px;';
+    var h3 = 'font-size:14px;font-weight:800;margin:0 0 10px;';
+    var td = 'padding:6px 8px;border-bottom:1px solid #eee;font-size:12.5px;';
+    var th = 'padding:6px 8px;border-bottom:1.5px solid #ddd;font-size:11px;text-align:left;text-transform:uppercase;color:#666;';
+
+    function nameCell(x) { return '<td style="' + td + 'font-weight:600;">' + e(stuDisplayName(x.s)) + '</td><td style="' + td + '">' + e(x.s.class) + '</td>'; }
+    function section(title, count, headCols, rowsHtml, empty) {
+      return '<div style="' + card + '"><div style="' + h3 + '">' + title + ' (' + count + ')</div>' +
+        (count ? '<table style="width:100%;border-collapse:collapse;"><thead><tr>' + headCols.map(function(h) { return '<th style="' + th + '">' + h + '</th>'; }).join('') +
+          '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' : '<div style="font-size:12.5px;color:#888;">' + empty + '</div>') + '</div>';
+    }
+
+    var html = '';
+    if (forPrint) html += '<h1 style="font-size:18px;margin:0 0 4px;">Redbridge International School — Gate Attendance</h1>';
+    html += '<div style="font-size:13px;color:#666;margin:' + (forPrint ? '0 0 12px' : '14px 0 12px') + ';">' + e(dateLabel) +
+      (rep.totals.notMarked ? ' · ' + rep.totals.notMarked + ' students in classes with no gate taps this day (not counted)' : '') + '</div>';
+
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">' +
+      gateTile('On time', rep.totals.onTime, '#1F9D57', '#E9F9EF') + gateTile('Late', rep.totals.late, '#E07E1F', '#FFF3E8') +
+      gateTile('Absent', rep.totals.absent, '#C53A3B', '#FDEAEA') + gateTile('Departed', rep.totals.left, '#5E50EE', '#EDECFD') + '</div>';
+
+    // Flags first — they need action.
+    var flagRows = rep.flagsAbsent.map(function(x) {
+      return '<tr>' + nameCell(x) + '<td style="' + td + 'color:#C53A3B;font-weight:700;">Absent ' + x.n + ' school days in a row</td></tr>';
+    }).join('') + rep.flagsLate.map(function(x) {
+      return '<tr>' + nameCell(x) + '<td style="' + td + 'color:#E07E1F;font-weight:700;">Late ' + x.n + ' school days in a row</td></tr>';
+    }).join('');
+    html += section('⚑ Flags', rep.flagsAbsent.length + rep.flagsLate.length, ['Student', 'Class', 'Pattern'], flagRows,
+      'No continuous absences (' + GATE_ABSENT_FLAG_DAYS + '+ days) or repeated lateness (' + GATE_LATE_FLAG_DAYS + '+ days).');
+
+    // By class
+    var clsRows = rep.classes.map(function(c) {
+      if (!c.active) return '<tr><td style="' + td + 'font-weight:700;">' + e(c.cls) + '</td><td style="' + td + '">' + c.total + '</td><td colspan="4" style="' + td + 'color:#999;">No gate taps</td></tr>';
+      return '<tr><td style="' + td + 'font-weight:700;">' + e(c.cls) + '</td><td style="' + td + '">' + c.total + '</td><td style="' + td + 'color:#1F9D57;">' + c.onTime +
+        '</td><td style="' + td + 'color:#E07E1F;">' + c.late + '</td><td style="' + td + 'color:#C53A3B;">' + c.absent + '</td><td style="' + td + 'color:#5E50EE;">' + c.left + '</td></tr>';
+    }).join('');
+    html += '<div style="' + card + '"><div style="' + h3 + '">By class</div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>' +
+      ['Class', 'Students', 'On time', 'Late', 'Absent', 'Departed'].map(function(h) { return '<th style="' + th + '">' + h + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + clsRows + '</tbody></table></div></div>';
+
+    // Absent, with whether the parent has seen the alert
+    var absRows = rep.absent.map(function(x) {
+      var a = rep.alertMap[x.s.id + '|absent'];
+      var seen = a && a.acknowledged_at ? '✓ Seen ' + gateTimeLabel(a.acknowledged_at) : (a && a.shown_at ? 'Opened, not confirmed' : 'Not seen yet');
+      return '<tr>' + nameCell(x) + '<td style="' + td + 'color:' + (a && a.acknowledged_at ? '#1F9D57' : '#999') + ';">' + seen + '</td></tr>';
+    }).join('');
+    html += section('Absent', rep.absent.length, ['Student', 'Class', 'Parent'], absRows, 'Nobody absent.');
+
+    var lateRows = rep.late.map(function(x) {
+      return '<tr>' + nameCell(x) + '<td style="' + td + 'color:#E07E1F;font-weight:700;">' + gateTimeLabel(x.r.arrived_at) + '</td></tr>';
+    }).join('');
+    html += section('Late arrivals', rep.late.length, ['Student', 'Class', 'Arrived'], lateRows, 'Nobody late.');
+
+    var depRows = rep.departures.map(function(x) {
+      var early = gateMinutes(x.r.departed_at) < GATE_EARLY_LEAVE_BEFORE;
+      return '<tr>' + nameCell(x) + '<td style="' + td + 'font-weight:700;color:' + (early ? '#E07E1F' : '#5E50EE') + ';">' + gateTimeLabel(x.r.departed_at) +
+        (early ? ' (before 16:00)' : '') + '</td></tr>';
+    }).join('');
+    html += section('Departures', rep.departures.length, ['Student', 'Class', 'Left'], depRows, 'No departures recorded.');
+
+    var outRows = rep.notOut.map(function(x) {
+      return '<tr>' + nameCell(x) + '<td style="' + td + '">Arrived ' + gateTimeLabel(x.r.arrived_at) + '</td></tr>';
+    }).join('');
+    html += section('Arrived but no departure recorded', rep.notOut.length, ['Student', 'Class', ''], outRows, 'Everyone who arrived has a departure time.');
+    return html;
+  }
+
+  function gatePrintReport() {
+    if (!_gate.report) { showToast('The report is still loading.'); return; }
+    var w = window.open('', '_blank');
+    if (!w) { showToast('Allow pop-ups to print the report.'); return; }
+    w.document.write('<html><head><title>Gate Attendance ' + _gate.report.date + '</title><meta charset="utf-8">' +
+      '<style>body{font-family:Arial,sans-serif;color:#111;padding:20px;} table{page-break-inside:auto;} tr{page-break-inside:avoid;}</style></head><body>' +
+      gateReportHtml(_gate.report, true) + '</body></html>');
+    w.document.close();
+    w.focus();
+    setTimeout(function() { w.print(); }, 300);
+  }
+
+  // ══ DAILY REPORT FILE ATTACHMENTS ═══════════════════════════════════════
   var _drPendingFiles = { topic: null, homework: null };
 
   function drHandleFileSelect(input, field) {
@@ -7515,10 +8099,16 @@ function saveDailyReport() {
       fetchClassStudents(cls),
       fetch(_SB_URL + '/rest/v1/timetable?class=eq.' + encodeURIComponent(cls) + '&subject=eq.' + encodeURIComponent(subject) + '&select=day,teacher_name', {
         headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
+      }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; }),
+      fetch(_SB_URL + '/rest/v1/gate_attendance?class=eq.' + encodeURIComponent(cls) + '&date=eq.' + localDateStr() + '&select=student_id,status,arrived_at,departed_at', {
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
       }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; })
     ]).then(function(results) {
       var students = results[0];
       var timetableRows = results[1] || [];
+      var gateMap = {};
+      (results[2] || []).forEach(function(g) { gateMap[g.student_id] = g; });
+      drRenderGrid._gate = gateMap;
       var scheduledDays = new Set(timetableRows.map(function(r){ return r.day; }));
 
       // "Class 3C · Maths-Rus · Nasiba Ismailovna" — so it's always clear
@@ -7531,7 +8121,9 @@ function saveDailyReport() {
         subtitle.textContent = 'Class ' + cls + ' · ' + subject + teacherPart;
       }
 
+      drRenderGrid._sched = scheduledDays;
       drRenderGrid(cls, subject, students, scheduledDays);
+      drStartGateRefresh();
     }).catch(function(e) {
       console.error('Failed to load class roster:', e);
       grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load the class list. Check your connection, then reopen this class.</div>';
@@ -7573,8 +8165,12 @@ function saveDailyReport() {
         return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
       })();
       var todayRep = drGetOrCreateTodayReport(cls, subject, todayDateStr);
+      var gateMap = drRenderGrid._gate || {};
+      var lessonEnd = drCurrentLessonEndMinutes();
+      var gateActive = Object.keys(gateMap).length > 0;
       students.forEach(function(st) {
-        drGetOrCreateStudentEntry(todayRep, stuStableKey(st));
+        var entry = drGetOrCreateStudentEntry(todayRep, stuStableKey(st));
+        drApplyGateToEntry(entry, gateMap[st.id], lessonEnd, gateActive);
       });
     })();
 
@@ -7724,7 +8320,7 @@ function saveDailyReport() {
         '<div style="display:flex;align-items:center;gap:5px;">' +
           '<span style="font-size:9px;color:#94a3b8;font-weight:600;min-width:15px;flex-shrink:0;">' + (idx+1<10?'0'+(idx+1):idx+1) + '</span>' +
           '<span style="font-size:11px;font-weight:600;color:#0f172a;margin-right:4px;">' + fullName + '</span>' +
-          avgBadge +
+          avgBadge + drGateBadge((drRenderGrid._gate || {})[st.id]) +
         '</div>';
       (function(capturedTr, capturedBg) {
         tdName.addEventListener('click', function() {
@@ -8548,7 +9144,14 @@ function saveDailyReport() {
     });
   }
 
-  function updateCloudStatus(state) {
+  function updateCloudStatus(state, fromHeartbeat) {
+    // The Connected/Disconnected badge is owned by the heartbeat only.
+    // Individual save/load calls may fail for reasons unrelated to
+    // connectivity (a 400, a slow request) - letting them flip the badge
+    // made it bounce between states. They can still show 'saving'.
+    if (state === 'error' && !fromHeartbeat) return;
+    if (state === 'saved' && !fromHeartbeat && window._sbBadgeDown) return;
+    if (state === 'saved' || state === 'error') window._sbBadgeDown = (state === 'error');
     // Update all possible status elements
     var label = document.getElementById('sb-label');
     var dot   = document.getElementById('sb-dot');
@@ -12170,7 +12773,7 @@ function saveDailyReport() {
 
     Promise.all([
       fetchAllPages(_SB_URL + '/rest/v1/students?select=id,full_name_en,full_name_ru,class&order=full_name_en.asc'),
-      fetchAllPages(_SB_URL + '/rest/v1/daily_reports?select=class,subject,teacher_name,date,students&date=gte.' + monthStart + '&date=lt.' + nextMonthStart),
+      fetchAllPages(_SB_URL + '/rest/v1/daily_reports?select=class,subject,teacher_name,date,cancelled,students&date=gte.' + monthStart + '&date=lt.' + nextMonthStart),
       fetchAllPages(_SB_URL + '/rest/v1/assessments?select=class,subject,teacher,date,students&date=gte.' + monthStart + '&date=lt.' + nextMonthStart),
       fetchAllPages(_SB_URL + '/rest/v1/monthly_report_extra?select=*&month=eq.' + monthStr),
       fetchAllPages(_SB_URL + '/rest/v1/timetable?select=class,subject,teacher_name')
@@ -12263,7 +12866,7 @@ function saveDailyReport() {
         return byName[name] || byNamePrefix[namePrefix(name)];
       }
 
-      var classDR = MR_STATE.dailyReports.filter(function(r) { return r.class === cls; });
+      var classDR = MR_STATE.dailyReports.filter(function(r) { return r.class === cls && !r.cancelled; });
       var classAssess = MR_STATE.assessments.filter(function(a) { return a.class === cls; });
 
       // Two related data-quality issues, both verified directly against
