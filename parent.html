@@ -293,6 +293,21 @@
   #att-alert button{width:100%;padding:15px;border:none;border-radius:14px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;}
   #att-alert.absent button{background:var(--red);}
   #att-alert.late button{background:#E07E1F;}
+  /* Today-at-school card (claymorphism) */
+  .gate-card{margin:16px 16px 0;border-radius:30px;padding:20px 20px 18px;display:flex;align-items:center;gap:16px;
+    background:var(--gc-bg);
+    box-shadow:10px 12px 28px var(--gc-shadow), inset -6px -8px 14px rgba(0,0,0,0.06), inset 6px 8px 14px rgba(255,255,255,0.85);}
+  .gate-card .gc-blob{width:74px;height:74px;border-radius:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
+    background:var(--gc-ink);
+    box-shadow:6px 8px 16px var(--gc-shadow), inset -5px -6px 10px rgba(0,0,0,0.18), inset 5px 6px 10px rgba(255,255,255,0.35);}
+  .gate-card .gc-label{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gc-ink);opacity:.75;}
+  .gate-card .gc-title{font-size:23px;font-weight:800;color:#1f1a24;line-height:1.15;margin-top:2px;}
+  .gate-card .gc-time{font-size:38px;font-weight:900;color:var(--gc-ink);line-height:1.05;letter-spacing:-.01em;margin-top:2px;}
+  .gate-card .gc-sub{font-size:13px;color:#5b5563;margin-top:4px;line-height:1.35;}
+  .gate-card.k-since{--gc-bg:#E6F7EC;--gc-ink:#1F9D57;--gc-shadow:rgba(31,157,87,0.22);}
+  .gate-card.k-late{--gc-bg:#FFF0DF;--gc-ink:#E07E1F;--gc-shadow:rgba(224,126,31,0.24);}
+  .gate-card.k-left{--gc-bg:#ECEBFD;--gc-ink:#5E50EE;--gc-shadow:rgba(94,80,238,0.22);}
+  .gate-card.k-absent{--gc-bg:#FDE9EB;--gc-ink:#D64550;--gc-shadow:rgba(214,69,80,0.24);}
 </style>
 </head>
 <body>
@@ -358,6 +373,7 @@
       <span class="chev"><i data-ico="chevR" data-size="22"></i></span>
     </div>
 
+    <div class="gate-card" id="gate-card" style="display:none;" onclick="switchTab('attendance')"></div>
     <div class="hero" id="home-hero" style="display:none;"></div>
 
     <div class="install" id="install-banner">
@@ -457,6 +473,21 @@
       att_late_body: "{name} arrived at school today at {time}.",
       att_late_sub: "Earlier today they were marked as not at school.",
       att_ack: "I understand",
+      gate_since: "At school since {time}",
+      gc_label: "Today at school",
+      gc_since: "At school",
+      gc_since_sub: "Arrived on time",
+      gc_late: "Arrived late",
+      gc_late_sub: "School starts at 08:10",
+      gc_left: "Left school",
+      gc_arrived: "Arrived at {time}",
+      gc_absent: "Not at school today",
+      gc_absent_sub: "Not marked at the school gate. Please contact the school if this is wrong.",
+      gate_late: "Arrived late at {time}",
+      gate_left: "Left school at {time}",
+      gate_absent: "Not at school today",
+      gate_missed: "Missed {n} lesson(s) today",
+      gate_missed_tip: "At school, but marked absent in these lessons. Tap to see which.",
       install_title: "Install the Redbridge app",
       install_sub: "Open it from your home screen, full screen, like any app.",
       install_sub_ios: "Add it to your home screen in two taps.",
@@ -551,6 +582,21 @@
       att_late_body: "{name} пришёл(ла) в школу сегодня в {time}.",
       att_late_sub: "Ранее сегодня ребёнок был отмечен как отсутствующий.",
       att_ack: "Понятно",
+      gate_since: "В школе с {time}",
+      gc_label: "Сегодня в школе",
+      gc_since: "В школе",
+      gc_since_sub: "Пришёл(ла) вовремя",
+      gc_late: "Опоздал(а)",
+      gc_late_sub: "Занятия начинаются в 08:10",
+      gc_left: "Ушёл(ла) из школы",
+      gc_arrived: "Пришёл(ла) в {time}",
+      gc_absent: "Сегодня не в школе",
+      gc_absent_sub: "Не отмечен(а) на входе в школу. Если это ошибка, свяжитесь со школой.",
+      gate_late: "Опоздал(а), пришёл(ла) в {time}",
+      gate_left: "Ушёл(ла) из школы в {time}",
+      gate_absent: "Сегодня не в школе",
+      gate_missed: "Пропущено уроков сегодня: {n}",
+      gate_missed_tip: "Был(а) в школе, но отмечен(а) отсутствующим(ей) на этих уроках. Нажмите, чтобы посмотреть.",
       install_title: "Установите приложение Redbridge",
       install_sub: "Открывайте с главного экрана, на весь экран, как обычное приложение.",
       install_sub_ios: "Добавьте на главный экран в два касания.",
@@ -645,6 +691,21 @@
       att_late_body: "{name} bugun maktabga soat {time} da keldi.",
       att_late_sub: "Bugun ertalab farzandingiz kelmagan deb belgilangan edi.",
       att_ack: "Tushundim",
+      gate_since: "{time} dan beri maktabda",
+      gc_label: "Bugun maktabda",
+      gc_since: "Maktabda",
+      gc_since_sub: "Oʻz vaqtida keldi",
+      gc_late: "Kechikib keldi",
+      gc_late_sub: "Darslar soat 08:10 da boshlanadi",
+      gc_left: "Maktabdan ketdi",
+      gc_arrived: "Soat {time} da kelgan",
+      gc_absent: "Bugun maktabda emas",
+      gc_absent_sub: "Maktab kirishida belgilanmagan. Agar bu xato boʻlsa, maktab bilan bogʻlaning.",
+      gate_late: "Kechikdi, soat {time} da keldi",
+      gate_left: "Soat {time} da maktabdan ketdi",
+      gate_absent: "Bugun maktabda emas",
+      gate_missed: "Bugun {n} ta dars qoldirildi",
+      gate_missed_tip: "Maktabda edi, lekin bu darslarda kelmagan deb belgilangan. Koʻrish uchun bosing.",
       install_title: "Redbridge ilovasini oʻrnating",
       install_sub: "Bosh ekrandan butun ekranda, oddiy ilova kabi oching.",
       install_sub_ios: "Bosh ekranga ikki bosishda qoʻshing.",
@@ -841,7 +902,7 @@
     home:'<path d="m3 10 9-8 9 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-    plus:'<path d="M12 5v14M5 12h14"/>', check:'<path d="M20 6 9 17l-5-5"/>', trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'
+    plus:'<path d="M12 5v14M5 12h14"/>', check:'<path d="M20 6 9 17l-5-5"/>', logOut:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>', alert:'<path d="M12 8v5"/><path d="M12 16.5h.01"/><circle cx="12" cy="12" r="10"/>', trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'
   };
   function ico(name, size, sw) {
     size = size || 22;
@@ -1101,7 +1162,13 @@
     document.getElementById('stat-grades').textContent = val('grades');
     document.getElementById('stat-events').textContent = val('events');
     var pill = document.getElementById('home-status');
-    if (g && g !== 'err' && g.status) {
+    var gs = gateTodayStatus();
+    renderGateCard(gs);
+    if (gs) {
+      pill.style.display = 'inline-flex';
+      pill.className = 'status-pill ' + (gs.kind === 'absent' ? 'bad' : 'ok');
+      document.getElementById('home-status-t').textContent = gs.kind === 'absent' ? t('gate_absent') : tf('gate_' + gs.kind, { time: gs.time });
+    } else if (g && g !== 'err' && g.status) {
       pill.style.display = 'inline-flex';
       pill.className = 'status-pill ' + (g.status === 'present' ? 'ok' : 'bad');
       document.getElementById('home-status-t').textContent = t(g.status === 'present' ? 'present_today' : 'absent_today');
@@ -1128,6 +1195,7 @@
     if (!_student) return;
     var token = ++_glanceToken, stu = _student;
     _glance = null; renderGlance();
+    _gateToday = null; loadGateToday();
     var cls = encodeURIComponent(stu.class || '');
     var today = new Date(), todayStr = localDateStr(today);
     var d7 = localDateStr(new Date(today.getTime() - 7 * 86400000));
@@ -1141,7 +1209,7 @@
     ]).then(function(res) {
       if (token !== _glanceToken || stu !== _student) return;
       var tt = res[0], reports = res[1], ev = res[2];
-      var hw = 0, grades = 0, status = null, entries = 0, absent = 0;
+      var hw = 0, grades = 0, status = null, entries = 0, absent = 0, missedToday = 0;
       var cur = [], prev = [], bySubj = {}, absDates = {};
       reports.forEach(function(r) {
         if (r.cancelled) return;
@@ -1154,6 +1222,7 @@
             if (s.absent) { absent++; absDates[r.date] = 1; }
           }
           if (r.date === todayStr) {
+            if (s.absent) missedToday++;
             if (s.absent) status = 'absent';
             else if (status !== 'absent') status = 'present';
           }
@@ -1168,7 +1237,7 @@
       });
       var subj = Object.keys(bySubj).map(function(k) { return { name: k, avg: avg(bySubj[k]) }; })
         .sort(function(a, b) { return b.avg - a.avg; });
-      _glance = { lessons: tt.length, homework: hw, grades: grades, events: ev.length, status: status,
+      _glance = { lessons: tt.length, homework: hw, grades: grades, events: ev.length, status: status, missedToday: missedToday,
         entries: entries, absent: absent, absDays: Object.keys(absDates).length,
         avgNow: avg(cur), avgPrev: avg(prev), subj: subj };
       renderGlance(); updateBellDot();
@@ -1201,6 +1270,9 @@
     g.subj.filter(function(x) { return x.avg < 4; }).slice(-2).reverse().forEach(function(x) {
       tips.push({ t: tf('improve', { s: x.name, v: r1(x.avg) }), h: t('improve_tip') });
     });
+    var gs = gateTodayStatus();
+    if (gs && gs.kind !== 'absent' && g.missedToday > 0)
+      tips.unshift({ t: tf('gate_missed', { n: g.missedToday }), h: t('gate_missed_tip'), tab: 'attendance' });
     if (g.absDays > 0) tips.push({ t: tf('absences_n', { n: g.absDays }), h: t('absence_tip'), tab: 'attendance' });
 
     // hero
@@ -1208,7 +1280,9 @@
     hero.className = 'hero' + (warn ? ' warn' : '');
     hero.style.display = 'block';
     var head, sub;
-    if (g.status === 'absent') { head = t('hero_absent'); sub = t('hero_absent_sub'); warn = true; hero.className = 'hero warn'; }
+    var notAtSchool = gs ? gs.kind === 'absent' : g.status === 'absent';
+    if (notAtSchool && gs) { head = t('hero_look'); sub = t('hero_absent_sub'); warn = true; hero.className = 'hero warn'; }
+    else if (notAtSchool) { head = t('hero_absent'); sub = t('hero_absent_sub'); warn = true; hero.className = 'hero warn'; }
     else if (!warn) { head = t('hero_ok'); sub = good.length ? good[0].t : (g.entries ? '' : t('hero_nodata')); }
     else { head = t('hero_look'); sub = tips[0].t; }
     var actTab = g.homework > 0 ? 'homework' : 'timetable';
@@ -2035,6 +2109,63 @@
   }
 
   // (sendParentMessage removed along with the Message Teacher tab)
+
+  // ── TODAY'S GATE STATUS (home screen) ──
+  // The gate decides whether the child is at school today. Missing a single
+  // lesson does not change that — it shows as a separate "missed N lessons" note.
+  var _gateToday = null; // { active: bool, row: gate row or null } ; null = not loaded
+
+  function loadGateToday() {
+    var stu = _student;
+    if (!stu) return;
+    fetch(_SB_URL + '/rest/v1/gate_attendance?class=eq.' + encodeURIComponent(stu.class) + '&date=eq.' + localDateStr() + '&select=student_id,status,arrived_at,departed_at', { headers: sbHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(rows) {
+        if (_student !== stu) return;
+        var mine = null;
+        (rows || []).forEach(function(r) { if (r.student_id === stu.id) mine = r; });
+        var next = { active: (rows || []).length > 0, row: mine };
+        if (JSON.stringify(next) === JSON.stringify(_gateToday)) return;
+        _gateToday = next;
+        renderGlance();
+      })
+      .catch(function() { /* keep what we had; retried every minute */ });
+  }
+
+  function gateTodayStatus() {
+    var g = _gateToday;
+    if (!g || !g.active) return null;
+    var r = g.row;
+    if (r && r.status !== 'absent') {
+      if (r.departed_at) return { kind: 'left', time: attTime(r.departed_at), arrived: attTime(r.arrived_at) };
+      return { kind: r.status === 'late' ? 'late' : 'since', time: attTime(r.arrived_at) };
+    }
+    var now = new Date();
+    if (now.getHours() * 60 + now.getMinutes() <= ATT_CUTOFF_MIN) return null; // still arriving
+    return { kind: 'absent' };
+  }
+
+  function renderGateCard(gs) {
+    var el = document.getElementById('gate-card');
+    if (!el) return;
+    if (!gs) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    var icon = { since: 'check', late: 'clock', left: 'logOut', absent: 'alert' }[gs.kind];
+    var title = t('gc_' + gs.kind);
+    var sub = gs.kind === 'since' ? t('gc_since_sub')
+            : gs.kind === 'late' ? t('gc_late_sub')
+            : gs.kind === 'left' ? tf('gc_arrived', { time: gs.arrived })
+            : t('gc_absent_sub');
+    el.className = 'gate-card k-' + gs.kind;
+    el.style.display = 'flex';
+    el.innerHTML = '<div class="gc-blob">' + ico(icon, 38, 2.6) + '</div><div style="min-width:0;">' +
+      '<div class="gc-label">' + escapeHtml(t('gc_label')) + '</div>' +
+      '<div class="gc-title">' + escapeHtml(title) + '</div>' +
+      (gs.time ? '<div class="gc-time">' + escapeHtml(gs.time) + '</div>' : '') +
+      '<div class="gc-sub">' + escapeHtml(sub) + '</div></div>';
+  }
+
+  setInterval(function() { if (_student) loadGateToday(); }, 60000);
+  document.addEventListener('visibilitychange', function() { if (!document.hidden && _student) loadGateToday(); });
 
   // ── ATTENDANCE ALERT ──
   // After 08:10 on a school day, if the gate has started marking the child's
