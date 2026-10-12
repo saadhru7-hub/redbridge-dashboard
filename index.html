@@ -698,6 +698,9 @@
     <a class="nav-item" data-panel="gate" onclick="showPanel('gate', this)">
       <span class="nav-icon">🚪</span> Gate Attendance
     </a>
+    <a class="nav-item" data-panel="clubs" onclick="showPanel('clubs', this)">
+      <span class="nav-icon">🎯</span> <span data-i18n="nav_clubs">Club Attendance</span>
+    </a>
     <a class="nav-item" data-panel="timetable" onclick="showPanel('timetable', this)">
       <span class="nav-icon">🗒️</span> Timetable
     </a>
@@ -1740,6 +1743,46 @@ id="panel-timetable">
       </div>
     </div>
 
+    <!-- ── CLUB ATTENDANCE PANEL (7th lesson, Grades 1–6) ── -->
+    <div class="panel" id="panel-clubs">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;" data-i18n="club_title">Club Attendance</h2>
+          <div style="font-size:12.5px;color:var(--text-3);" id="club-date-label">7th lesson · 16:00–16:50</div>
+        </div>
+        <div style="display:flex;gap:6px;" id="club-tabs">
+          <button class="btn btn-primary" id="club-tab-mark" onclick="clubSwitchTab('mark')" data-i18n="club_tab_mark">Mark</button>
+          <button class="btn btn-outline" id="club-tab-report" onclick="clubSwitchTab('report')" data-i18n="club_tab_report">Club Report</button>
+        </div>
+      </div>
+
+      <div id="club-mark-view">
+        <div class="card">
+          <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+            <div id="club-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            <div id="club-summary" style="font-size:12.5px;color:var(--text-2);font-weight:600;"></div>
+          </div>
+          <div id="club-list" style="border-top:1px solid var(--border);">
+            <div style="padding:30px;text-align:center;color:var(--text-4);">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="club-report-view" style="display:none;">
+        <div class="card">
+          <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:5px;" data-i18n="club_date">Date</label>
+              <input type="date" id="club-report-date" onchange="clubLoadReport()" style="width:auto;">
+            </div>
+            <button class="btn btn-outline" onclick="clubLoadReport()" data-i18n="club_refresh">↻ Refresh</button>
+            <button class="btn btn-primary" onclick="clubPrintReport()" data-i18n="club_print">🖨 Print</button>
+          </div>
+        </div>
+        <div id="club-report-body"></div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-dailyreport">
 
       <!-- Persistent unsynced-data warning — stays visible (does not
@@ -2144,12 +2187,13 @@ id="panel-timetable">
     assessments: 'Assessments',
     messenger: 'Messages',
     gate: 'Gate Attendance',
+    clubs: 'Club Attendance',
     ai: 'AI Assistant'
   };
 
   var panelIcons = {
     dashboard:'🏠', teachers:'👨‍🏫', discipline:'🛡️', academics:'🎯',
-    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', assessments:'📋', messenger:'💬', gate:'🚪', ai:'✨'
+    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', assessments:'📋', messenger:'💬', gate:'🚪', clubs:'🎯', ai:'✨'
   };
 
   function toggleMobileSidebar() {
@@ -2209,6 +2253,7 @@ id="panel-timetable">
     if (iconEl) iconEl.textContent = panelIcons[id] || '◈';
     if (id === 'dailyreport') { if(typeof drInitPanel==='function') drInitPanel(); }
     if (id === 'gate')        { if(typeof gateInit==='function') gateInit(); }
+    if (id === 'clubs')       { if(typeof clubInit==='function') clubInit(); }
     if (id === 'discipline')  { if(typeof loadIncidents==='function') { loadIncidents(); renderIncidentLog(); } if(typeof obsLoad==='function') obsLoad(); }
     if (id === 'calendar')    { if(typeof calInit==='function') calInit(); }
     if (id === 'timetable')   { if(typeof ttInitPanel==='function') ttInitPanel(); }
@@ -4552,6 +4597,12 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   // REDBRIDGE INTERNATIONAL — MULTI-USER LOGIN SYSTEM
   // ══════════════════════════════════════════════════════
 
+  // Teachers who run a 7th-lesson club (Grades 1–6) see the Club Attendance
+  // panel; admin sees it for the Club Report. Principal/founders see everything.
+  var CLUB_TEACHERS = ['alima.teacher','banu.umer','egambe.zafar','mishra.soni','traxzee.teacher',
+    'normam.furkat','gulnara.maths','samandar.club','naimov.musino','djuray.isayev','rakhim.sabi',
+    'yanliu.club','liyaqat.teacher','bobobe.olimov','mskarina','alexander.teacher','khalid.ali'];
+  var CLUB_LEADERS = ['admin.redbridge'];
   var USERS = {
     // ── PRINCIPAL ──
     'akash.sharma': {
@@ -4961,6 +5012,27 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       panels: ['dashboard','results','discipline','timetable','calendar','ai','dailyreport','assessments','reportcard','messenger'],
       readonlyStats: true,
     },
+    // ── CLUB-ONLY TEACHERS (7th lesson, Grades 1–6) ──
+    'samandar.club': {
+      password: 'Qm7vK2xR',
+      name: 'Samandar Kudratovich',
+      role: 'teacher',
+      title: 'Club Teacher · Maths Olympiad',
+      avatar: 'SK',
+      access: 'limited',
+      panels: ['clubs'],
+      readonlyStats: true,
+    },
+    'yanliu.club': {
+      password: 'Lw4nP9tE',
+      name: 'Mr. Yan Liu',
+      role: 'teacher',
+      title: 'Club Teacher · Chinese',
+      avatar: 'YL',
+      access: 'limited',
+      panels: ['clubs'],
+      readonlyStats: true,
+    },
     'traxzee.teacher': {
       password: 'redbridge2024',
       name: 'Traxzee',
@@ -5196,6 +5268,10 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       readonlyStats: true,
     },
   };
+  CLUB_TEACHERS.concat(CLUB_LEADERS).forEach(function(un) {
+    var u = USERS[un];
+    if (u && u.panels.indexOf('clubs') === -1) u.panels = u.panels.concat(['clubs']);
+  });
 
   var _currentUser = null;
 
@@ -7597,6 +7673,345 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       gateReportHtml(_gate.report, true) + '</body></html>');
     w.document.close();
     w.focus();
+    setTimeout(function() { w.print(); }, 300);
+  }
+
+  // ══ CLUB ATTENDANCE (7th lesson, Grades 1–6) ══════════════════════════════
+  // clubs / club_members / club_attendance tables. One Present button per
+  // student: a tap at or before 16:00 is present, after 16:00 is late (time
+  // kept). Anyone not tapped counts as absent once the club has been marked.
+  var CLUB_START = 960; // 16:00
+  var _club = { clubs: [], members: {}, rows: {}, gate: {}, sel: null, tab: 'mark', loaded: false, report: null };
+
+  function clubIsLeader() {
+    var u = _currentUser;
+    return !!u && (u.access === 'all' || CLUB_LEADERS.indexOf(u.username) !== -1);
+  }
+  function clubDaysFor(dateStr) {
+    var d = dateStr ? new Date(dateStr + 'T12:00:00') : new Date();
+    var w = d.getDay();
+    return (w === 1 || w === 3) ? 'MW' : (w === 2 || w === 4) ? 'TT' : null;
+  }
+  function clubDaysLabel(days) { return t(days === 'MW' ? 'club_mw' : 'club_tt'); }
+  function clubName(c) { var k = 'cn_' + c.name, v = t(k); return v === k ? c.name : v; }
+  function clubRoom(c) { if (!c.room) return '—'; var k = 'room_' + c.room, v = t(k); return v === k ? c.room : v; }
+  function clubLabel(c) { return clubName(c) + ' · ' + t('club_gr') + ' ' + c.grades; }
+  var CLUB_TEACHER_RU = {
+    'Alima': 'Мисс Алима', 'Banu Umera': 'Мисс Умейра', 'Egamberdiyev Zafar': 'Эгамбердиев Зафар', 'Mishra Soniya': 'Мисс Сония Мишра',
+    'Traxzee': 'Мисс Трэкзи', 'Normamatova Sitora Furkatovna': 'Нормаматова Ситора Фуркатовна', 'Abdullayeva Gulnara Asatovna': 'Абдуллаева Гульнара Асатовна',
+    'Samandar Kudratovich': 'Самандар Кудратович', 'Naimova Zarrina Musinovna': 'Наимова Заррина Мусиновна', 'Djurayeva Oygul Isayevna': 'Джураева Ойгуль Исаевна',
+    'Rakhimova Sabina Robertovna': 'Рахимова Сабина Робертовна', 'Mr. Yan Liu': 'Мр. Ян Лю', 'Liyaqat': 'Мр. Лиякат',
+    'Bobobekova Barno Olimovna': 'Бобобекова Барно Олимовна', 'ms.Karina': 'Мисс Каринэ', 'Alexander': 'Мр. Александр',
+    'Khalid Ali': 'Мр. Халед Али', 'Nigora Ilkhomovna': 'Нигора Ильхомовна', 'Maqsudjon': 'Мр. Максуджон'
+  };
+  function clubTeacherLabel(c) {
+    if (!c.teacher_name) return t('club_no_teacher');
+    return (_lang === 'ru' && CLUB_TEACHER_RU[c.teacher_name]) || c.teacher_name;
+  }
+  function clubLocale() { return { ru: 'ru-RU', uz: 'uz-UZ' }[_lang] || 'en-GB'; }
+  function clubDateLong(d, withYear) {
+    if (_lang === 'uz') {
+      var M = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'];
+      var W = ['yakshanba','dushanba','seshanba','chorshanba','payshanba','juma','shanba'];
+      return W[d.getDay()] + ', ' + d.getDate() + '-' + M[d.getMonth()] + (withYear ? ' ' + d.getFullYear() + '-yil' : '');
+    }
+    var o = { weekday: 'long', day: 'numeric', month: 'long' }; if (withYear) o.year = 'numeric';
+    try { return d.toLocaleDateString(clubLocale(), o); } catch (e) { return d.toLocaleDateString('en-GB', o); }
+  }
+  // Re-draw the club panel in the new language (called from applyTranslations).
+  function clubOnLang() {
+    var p = document.getElementById('panel-clubs');
+    if (!p || !p.classList.contains('active')) return;
+    clubSetHeader();
+    if (_club.loaded) clubRenderMark();
+    if (_club.report && _club.tab === 'report') document.getElementById('club-report-body').innerHTML = clubReportHtml(_club.report, false);
+  }
+  function clubSetHeader() {
+    var lbl = document.getElementById('club-date-label');
+    if (lbl) lbl.textContent = clubDateLong(new Date()) + ' · ' + t('club_sub') + (clubDaysFor() ? '' : ' · ' + t('club_no_today'));
+  }
+
+  function clubInit() { setTimeout(clubInitNow, 0); }
+
+  function clubInitNow() {
+    var leader = clubIsLeader();
+    document.getElementById('club-tabs').style.display = leader ? 'flex' : 'none';
+    var rd = document.getElementById('club-report-date');
+    if (rd && !rd.value) rd.value = localDateStr();
+    clubSetHeader();
+    clubLoadAll();
+    if (_club.tab === 'report' && leader) clubLoadReport();
+  }
+
+  function clubSwitchTab(tab) {
+    if (tab === 'report' && !clubIsLeader()) return;
+    _club.tab = tab;
+    document.getElementById('club-mark-view').style.display = tab === 'mark' ? '' : 'none';
+    document.getElementById('club-report-view').style.display = tab === 'report' ? '' : 'none';
+    document.getElementById('club-tab-mark').className = 'btn ' + (tab === 'mark' ? 'btn-primary' : 'btn-outline');
+    document.getElementById('club-tab-report').className = 'btn ' + (tab === 'report' ? 'btn-primary' : 'btn-outline');
+    if (tab === 'report') clubLoadReport();
+  }
+
+  function clubLoadBase() {
+    if (_club.loaded) return Promise.resolve();
+    return Promise.all([
+      fetchAllPages(_SB_URL + '/rest/v1/clubs?select=*&order=name.asc,days.asc'),
+      fetchAllPages(_SB_URL + '/rest/v1/club_members?select=club_id,students(id,full_name_en,full_name_ru,class)')
+    ]).then(function(res) {
+      _club.clubs = res[0] || [];
+      _club.members = {};
+      (res[1] || []).forEach(function(m) {
+        if (!m.students) return;
+        (_club.members[m.club_id] = _club.members[m.club_id] || []).push(m.students);
+      });
+      Object.keys(_club.members).forEach(function(k) {
+        _club.members[k].sort(function(a, b) {
+          return (a.class + stuDisplayName(a)).localeCompare(b.class + stuDisplayName(b), undefined, { numeric: true });
+        });
+      });
+      _club.loaded = true;
+    });
+  }
+
+  function clubMyClubs() {
+    var u = _currentUser;
+    if (clubIsLeader()) return _club.clubs.slice();
+    return _club.clubs.filter(function(c) { return c.teacher_username === (u && u.username); });
+  }
+
+  function clubLoadAll() {
+    var list = document.getElementById('club-list');
+    if (list && !_club.loaded) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4);">' + t('club_loading') + '</div>';
+    clubLoadBase().then(function() {
+      var ids = clubMyClubs().map(function(c) { return c.id; });
+      var today = localDateStr();
+      return Promise.all([
+        ids.length ? fetchAllPages(_SB_URL + '/rest/v1/club_attendance?date=eq.' + today + '&club_id=in.(' + ids.join(',') + ')&select=club_id,student_id,status,arrived_at,marked_by') : Promise.resolve([]),
+        fetchAllPages(_SB_URL + '/rest/v1/gate_attendance?date=eq.' + today + '&select=student_id,class,status,arrived_at,departed_at')
+      ]);
+    }).then(function(res) {
+      _club.rows = {};
+      (res[0] || []).forEach(function(r) { _club.rows[r.club_id + '|' + r.student_id] = r; });
+      _club.gate = { rows: {}, classes: {} };
+      (res[1] || []).forEach(function(g) { _club.gate.rows[g.student_id] = g; _club.gate.classes[g.class] = true; });
+      clubRenderMark();
+    }).catch(function(e) {
+      console.error('clubLoadAll:', e);
+      if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red);">' + t('club_load_err') + '</div>';
+    });
+  }
+
+  function clubCounts(c) {
+    var mem = _club.members[c.id] || [];
+    var k = { present: 0, late: 0, unmarked: 0, total: mem.length };
+    mem.forEach(function(st) {
+      var r = _club.rows[c.id + '|' + st.id];
+      if (!r) k.unmarked++; else k[r.status]++;
+    });
+    return k;
+  }
+
+  function clubRenderMark() {
+    var chips = document.getElementById('club-chips');
+    var list = document.getElementById('club-list');
+    var summary = document.getElementById('club-summary');
+    if (!chips || !list) return;
+    var mine = clubMyClubs();
+    var today = clubDaysFor();
+    if (!mine.length) {
+      chips.innerHTML = ''; summary.textContent = '';
+      list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4);">' + t('club_none_assigned') + '</div>';
+      return;
+    }
+    var todays = today ? mine.filter(function(c) { return c.days === today; }) : [];
+    if (!todays.length) {
+      chips.innerHTML = ''; summary.textContent = '';
+      list.innerHTML = '<div style="padding:24px 16px;color:var(--text-3);font-size:13px;">' +
+        '<div style="font-weight:700;color:var(--text-1);margin-bottom:8px;">' + t('club_none_today') + '</div>' +
+        mine.map(function(c) {
+          return '<div style="padding:6px 0;border-bottom:1px solid var(--rule-light);">' + escapeHtml(clubLabel(c)) +
+            ' · ' + clubDaysLabel(c.days) + ' · ' + t('club_room') + ' ' + escapeHtml(clubRoom(c)) + ' · ' + (_club.members[c.id] || []).length + ' ' + t('club_students') + '</div>';
+        }).join('') + '</div>';
+      return;
+    }
+    if (!_club.sel || !todays.some(function(c) { return c.id === _club.sel; })) _club.sel = todays[0].id;
+
+    chips.innerHTML = todays.map(function(c) {
+      var k = clubCounts(c);
+      var active = c.id === _club.sel;
+      var done = k.total - k.unmarked;
+      return '<button onclick="clubSelect(' + c.id + ')" style="padding:7px 11px;border-radius:9px;border:1.5px solid ' +
+        (active ? 'var(--blue)' : 'var(--border)') + ';background:' + (active ? 'var(--blue)' : 'var(--surface)') +
+        ';color:' + (active ? '#fff' : 'var(--text-2)') + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">' +
+        escapeHtml(clubLabel(c)) + (clubIsLeader() ? ' <span style="font-weight:500;opacity:0.8;">· ' + escapeHtml(clubTeacherLabel(c)) + '</span>' : '') +
+        ' <span style="font-weight:500;opacity:0.8;">' + done + '/' + k.total + '</span></button>';
+    }).join('');
+
+    var c = todays.filter(function(x) { return x.id === _club.sel; })[0];
+    var k = clubCounts(c);
+    summary.textContent = clubLabel(c) + ' · ' + clubTeacherLabel(c) + ' · ' + t('club_room') + ' ' + clubRoom(c) + ' · ' +
+      k.total + ' ' + t('club_students') + ' · ' + k.present + ' ' + t('club_on_time') + ' · ' + k.late + ' ' + t('club_late_l') + ' · ' + k.unmarked + ' ' + t('club_not_here');
+
+    var mem = _club.members[c.id] || [];
+    var btnBase = 'padding:11px 12px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;min-width:118px;flex-shrink:0;';
+    list.innerHTML = mem.map(function(st) {
+      var r = _club.rows[c.id + '|' + st.id];
+      var isLate = r && r.status === 'late';
+      var color = isLate ? '#E07E1F' : '#1F9D57';
+      var label = r ? ((isLate ? t('club_late_btn') + ' · ' : '✓ ') + gateTimeLabel(r.arrived_at)) : t('club_present_btn');
+      var btn = '<button onclick="clubMark(' + c.id + ',' + st.id + ')" style="' + btnBase + 'border:1.5px solid ' + (r ? color : 'var(--border)') +
+        ';background:' + (r ? color : 'var(--surface)') + ';color:' + (r ? '#fff' : '#1F9D57') + ';">' + label + '</button>';
+      // Gate info: already left school, or never arrived
+      var g = _club.gate.rows[st.id], note = '';
+      if (r) note = '';
+      else if (g && g.departed_at) note = '<span style="color:#5E50EE;">' + t('club_left') + ' ' + gateTimeLabel(g.departed_at) + '</span>';
+      else if ((!g || g.status === 'absent') && _club.gate.classes[st.class]) note = '<span style="color:#C53A3B;">' + t('club_not_school') + '</span>';
+      var meta = [escapeHtml(st.class)];
+      if (note) meta.push(note);
+      if (r && r.marked_by) meta.push(t('club_undo'));
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid var(--rule-light);">' +
+        '<div style="min-width:0;"><div style="font-size:13.5px;font-weight:700;color:var(--text-1);">' + escapeHtml(stuDisplayName(st)) + '</div>' +
+        '<div style="font-size:10.5px;color:var(--text-4);margin-top:2px;">' + meta.join(' · ') + '</div></div>' + btn + '</div>';
+    }).join('') || '<div style="padding:30px;text-align:center;color:var(--text-4);">' + t('club_no_students') + '</div>';
+  }
+
+  function clubSelect(id) { _club.sel = id; clubRenderMark(); }
+
+  function clubMark(clubId, studentId) {
+    var key = clubId + '|' + studentId, prev = _club.rows[key];
+    var today = localDateStr();
+    var hdr = { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json' };
+    if (prev) {
+      delete _club.rows[key]; clubRenderMark();
+      fetch(_SB_URL + '/rest/v1/club_attendance?club_id=eq.' + clubId + '&student_id=eq.' + studentId + '&date=eq.' + today, {
+        method: 'DELETE', headers: Object.assign({ 'Prefer': 'return=minimal' }, hdr)
+      }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); })
+        .catch(function(e) { console.error('clubMark undo:', e); _club.rows[key] = prev; clubRenderMark(); showToast(t('club_undo_err')); });
+      return;
+    }
+    var now = new Date();
+    var row = { club_id: clubId, student_id: studentId, date: today,
+      status: (now.getHours() * 60 + now.getMinutes()) <= CLUB_START ? 'present' : 'late',
+      arrived_at: now.toISOString(), marked_by: _currentUser ? _currentUser.name : '', updated_at: now.toISOString() };
+    _club.rows[key] = row; clubRenderMark();
+    fetch(_SB_URL + '/rest/v1/club_attendance?on_conflict=club_id,student_id,date', {
+      method: 'POST', headers: Object.assign({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }, hdr), body: JSON.stringify(row)
+    }).then(function(r) { if (!r.ok) return r.text().then(function(tx) { throw new Error('HTTP ' + r.status + ': ' + tx); }); })
+      .catch(function(e) { console.error('clubMark:', e); delete _club.rows[key]; clubRenderMark(); showToast(t('club_save_err')); });
+  }
+
+  // ── Club Report ───────────────────────────────────────────────────────────
+  // A club counts for a date only if at least one student was marked in it.
+  // Unmarked clubs are listed separately and never turn into absences.
+  var CLUB_ABSENT_FLAG = 2; // missed the same club this many sessions in a row
+
+  function clubLoadReport() {
+    var body = document.getElementById('club-report-body');
+    var dateEl = document.getElementById('club-report-date');
+    if (!body || !dateEl) return;
+    if (!dateEl.value) dateEl.value = localDateStr();
+    var date = dateEl.value, days = clubDaysFor(date);
+    if (!days) { body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4);">' + t('club_no_day') + '</div>'; return; }
+    body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4);">' + t('club_loading') + '</div>';
+    var since = gateAddDays(date, -60);
+    clubLoadBase().then(function() {
+      return fetchAllPages(_SB_URL + '/rest/v1/club_attendance?date=gte.' + since + '&date=lte.' + date + '&select=club_id,student_id,date,status,arrived_at');
+    }).then(function(rows) {
+      _club.report = clubBuildReport(date, days, rows || []);
+      body.innerHTML = clubReportHtml(_club.report, false);
+    }).catch(function(e) {
+      console.error('clubLoadReport:', e);
+      body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red);">' + t('club_rep_err') + '</div>';
+    });
+  }
+
+  function clubBuildReport(date, days, rows) {
+    var byClubDate = {}; // club -> date -> {student: row}
+    rows.forEach(function(r) {
+      var cd = (byClubDate[r.club_id] = byClubDate[r.club_id] || {});
+      (cd[r.date] = cd[r.date] || {})[r.student_id] = r;
+    });
+    var rep = { date: date, days: days, totals: { onTime: 0, late: 0, absent: 0 }, clubs: [], unmarked: [], absent: [], late: [], flags: [] };
+    _club.clubs.filter(function(c) { return c.days === days; }).forEach(function(c) {
+      var mem = _club.members[c.id] || [];
+      var sessions = Object.keys(byClubDate[c.id] || {}).filter(function(d) { return d <= date; }).sort().reverse();
+      var todayRows = (byClubDate[c.id] || {})[date];
+      var entry = { c: c, total: mem.length, marked: !!todayRows, onTime: 0, late: 0, absent: 0 };
+      if (!todayRows) { rep.unmarked.push(entry); rep.clubs.push(entry); return; }
+      mem.forEach(function(st) {
+        var r = todayRows[st.id];
+        if (!r) { entry.absent++; rep.absent.push({ s: st, c: c }); }
+        else if (r.status === 'late') { entry.late++; rep.late.push({ s: st, c: c, r: r }); }
+        else entry.onTime++;
+        var streak = 0;
+        for (var i = 0; i < sessions.length; i++) { if (!byClubDate[c.id][sessions[i]][st.id]) streak++; else break; }
+        if (streak >= CLUB_ABSENT_FLAG) rep.flags.push({ s: st, c: c, n: streak });
+      });
+      rep.totals.onTime += entry.onTime; rep.totals.late += entry.late; rep.totals.absent += entry.absent;
+      rep.clubs.push(entry);
+    });
+    var byName = function(a, b) { return (a.s.class + stuDisplayName(a.s)).localeCompare(b.s.class + stuDisplayName(b.s), undefined, { numeric: true }); };
+    rep.absent.sort(byName); rep.late.sort(byName);
+    rep.flags.sort(function(a, b) { return b.n - a.n; });
+    return rep;
+  }
+
+  function clubReportHtml(rep, forPrint) {
+    var e = escapeHtml;
+    var dateLabel = clubDateLong(new Date(rep.date + 'T12:00:00'), true);
+    var card = forPrint ? 'border:1px solid #ccc;border-radius:8px;margin-bottom:14px;padding:12px;' : 'background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;padding:16px;';
+    var h3 = 'font-size:14px;font-weight:800;margin:0 0 10px;';
+    var td = 'padding:6px 8px;border-bottom:1px solid #eee;font-size:12.5px;';
+    var th = 'padding:6px 8px;border-bottom:1.5px solid #ddd;font-size:11px;text-align:left;text-transform:uppercase;color:#666;';
+    function table(head, body) {
+      return '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>' +
+        head.map(function(h) { return '<th style="' + th + '">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+    }
+    function section(title, count, head, body, empty) {
+      return '<div style="' + card + '"><div style="' + h3 + '">' + title + ' (' + count + ')</div>' +
+        (count ? table(head, body) : '<div style="font-size:12.5px;color:#888;">' + empty + '</div>') + '</div>';
+    }
+    var html = forPrint ? '<h1 style="font-size:18px;margin:0 0 4px;">' + e(t('club_print_title')) + '</h1>' : '';
+    html += '<div style="font-size:13px;color:#666;margin:' + (forPrint ? '0 0 12px' : '14px 0 12px') + ';">' + e(dateLabel) + ' · ' + clubDaysLabel(rep.days) + ' · 16:00–16:50</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">' +
+      gateTile(t('club_t_ontime'), rep.totals.onTime, '#1F9D57', '#E9F9EF') + gateTile(t('club_t_late'), rep.totals.late, '#E07E1F', '#FFF3E8') +
+      gateTile(t('club_t_absent'), rep.totals.absent, '#C53A3B', '#FDEAEA') + gateTile(t('club_t_notmarked'), rep.unmarked.length + ' ' + t('club_clubs_word'), '#666', '#F1F1F4') + '</div>';
+
+    html += section(t('club_flags'), rep.flags.length, [t('club_h_student'), t('club_h_class'), t('club_h_club'), t('club_h_pattern')], rep.flags.map(function(x) {
+      return '<tr><td style="' + td + 'font-weight:600;">' + e(stuDisplayName(x.s)) + '</td><td style="' + td + '">' + e(x.s.class) + '</td><td style="' + td + '">' +
+        e(clubLabel(x.c)) + '</td><td style="' + td + 'color:#C53A3B;font-weight:700;">' + t('club_missed_n').replace('{n}', x.n) + '</td></tr>';
+    }).join(''), t('club_no_flags').replace('{n}', CLUB_ABSENT_FLAG));
+
+    html += '<div style="' + card + '"><div style="' + h3 + '">' + t('club_by_club') + '</div>' + table([t('club_h_club'), t('club_h_teacher'), t('club_h_room'), t('club_h_students'), t('club_t_ontime'), t('club_t_late'), t('club_t_absent')],
+      rep.clubs.map(function(x) {
+        var first = '<td style="' + td + 'font-weight:700;">' + e(clubLabel(x.c)) + '</td><td style="' + td + '">' + e(clubTeacherLabel(x.c)) + '</td><td style="' + td + '">' + e(clubRoom(x.c)) + '</td><td style="' + td + '">' + x.total + '</td>';
+        if (!x.marked) return '<tr>' + first + '<td colspan="3" style="' + td + 'color:#999;">' + t('club_t_notmarked') + '</td></tr>';
+        return '<tr>' + first + '<td style="' + td + 'color:#1F9D57;">' + x.onTime + '</td><td style="' + td + 'color:#E07E1F;">' + x.late + '</td><td style="' + td + 'color:#C53A3B;">' + x.absent + '</td></tr>';
+      }).join('')) + '</div>';
+
+    html += section(t('club_absent_h'), rep.absent.length, [t('club_h_student'), t('club_h_class'), t('club_h_club'), t('club_h_teacher')], rep.absent.map(function(x) {
+      return '<tr><td style="' + td + 'font-weight:600;">' + e(stuDisplayName(x.s)) + '</td><td style="' + td + '">' + e(x.s.class) + '</td><td style="' + td + '">' + e(clubLabel(x.c)) + '</td><td style="' + td + '">' + e(clubTeacherLabel(x.c)) + '</td></tr>';
+    }).join(''), t('club_no_absent'));
+
+    html += section(t('club_late_h'), rep.late.length, [t('club_h_student'), t('club_h_class'), t('club_h_club'), t('club_h_arrived')], rep.late.map(function(x) {
+      return '<tr><td style="' + td + 'font-weight:600;">' + e(stuDisplayName(x.s)) + '</td><td style="' + td + '">' + e(x.s.class) + '</td><td style="' + td + '">' + e(clubLabel(x.c)) + '</td><td style="' + td + 'color:#E07E1F;font-weight:700;">' + gateTimeLabel(x.r.arrived_at) + '</td></tr>';
+    }).join(''), t('club_no_late'));
+
+    html += section(t('club_unmarked_h'), rep.unmarked.length, [t('club_h_club'), t('club_h_teacher'), t('club_h_room'), t('club_h_students')], rep.unmarked.map(function(x) {
+      return '<tr><td style="' + td + 'font-weight:700;">' + e(clubLabel(x.c)) + '</td><td style="' + td + '">' + e(clubTeacherLabel(x.c)) + '</td><td style="' + td + '">' + e(clubRoom(x.c)) + '</td><td style="' + td + '">' + x.total + '</td></tr>';
+    }).join(''), t('club_all_marked'));
+    return html;
+  }
+
+  function clubPrintReport() {
+    if (!_club.report) { showToast(t('club_still_loading')); return; }
+    var w = window.open('', '_blank');
+    if (!w) { showToast(t('club_allow_popups')); return; }
+    w.document.write('<html><head><title>' + t('club_title') + ' ' + _club.report.date + '</title><meta charset="utf-8">' +
+      '<style>body{font-family:Arial,sans-serif;color:#111;padding:20px;} tr{page-break-inside:avoid;}</style></head><body>' +
+      clubReportHtml(_club.report, true) + '</body></html>');
+    w.document.close(); w.focus();
     setTimeout(function() { w.print(); }, 300);
   }
 
@@ -10336,6 +10751,100 @@ function saveDailyReport() {
     }
   };
 
+  // ── Club Attendance strings (EN / RU / UZ) ──
+  (function() {
+    var X = {
+      en: {
+        nav_clubs: 'Club Attendance', title_clubs: 'Club Attendance',
+        club_title: 'Club Attendance', club_sub: '7th lesson · 16:00–16:50', club_no_today: 'no clubs today',
+        club_tab_mark: 'Mark', club_tab_report: 'Club Report', club_loading: 'Loading…', club_date: 'Date',
+        club_refresh: '↻ Refresh', club_print: '🖨 Print',
+        club_load_err: '⚠ Could not load clubs. Check your connection and reopen Club Attendance.',
+        club_none_assigned: 'You have no clubs assigned.', club_none_today: 'No club to mark today.',
+        club_room: 'Room', club_students: 'students', club_on_time: 'on time', club_late_l: 'late', club_not_here: 'not here',
+        club_present_btn: 'Present', club_late_btn: 'Late', club_left: 'Left school', club_not_school: 'Not at school today',
+        club_undo: 'tap again to undo', club_no_students: 'No students in this club.', club_no_teacher: 'No teacher assigned',
+        club_gr: 'Gr', club_mw: 'Mon / Wed', club_tt: 'Tue / Thu',
+        club_save_err: '⚠ Not saved — check the connection and tap again.', club_undo_err: '⚠ Could not undo — check the connection and try again.',
+        club_no_day: 'No clubs run on this day (clubs are Mon–Thu).',
+        club_rep_err: '⚠ Could not load the report. Check your connection and tap Refresh.',
+        club_print_title: 'Redbridge International School — Club Attendance', club_clubs_word: 'clubs',
+        club_t_ontime: 'On time', club_t_late: 'Late', club_t_absent: 'Absent', club_t_notmarked: 'Not marked',
+        club_flags: '⚑ Flags', club_h_student: 'Student', club_h_class: 'Class', club_h_club: 'Club', club_h_pattern: 'Pattern',
+        club_h_teacher: 'Teacher', club_h_room: 'Room', club_h_students: 'Students', club_h_arrived: 'Arrived',
+        club_missed_n: 'Missed {n} sessions in a row',
+        club_no_flags: 'No student has missed the same club {n} or more sessions in a row.',
+        club_by_club: 'By club', club_absent_h: 'Absent', club_late_h: 'Late', club_unmarked_h: 'Clubs not marked',
+        club_no_absent: 'Nobody absent from a marked club.', club_no_late: 'Nobody late.', club_all_marked: 'Every club has been marked.',
+        club_still_loading: 'The report is still loading.', club_allow_popups: 'Allow pop-ups to print the report.',
+        cn_Chess: 'Chess', cn_Football: 'Football', cn_Chinese: 'Chinese', cn_Art: 'Art', cn_Dance: 'Dance', cn_ICT: 'ICT',
+        cn_Choir: 'Choir', cn_MMA: 'MMA', cn_Volleyball: 'Volleyball', 'cn_English Olympiad': 'English Olympiad',
+        'cn_Maths Olympiad': 'Maths Olympiad', cn_Russian: 'Russian',
+        room_Gym: 'Gym', room_Stadium: 'Stadium', 'room_Volleyball court': 'Volleyball court'
+      },
+      ru: {
+        nav_clubs: 'Посещение кружков', title_clubs: 'Посещение кружков',
+        club_title: 'Посещение кружков', club_sub: '7-й урок · 16:00–16:50', club_no_today: 'сегодня кружков нет',
+        club_tab_mark: 'Отметить', club_tab_report: 'Отчёт по кружкам', club_loading: 'Загрузка…', club_date: 'Дата',
+        club_refresh: '↻ Обновить', club_print: '🖨 Печать',
+        club_load_err: '⚠ Не удалось загрузить кружки. Проверьте подключение и откройте раздел снова.',
+        club_none_assigned: 'За вами не закреплено ни одного кружка.', club_none_today: 'Сегодня нет кружка для отметки.',
+        club_room: 'Каб.', club_students: 'учеников', club_on_time: 'вовремя', club_late_l: 'опоздали', club_not_here: 'нет',
+        club_present_btn: 'Присутствует', club_late_btn: 'Опоздал', club_left: 'Ушёл из школы', club_not_school: 'Сегодня не в школе',
+        club_undo: 'нажмите ещё раз, чтобы отменить', club_no_students: 'В этом кружке нет учеников.', club_no_teacher: 'Учитель не назначен',
+        club_gr: 'Кл.', club_mw: 'Пн / Ср', club_tt: 'Вт / Чт',
+        club_save_err: '⚠ Не сохранено — проверьте подключение и нажмите ещё раз.', club_undo_err: '⚠ Не удалось отменить — проверьте подключение.',
+        club_no_day: 'В этот день кружков нет (кружки проходят Пн–Чт).',
+        club_rep_err: '⚠ Не удалось загрузить отчёт. Проверьте подключение и нажмите «Обновить».',
+        club_print_title: 'Redbridge International School — Посещение кружков', club_clubs_word: 'кружки',
+        club_t_ontime: 'Вовремя', club_t_late: 'Опоздали', club_t_absent: 'Отсутствовали', club_t_notmarked: 'Не отмечено',
+        club_flags: '⚑ Внимание', club_h_student: 'Ученик', club_h_class: 'Класс', club_h_club: 'Кружок', club_h_pattern: 'Описание',
+        club_h_teacher: 'Учитель', club_h_room: 'Кабинет', club_h_students: 'Учеников', club_h_arrived: 'Пришёл',
+        club_missed_n: 'Пропустил(а) {n} занятия подряд',
+        club_no_flags: 'Нет учеников, пропустивших один и тот же кружок {n} и более раз подряд.',
+        club_by_club: 'По кружкам', club_absent_h: 'Отсутствуют', club_late_h: 'Опоздали', club_unmarked_h: 'Неотмеченные кружки',
+        club_no_absent: 'В отмеченных кружках отсутствующих нет.', club_no_late: 'Опоздавших нет.', club_all_marked: 'Все кружки отмечены.',
+        club_still_loading: 'Отчёт ещё загружается.', club_allow_popups: 'Разрешите всплывающие окна, чтобы распечатать отчёт.',
+        cn_Chess: 'Шахматы', cn_Football: 'Футбол', cn_Chinese: 'Китайский язык', cn_Art: 'Изобразительное искусство', cn_Dance: 'Современный балет',
+        cn_ICT: 'Информатика', cn_Choir: 'Хор', cn_MMA: 'Рукопашный бой', cn_Volleyball: 'Волейбол',
+        'cn_English Olympiad': 'Английский язык — олимпиада', 'cn_Maths Olympiad': 'Математика — олимпиадная', cn_Russian: 'Русский язык',
+        room_Gym: 'Спортзал', room_Stadium: 'Стадион', 'room_Volleyball court': 'Вол. площадка'
+      },
+      uz: {
+        nav_clubs: 'To‘garaklar davomati', title_clubs: 'To‘garaklar davomati',
+        club_title: 'To‘garaklar davomati', club_sub: '7-dars · 16:00–16:50', club_no_today: 'bugun to‘garak yo‘q',
+        club_tab_mark: 'Belgilash', club_tab_report: 'To‘garaklar hisoboti', club_loading: 'Yuklanmoqda…', club_date: 'Sana',
+        club_refresh: '↻ Yangilash', club_print: '🖨 Chop etish',
+        club_load_err: '⚠ To‘garaklarni yuklab bo‘lmadi. Ulanishni tekshirib, bo‘limni qayta oching.',
+        club_none_assigned: 'Sizga hech qanday to‘garak biriktirilmagan.', club_none_today: 'Bugun belgilanadigan to‘garak yo‘q.',
+        club_room: 'Xona', club_students: 'o‘quvchi', club_on_time: 'o‘z vaqtida', club_late_l: 'kechikkan', club_not_here: 'kelmagan',
+        club_present_btn: 'Keldi', club_late_btn: 'Kechikdi', club_left: 'Maktabdan ketdi', club_not_school: 'Bugun maktabda emas',
+        club_undo: 'bekor qilish uchun yana bosing', club_no_students: 'Bu to‘garakda o‘quvchi yo‘q.', club_no_teacher: 'O‘qituvchi tayinlanmagan',
+        club_gr: 'Sinf', club_mw: 'Du / Cho', club_tt: 'Se / Pa',
+        club_save_err: '⚠ Saqlanmadi — ulanishni tekshirib, yana bosing.', club_undo_err: '⚠ Bekor qilib bo‘lmadi — ulanishni tekshiring.',
+        club_no_day: 'Bu kuni to‘garak yo‘q (to‘garaklar Du–Pa kunlari).',
+        club_rep_err: '⚠ Hisobotni yuklab bo‘lmadi. Ulanishni tekshirib, «Yangilash»ni bosing.',
+        club_print_title: 'Redbridge International School — To‘garaklar davomati', club_clubs_word: 'to‘garak',
+        club_t_ontime: 'O‘z vaqtida', club_t_late: 'Kechikkan', club_t_absent: 'Kelmagan', club_t_notmarked: 'Belgilanmagan',
+        club_flags: '⚑ Diqqat', club_h_student: 'O‘quvchi', club_h_class: 'Sinf', club_h_club: 'To‘garak', club_h_pattern: 'Holat',
+        club_h_teacher: 'O‘qituvchi', club_h_room: 'Xona', club_h_students: 'O‘quvchilar', club_h_arrived: 'Keldi',
+        club_missed_n: 'Ketma-ket {n} ta mashg‘ulotni qoldirdi',
+        club_no_flags: 'Bitta to‘garakni ketma-ket {n} va undan ko‘p marta qoldirgan o‘quvchi yo‘q.',
+        club_by_club: 'To‘garaklar bo‘yicha', club_absent_h: 'Kelmaganlar', club_late_h: 'Kechikkanlar', club_unmarked_h: 'Belgilanmagan to‘garaklar',
+        club_no_absent: 'Belgilangan to‘garaklarda kelmaganlar yo‘q.', club_no_late: 'Kechikkanlar yo‘q.', club_all_marked: 'Barcha to‘garaklar belgilangan.',
+        club_still_loading: 'Hisobot hali yuklanmoqda.', club_allow_popups: 'Hisobotni chop etish uchun qalqib chiquvchi oynalarga ruxsat bering.',
+        cn_Chess: 'Shaxmat', cn_Football: 'Futbol', cn_Chinese: 'Xitoy tili', cn_Art: 'Tasviriy san’at', cn_Dance: 'Zamonaviy balet',
+        cn_ICT: 'Informatika', cn_Choir: 'Xor', cn_MMA: 'Qo‘l jangi', cn_Volleyball: 'Voleybol',
+        'cn_English Olympiad': 'Ingliz tili — olimpiada', 'cn_Maths Olympiad': 'Matematika — olimpiada', cn_Russian: 'Rus tili',
+        room_Gym: 'Sport zali', room_Stadium: 'Stadion', 'room_Volleyball court': 'Voleybol maydoni'
+      }
+    };
+    Object.keys(X).forEach(function(l) {
+      TRANSLATIONS[l] = TRANSLATIONS[l] || {};
+      Object.keys(X[l]).forEach(function(k) { TRANSLATIONS[l][k] = X[l][k]; });
+    });
+  })();
+
   function t(key) {
     var lang = TRANSLATIONS[_lang] || TRANSLATIONS['en'];
     return lang[key] || TRANSLATIONS['en'][key] || key;
@@ -10374,6 +10883,7 @@ function saveDailyReport() {
     if (typeof _selectedClass !== 'undefined' && _selectedClass && typeof stuRenderRoster === 'function') {
       stuRenderRoster(_selectedClass);
     }
+    if (typeof clubOnLang === 'function') clubOnLang();
     // Re-translate messenger channel list + incident statuses if visible
     if (typeof msgBuildSidebar === 'function' && document.getElementById('msg-channel-list')) {
       msgBuildSidebar();
@@ -10388,7 +10898,7 @@ function saveDailyReport() {
       subjects:'nav_subjects', results:'nav_results', discipline:'nav_discipline',
       academics:'nav_academics', rubric:'nav_rubric', timetable:'nav_timetable',
       dailyreport:'nav_dailyreport', assessments:'nav_assessments',
-      calendar:'nav_calendar', ai:'nav_ai'
+      calendar:'nav_calendar', ai:'nav_ai', clubs:'nav_clubs'
     };
     document.querySelectorAll('.nav-item[data-panel]').forEach(function(item) {
       var panel = item.getAttribute('data-panel');
@@ -10406,7 +10916,7 @@ function saveDailyReport() {
       academics:'title_academics', classes:'title_classes', subjects:'title_subjects',
       results:'title_results', rubric:'title_rubric', timetable:'title_timetable',
       dailyreport:'title_dailyreport', assessments:'title_assessments',
-      calendar:'title_calendar', ai:'title_ai'
+      calendar:'title_calendar', ai:'title_ai', clubs:'title_clubs'
     };
     // Update panelTitles object so showPanel works in new language
     Object.keys(titleMap).forEach(function(p) { panelTitles[p] = t(titleMap[p]); });
