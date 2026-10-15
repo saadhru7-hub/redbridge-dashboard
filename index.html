@@ -6853,7 +6853,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     if (rep.students && rep.students.length) {
       drAutoSaveInline(rep);
     } else {
-      fetchClassStudents(cls).then(function(students) {
+      fetchClassStudents(cls, subj).then(function(students) {
         students.forEach(function(st) {
           drGetOrCreateStudentEntry(rep, stuStableKey(st));
         });
@@ -7250,12 +7250,19 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     window._drGateTimer = setInterval(drRefreshGate, 60000);
   }
 
+  function drGateUrl(cls, roster) {
+    // Whole class by default; a mixed lesson group also pulls its members from other classes.
+    var other = (roster || []).filter(function(s) { return s.class !== cls; }).map(function(s) { return s.id; });
+    var f = other.length ? 'or=(class.eq.' + encodeURIComponent(cls) + ',student_id.in.(' + other.join(',') + '))' : 'class=eq.' + encodeURIComponent(cls);
+    return _SB_URL + '/rest/v1/gate_attendance?' + f + '&date=eq.' + localDateStr() + '&select=student_id,status,arrived_at,departed_at';
+  }
+
   function drRefreshGate() {
     var panel = document.getElementById('panel-dailyreport');
     var cls = drRenderGrid._cls, subject = drRenderGrid._subject;
     if (!panel || !panel.classList.contains('active') || !cls || !drRenderGrid._roster) return;
     if (document.getElementById('dr-mark-popup')) return; // don't disturb an open mark popup
-    fetch(_SB_URL + '/rest/v1/gate_attendance?class=eq.' + encodeURIComponent(cls) + '&date=eq.' + localDateStr() + '&select=student_id,status,arrived_at,departed_at', {
+    fetch(drGateUrl(cls, drRenderGrid._roster), {
       headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
     }).then(function(r) { return r.ok ? r.json() : null; })
     .then(function(rows) {
@@ -7870,8 +7877,14 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       var meta = [escapeHtml(st.class)];
       if (note) meta.push(note);
       if (r && r.marked_by) meta.push(t('club_undo'));
+      // Gate dot: green = in school now, red = not at school / left. No dot until the gate has started for that class.
+      var dot = '';
+      if (_club.gate.classes[st.class]) {
+        var inSchool = g && g.status !== 'absent' && !g.departed_at;
+        dot = '<span title="' + (inSchool ? 'In school' : 'Not in school') + '" style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle;background:' + (inSchool ? '#1F9D57' : '#C53A3B') + ';"></span>';
+      }
       return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid var(--rule-light);">' +
-        '<div style="min-width:0;"><div style="font-size:13.5px;font-weight:700;color:var(--text-1);">' + escapeHtml(stuDisplayName(st)) + '</div>' +
+        '<div style="min-width:0;"><div style="font-size:13.5px;font-weight:700;color:var(--text-1);">' + dot + escapeHtml(stuDisplayName(st)) + '</div>' +
         '<div style="font-size:10.5px;color:var(--text-4);margin-top:2px;">' + meta.join(' · ') + '</div></div>' + btn + '</div>';
     }).join('') || '<div style="padding:30px;text-align:center;color:var(--text-4);">' + t('club_no_students') + '</div>';
   }
@@ -8125,7 +8138,7 @@ function saveDailyReport() {
     var rosterFetchFailed = false;
     var rosterPromise = (rep.students && rep.students.length)
       ? Promise.resolve()
-      : fetchClassStudents(cls).then(function(students) {
+      : fetchClassStudents(cls, subject).then(function(students) {
           students.forEach(function(st) {
             drGetOrCreateStudentEntry(rep, stuStableKey(st));
           });
@@ -8455,26 +8468,25 @@ function saveDailyReport() {
     document.getElementById('dr-lesson-cards-wrap').style.display = '';
   }
 
-  function fetchClassStudents(cls) {
-    // Real student roster from Supabase, replacing the old dead resultsData source.
-    // Rejects on an actual fetch/HTTP failure rather than silently resolving
-    // to [] — a genuinely empty class (0 rows, request succeeded) is a real,
-    // distinct outcome from "the request itself failed" (network issue, or
-    // — notably — opening this file directly via file:// in a browser,
-    // which some browsers restrict cross-origin fetches from differently
-    // than a real https:// deploy). Collapsing both into the same silent []
-    // is exactly what let reports save with zero students without any
-    // visible error.
-    return fetch(_SB_URL + '/rest/v1/students?class=eq.' + encodeURIComponent(cls) + '&order=full_name_en.asc&select=*', {
-      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
-    })
-    .then(function(r) {
-      if (!r.ok) throw new Error('Roster fetch failed: HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(rows) { return rows || []; });
+  function fetchClassStudents(cls, subject) {
+    // A lesson can be attended by a hand-picked group (e.g. 9B Biology = students
+    // from 9A+9B). Those groups live in the lesson_groups table; if one exists
+    // for this class+subject, it replaces the whole-class roster.
+    var hdr = { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' };
+    var fullClass = function() {
+      return fetch(_SB_URL + '/rest/v1/students?class=eq.' + encodeURIComponent(cls) + '&order=full_name_en.asc&select=*', { headers: hdr })
+        .then(function(r) { if (!r.ok) throw new Error('Roster fetch failed: HTTP ' + r.status); return r.json(); })
+        .then(function(rows) { return rows || []; });
+    };
+    if (!subject) return fullClass();
+    return fetch(_SB_URL + '/rest/v1/lesson_groups?class=eq.' + encodeURIComponent(cls) + '&subject=eq.' + encodeURIComponent(subject) + '&select=student_id', { headers: hdr })
+      .then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; })
+      .then(function(g) {
+        if (!g.length) return fullClass();
+        return fetch(_SB_URL + '/rest/v1/students?id=in.(' + g.map(function(x){ return x.student_id; }).join(',') + ')&class=neq.ARCHIVED&order=full_name_en.asc&select=*', { headers: hdr })
+          .then(function(r) { if (!r.ok) throw new Error('Roster fetch failed: HTTP ' + r.status); return r.json(); });
+      });
   }
-
   // Shows what homework was assigned in the most recent PRIOR lesson for
   // this class/subject — not strictly "yesterday", since subjects taught
   // only 2-3x/week won't always have a lesson the day before. Whatever
@@ -8511,14 +8523,18 @@ function saveDailyReport() {
     drShowPrevHomework(cls, subject);
 
     Promise.all([
-      fetchClassStudents(cls),
+      fetchClassStudents(cls, subject),
       fetch(_SB_URL + '/rest/v1/timetable?class=eq.' + encodeURIComponent(cls) + '&subject=eq.' + encodeURIComponent(subject) + '&select=day,teacher_name', {
         headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
       }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; }),
-      fetch(_SB_URL + '/rest/v1/gate_attendance?class=eq.' + encodeURIComponent(cls) + '&date=eq.' + localDateStr() + '&select=student_id,status,arrived_at,departed_at', {
+      Promise.resolve(0)
+    ]).then(function(results) {
+      var students = results[0];
+      return fetch(drGateUrl(cls, students), {
         headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Accept': 'application/json' }
       }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; })
-    ]).then(function(results) {
+      .then(function(g) { results[2] = g; return results; });
+    }).then(function(results) {
       var students = results[0];
       var timetableRows = results[1] || [];
       var gateMap = {};
