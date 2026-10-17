@@ -294,6 +294,29 @@
   .gate-card.k-late{--gc-bg:#FFF0DF;--gc-ink:#E07E1F;--gc-shadow:rgba(224,126,31,0.24);}
   .gate-card.k-left{--gc-bg:#ECEBFD;--gc-ink:#5E50EE;--gc-shadow:rgba(94,80,238,0.22);}
   .gate-card.k-absent{--gc-bg:#FDE9EB;--gc-ink:#D64550;--gc-shadow:rgba(214,69,80,0.24);}
+  /* Lunch card (smaller claymorphism card under the gate card) */
+  .food-card{margin:12px 16px 0;border-radius:24px;padding:13px 16px;display:flex;align-items:center;gap:13px;
+    background:var(--fc-bg);
+    box-shadow:7px 9px 20px var(--fc-shadow), inset -4px -6px 10px rgba(0,0,0,0.05), inset 4px 6px 10px rgba(255,255,255,0.85);}
+  .food-card .fc-blob{width:48px;height:48px;border-radius:17px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;
+    background:var(--fc-ink);
+    box-shadow:4px 6px 12px var(--fc-shadow), inset -4px -5px 8px rgba(0,0,0,0.18), inset 4px 5px 8px rgba(255,255,255,0.35);}
+  .food-card .fc-label{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--fc-ink);opacity:.75;}
+  .food-card .fc-title{font-size:17px;font-weight:800;color:#1f1a24;line-height:1.2;margin-top:1px;}
+  .food-card .fc-sub{font-size:12px;color:#5b5563;margin-top:2px;}
+  .food-card.k-full{--fc-bg:#E6F7EC;--fc-ink:#1F9D57;--fc-shadow:rgba(31,157,87,0.20);}
+  .food-card.k-half{--fc-bg:#F0F6DC;--fc-ink:#7BA82A;--fc-shadow:rgba(123,168,42,0.22);}
+  .food-card.k-quarter{--fc-bg:#FFF0DF;--fc-ink:#E07E1F;--fc-shadow:rgba(224,126,31,0.22);}
+  .food-card.k-none{--fc-bg:#FDE9EB;--fc-ink:#D64550;--fc-shadow:rgba(214,69,80,0.22);}
+  .exam-card{margin:12px 16px 0;border-radius:24px;padding:13px 16px;display:flex;align-items:flex-start;gap:13px;background:#EEE9FF;
+    box-shadow:7px 9px 20px rgba(110,80,220,0.22), inset -4px -6px 10px rgba(0,0,0,0.05), inset 4px 6px 10px rgba(255,255,255,0.85);animation:examFlash 1.8s ease-in-out infinite;}
+  .exam-card .ec-blob{width:48px;height:48px;border-radius:17px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;background:#6E50DC;
+    box-shadow:4px 6px 12px rgba(110,80,220,0.25), inset -4px -5px 8px rgba(0,0,0,0.18), inset 4px 5px 8px rgba(255,255,255,0.35);}
+  .exam-card .ec-label{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6E50DC;opacity:.8;}
+  .exam-card .ec-line{font-size:15px;font-weight:800;color:#1f1a24;line-height:1.3;margin-top:3px;}
+  .exam-card .ec-line.today{color:#6E50DC;}
+  @keyframes examFlash{0%,100%{box-shadow:7px 9px 20px rgba(110,80,220,0.22), inset -4px -6px 10px rgba(0,0,0,0.05), inset 4px 6px 10px rgba(255,255,255,0.85);}50%{box-shadow:0 0 0 4px rgba(110,80,220,0.28), 7px 9px 24px rgba(110,80,220,0.40), inset -4px -6px 10px rgba(0,0,0,0.05), inset 4px 6px 10px rgba(255,255,255,0.85);}}
+  @media (prefers-reduced-motion:reduce){.exam-card{animation:none;}}
 </style>
 </head>
 <body>
@@ -370,7 +393,9 @@
       <span class="chev"><i data-ico="chevR" data-size="22"></i></span>
     </div>
 
+    <div class="exam-card" id="exam-card" style="display:none;"></div>
     <div class="gate-card" id="gate-card" style="display:none;" onclick="switchTab('attendance')"></div>
+    <div class="food-card" id="food-card" style="display:none;"></div>
     <div class="hero" id="home-hero" style="display:none;"></div>
 
     <div class="install" id="install-banner">
@@ -472,6 +497,9 @@
       att_ack: "I understand",
       gate_since: "At school since {time}",
       gc_label: "Today at school",
+      exam_title: "Monthly exams", exam_grade: "Grade", exam_lesson: "Lesson", exam_lessons: "Lessons", exam_s_English: "English", exam_s_Maths: "Maths", exam_s_Camb_Maths: "Cambridge Maths", exam_s_Science: "Science", exam_s_Physics: "Physics", exam_s_Chemistry: "Chemistry",
+      food_label: "Lunch today", food_full: "Ate the full portion", food_half: "Ate half of the portion", food_quarter: "Ate a quarter of the portion", food_none: "Did not eat lunch",
+      food_p_full: "100% of the portion", food_p_half: "50% of the portion", food_p_quarter: "25% of the portion", food_p_none: "0% of the portion",
       gc_since: "At school",
       gc_since_sub: "Arrived on time",
       gc_late: "Arrived late",
@@ -587,6 +615,9 @@
       att_ack: "Понятно",
       gate_since: "В школе с {time}",
       gc_label: "Сегодня в школе",
+      exam_title: "Ежемесячные экзамены", exam_grade: "Класс", exam_lesson: "Урок", exam_lessons: "Уроки", exam_s_English: "Английский язык", exam_s_Maths: "Математика", exam_s_Camb_Maths: "Кембриджская математика", exam_s_Science: "Естествознание", exam_s_Physics: "Физика", exam_s_Chemistry: "Химия",
+      food_label: "Обед сегодня", food_full: "Съел(а) полную порцию", food_half: "Съел(а) половину порции", food_quarter: "Съел(а) четверть порции", food_none: "Не ел(а) обед",
+      food_p_full: "100% порции", food_p_half: "50% порции", food_p_quarter: "25% порции", food_p_none: "0% порции",
       gc_since: "В школе",
       gc_since_sub: "Пришёл(ла) вовремя",
       gc_late: "Опоздал(а)",
@@ -702,6 +733,9 @@
       att_ack: "Tushundim",
       gate_since: "{time} dan beri maktabda",
       gc_label: "Bugun maktabda",
+      exam_title: "Oylik imtihonlar", exam_grade: "Sinf", exam_lesson: "Dars", exam_lessons: "Darslar", exam_s_English: "Ingliz tili", exam_s_Maths: "Matematika", exam_s_Camb_Maths: "Kembrij matematikasi", exam_s_Science: "Tabiiy fanlar", exam_s_Physics: "Fizika", exam_s_Chemistry: "Kimyo",
+      food_label: "Bugungi tushlik", food_full: "To‘liq porsiyani yedi", food_half: "Porsiyaning yarmini yedi", food_quarter: "Porsiyaning chorak qismini yedi", food_none: "Tushlik qilmadi",
+      food_p_full: "Porsiyaning 100%", food_p_half: "Porsiyaning 50%", food_p_quarter: "Porsiyaning 25%", food_p_none: "Porsiyaning 0%",
       gc_since: "Maktabda",
       gc_since_sub: "Oʻz vaqtida keldi",
       gc_late: "Kechikib keldi",
@@ -918,6 +952,7 @@
     home:'<path d="m3 10 9-8 9 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    utensils:'<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
     plus:'<path d="M12 5v14M5 12h14"/>', check:'<path d="M20 6 9 17l-5-5"/>', logOut:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>', alert:'<path d="M12 8v5"/><path d="M12 16.5h.01"/><circle cx="12" cy="12" r="10"/>', trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'
   };
   function ico(name, size, sw) {
@@ -1211,6 +1246,47 @@
     renderGlance();
   }
 
+
+  // ── Monthly exams reminder (Oct 2026). One entry per grade+exam: [date, grade list, subject key, lessons]. Shown 2 days before through the exam day.
+  var EXAMS = [
+    ['2026-10-19',[1],'English','1'],['2026-10-19',[2],'English','2'],['2026-10-19',[3,4],'English','3-4'],['2026-10-19',[5],'English','5-6'],
+    ['2026-10-20',[1],'Maths','1'],['2026-10-20',[2,3],'Maths','5-6'],
+    ['2026-10-21',[4],'Maths','1'],['2026-10-21',[1],'Camb Maths','2'],['2026-10-21',[2,3],'Camb Maths','3-4'],['2026-10-21',[5],'Maths','5-6'],
+    ['2026-10-22',[1],'Science','1'],['2026-10-22',[2],'Science','2'],['2026-10-22',[3,4],'Science','3-4'],['2026-10-22',[6],'Maths','5-6'],
+    ['2026-10-23',[5],'Science','1'],['2026-10-23',[6],'Science','2'],['2026-10-23',[7],'English','3-4'],['2026-10-23',[8],'English','5-6'],
+    ['2026-10-26',[7],'Physics','1'],['2026-10-26',[8],'Physics','2'],['2026-10-26',[9,10],'English','3-4'],['2026-10-26',[6],'English','5-6'],
+    ['2026-10-27',[4],'Camb Maths','1'],['2026-10-27',[5],'Camb Maths','2'],['2026-10-27',[7],'Maths','3-4'],['2026-10-27',[8],'Maths','5-6'],
+    ['2026-10-28',[7],'Chemistry','1'],['2026-10-28',[8],'Chemistry','2'],['2026-10-28',[9,10],'Maths','3-4'],['2026-10-28',[6],'Camb Maths','5-6'],
+    ['2026-10-29',[7],'Camb Maths','1'],['2026-10-29',[6],'Camb Maths','3-4'],['2026-10-29',[9,10],'Camb Maths','5-6'],
+    ['2026-10-30',[7],'Science','1'],['2026-10-30',[8],'Science','3-4'],['2026-10-30',[9],'Science','5-6']
+  ];
+  function examsForGrade(grade, today) {
+    var p = today.split('-'), end = new Date(+p[0], +p[1] - 1, +p[2] + 2);
+    var endStr = end.getFullYear() + '-' + ('0' + (end.getMonth() + 1)).slice(-2) + '-' + ('0' + end.getDate()).slice(-2);
+    return EXAMS.filter(function(e) { return e[1].indexOf(grade) >= 0 && e[0] >= today && e[0] <= endStr; })
+      .sort(function(a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : (parseInt(a[3]) - parseInt(b[3])); });
+  }
+  function renderExamCard() {
+    var el = document.getElementById('exam-card');
+    if (!el) return;
+    var grade = parseInt(_student && _student.class, 10), today = localDateStr();
+    var list = isNaN(grade) ? [] : examsForGrade(grade, today);
+    if (!list.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    var loc = { en: 'en-GB', ru: 'ru-RU', uz: 'uz-UZ' }[_lang] || 'en-GB';
+    var rows = list.map(function(e) {
+      var d = e[0].split('-'), ds;
+      var dt = new Date(+d[0], +d[1] - 1, +d[2]);
+      if (_lang === 'uz') ds = +d[2] + '-' + ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'][dt.getMonth()] + ', ' + ['yakshanba','dushanba','seshanba','chorshanba','payshanba','juma','shanba'][dt.getDay()];
+      else { try { ds = dt.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' }); } catch (x) { ds = e[0]; } }
+      var ls = e[3].replace('-', '–');
+      var lessons = e[3].indexOf('-') >= 0 ? t('exam_lessons') : t('exam_lesson');
+      var txt = _lang === 'uz' ? ls + '-' + lessons.toLowerCase() : lessons + ' ' + ls;
+      return '<div class="ec-line' + (e[0] === today ? ' today' : '') + '">' + escapeHtml(ds + ' — ' + t('exam_s_' + e[2].replace(' ', '_')) + ', ' + txt) + '</div>';
+    }).join('');
+    el.innerHTML = '<div class="ec-blob">' + ico('calendar', 24, 2) + '</div><div><div class="ec-label">' + escapeHtml(t('exam_title') + ' · ' + t('exam_grade') + ' ' + grade) + '</div>' + rows + '</div>';
+    el.style.display = 'flex';
+  }
+
   function renderGlance() {
     var g = _glance;
     function val(k) { return (g && g !== 'err' && g[k] != null) ? g[k] : (g === 'err' ? '—' : '…'); }
@@ -1233,6 +1309,8 @@
       pill.style.display = 'none';
     }
     renderInsights();
+    if (typeof renderFoodCard === 'function') renderFoodCard();
+    renderExamCard();
   }
 
   function tf(key, vars) {
@@ -1253,6 +1331,7 @@
     var token = ++_glanceToken, stu = _student;
     _glance = null; renderGlance();
     _gateToday = null; loadGateToday();
+    _foodToday = null; renderFoodCard(); loadFoodToday();
     var cls = encodeURIComponent(stu.class || '');
     var today = new Date(), todayStr = localDateStr(today);
     var d7 = localDateStr(new Date(today.getTime() - 7 * 86400000));
@@ -2220,8 +2299,38 @@
       '<div class="gc-sub">' + escapeHtml(sub) + '</div></div>';
   }
 
-  setInterval(function() { if (_student) loadGateToday(); }, 60000);
-  document.addEventListener('visibilitychange', function() { if (!document.hidden && _student) loadGateToday(); });
+  // ── TODAY'S LUNCH (home screen) ── recorded by the nurses (food_intake), shown as a small card
+  var _foodToday = null; // food_intake row for today, or null
+
+  function loadFoodToday() {
+    var stu = _student;
+    if (!stu) return;
+    fetch(_SB_URL + '/rest/v1/food_intake?student_id=eq.' + stu.id + '&date=eq.' + localDateStr() + '&meal=eq.lunch&select=amount', { headers: sbHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(rows) {
+        if (_student !== stu) return;
+        var next = (rows && rows[0]) ? rows[0].amount : null;
+        if (next !== _foodToday) { _foodToday = next; renderFoodCard(); }
+      })
+      .catch(function() { /* keep what we had; retried every minute */ });
+  }
+
+  function renderFoodCard() {
+    var el = document.getElementById('food-card');
+    if (!el) return;
+    var a = _foodToday;
+    if (!a || ['full', 'half', 'quarter', 'none'].indexOf(a) === -1) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.className = 'food-card k-' + a;
+    el.style.display = 'flex';
+    el.innerHTML = '<div class="fc-blob">' + ico('utensils', 26, 2.4) + '</div><div style="min-width:0;">' +
+      '<div class="fc-label">' + escapeHtml(t('food_label')) + '</div>' +
+      '<div class="fc-title">' + escapeHtml(t('food_' + a)) + '</div>' +
+      '<div class="fc-sub">' + escapeHtml(t('food_p_' + a)) + '</div></div>';
+  }
+
+  setInterval(function() { if (_student) { loadGateToday(); loadFoodToday(); } }, 60000);
+  setInterval(function() { if (_student) renderExamCard(); }, 60000);
+  document.addEventListener('visibilitychange', function() { if (!document.hidden && _student) { loadGateToday(); loadFoodToday(); } });
 
   // ── ATTENDANCE ALERT ──
   // After 08:10 on a school day, if the gate has started marking the child's
