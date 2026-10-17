@@ -698,6 +698,9 @@
     <a class="nav-item" data-panel="gate" onclick="showPanel('gate', this)">
       <span class="nav-icon">🚪</span> Gate Attendance
     </a>
+    <a class="nav-item" data-panel="food" onclick="showPanel('food', this)">
+      <span class="nav-icon">🍽️</span> <span data-i18n="nav_food">Food Intake</span>
+    </a>
     <a class="nav-item" data-panel="clubs" onclick="showPanel('clubs', this)">
       <span class="nav-icon">🎯</span> <span data-i18n="nav_clubs">Club Attendance</span>
     </a>
@@ -1743,6 +1746,27 @@ id="panel-timetable">
       </div>
     </div>
 
+    <!-- ── FOOD INTAKE PANEL (nurses + management) ── -->
+    <div class="panel" id="panel-food">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:2px;" data-i18n="food_title">Food Intake</h2>
+          <div style="font-size:12.5px;color:var(--text-3);" id="food-date-label"></div>
+        </div>
+        <button class="btn btn-outline" onclick="foodLoadAll()" data-i18n="food_refresh">↻ Refresh</button>
+      </div>
+      <div class="card">
+        <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+          <input id="food-search" type="text" data-i18n-ph="food_search" placeholder="Search any student by name…" oninput="foodRenderList()" style="padding:11px 14px;font-size:14px;">
+          <div id="food-class-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+          <div id="food-class-summary" style="font-size:12.5px;color:var(--text-2);font-weight:600;"></div>
+        </div>
+        <div id="food-list" style="border-top:1px solid var(--border);">
+          <div style="padding:30px;text-align:center;color:var(--text-4);">Loading…</div>
+        </div>
+      </div>
+    </div>
+
     <!-- ── CLUB ATTENDANCE PANEL (7th lesson, Grades 1–6) ── -->
     <div class="panel" id="panel-clubs">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
@@ -2188,12 +2212,13 @@ id="panel-timetable">
     messenger: 'Messages',
     gate: 'Gate Attendance',
     clubs: 'Club Attendance',
+    food: 'Food Intake',
     ai: 'AI Assistant'
   };
 
   var panelIcons = {
     dashboard:'🏠', teachers:'👨‍🏫', discipline:'🛡️', academics:'🎯',
-    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', assessments:'📋', messenger:'💬', gate:'🚪', clubs:'🎯', ai:'✨'
+    classes:'🏫', subjects:'📐', results:'📊', rubric:'🔍', dailyreport:'📝', calendar:'🗓️', assessments:'📋', messenger:'💬', gate:'🚪', clubs:'🎯', food:'🍽️', ai:'✨'
   };
 
   function toggleMobileSidebar() {
@@ -2254,6 +2279,7 @@ id="panel-timetable">
     if (id === 'dailyreport') { if(typeof drInitPanel==='function') drInitPanel(); }
     if (id === 'gate')        { if(typeof gateInit==='function') gateInit(); }
     if (id === 'clubs')       { if(typeof clubInit==='function') clubInit(); }
+    if (id === 'food')        { if(typeof foodInit==='function') foodInit(); }
     if (id === 'discipline')  { if(typeof loadIncidents==='function') { loadIncidents(); renderIncidentLog(); } if(typeof obsLoad==='function') obsLoad(); }
     if (id === 'calendar')    { if(typeof calInit==='function') calInit(); }
     if (id === 'timetable')   { if(typeof ttInitPanel==='function') ttInitPanel(); }
@@ -4647,7 +4673,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Administration',
       avatar: 'AD',
       access: 'limited',
-      panels: ['dashboard','gate','calendar','classes','ai','dailyreport','assessments','messenger'],
+      panels: ['dashboard','gate','food','calendar','classes','ai','dailyreport','assessments','messenger'],
       readonlyStats: true,
     },
 
@@ -4659,7 +4685,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Nurse · Gate Attendance',
       avatar: 'MH',
       access: 'limited',
-      panels: ['gate'],
+      panels: ['gate','food'],
       readonlyStats: true,
     },
     'nurse2.gate': {
@@ -4669,7 +4695,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       title: 'Nurse · Gate Attendance',
       avatar: 'N2',
       access: 'limited',
-      panels: ['gate'],
+      panels: ['gate','food'],
       readonlyStats: true,
     },
 
@@ -7048,8 +7074,18 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     fetchAllPages(_SB_URL + '/rest/v1/daily_reports?' + params)
     .then(function(rows) {
       if (!rows || !rows.length) return;
+      // Match by class+subject+date (the DB's unique key), NOT by id: a report
+      // saved on this device has a local 'dr…' id that never equals the DB uuid,
+      // so id-matching showed the same lesson twice after a re-save/refresh.
+      var rkey = function(r){ return r.cls + '|' + r.subject + '|' + r.date; };
       var existingIds = {};
-      dailyReports.forEach(function(r){ existingIds[r.id] = 1; });
+      var seenKeys = {};
+      dailyReports = dailyReports.filter(function(r){
+        var k = rkey(r);
+        if (seenKeys[k]) return false;   // collapse duplicates already in localStorage
+        seenKeys[k] = 1; return true;
+      });
+      dailyReports.forEach(function(r){ existingIds[rkey(r)] = 1; });
       var added = 0;
       rows.forEach(function(r) {
         var rep = {
@@ -7071,14 +7107,14 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
           cancel_reason:    r.cancel_reason || '',
           submitted: true
         };
-        if (!existingIds[rep.id]) {
+        if (!existingIds[rkey(rep)]) {
           dailyReports.push(rep);
-          existingIds[rep.id] = 1;
+          existingIds[rkey(rep)] = 1;
           added++;
         } else {
           // Update existing with Supabase version (more authoritative)
           for (var j=0; j<dailyReports.length; j++) {
-            if (dailyReports[j].id === rep.id) {
+            if (rkey(dailyReports[j]) === rkey(rep)) {
               dailyReports[j] = rep; break;
             }
           }
@@ -7683,6 +7719,119 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
     setTimeout(function() { w.print(); }, 300);
   }
 
+  // ══ FOOD INTAKE (lunch) — nurses + management ═══════════════════════════
+  // One row per student per day (food_intake: full / half / quarter / none).
+  // Tap the chosen button again to clear it.
+  var _food = { students: [], rows: {}, cls: null, loaded: false };
+  var FOOD_OPTS = [
+    { k: 'full',    pct: '100%', color: '#1F9D57' },
+    { k: 'half',    pct: '50%',  color: '#7BA82A' },
+    { k: 'quarter', pct: '25%',  color: '#E07E1F' },
+    { k: 'none',    pct: '0%',   color: '#C53A3B' }
+  ];
+  function foodInit() { setTimeout(foodInitNow, 0); }
+  function foodInitNow() {
+    foodSetHeader();
+    if (!_food.cls) _food.cls = ALL_CLASSES[0];
+    foodLoadAll();
+  }
+  function foodSetHeader() {
+    var lbl = document.getElementById('food-date-label');
+    if (lbl) lbl.textContent = clubDateLong(new Date(), true) + ' · ' + t('food_sub');
+  }
+  function foodOnLang() {
+    var p = document.getElementById('panel-food');
+    if (!p || !p.classList.contains('active')) return;
+    foodSetHeader();
+    if (_food.loaded) foodRenderAll();
+  }
+  function foodLoadAll() {
+    var list = document.getElementById('food-list');
+    if (list && !_food.loaded) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4);">' + t('club_loading') + '</div>';
+    Promise.all([
+      fetchAllPages(_SB_URL + '/rest/v1/students?select=id,full_name_en,full_name_ru,class&order=full_name_en.asc'),
+      fetchAllPages(_SB_URL + '/rest/v1/food_intake?date=eq.' + localDateStr() + '&meal=eq.lunch&select=student_id,class,amount,marked_by')
+    ]).then(function(res) {
+      _food.students = res[0] || [];
+      _food.rows = {};
+      (res[1] || []).forEach(function(r) { _food.rows[r.student_id] = r; });
+      _food.loaded = true;
+      foodRenderAll();
+    }).catch(function(e) {
+      console.error('foodLoadAll:', e);
+      if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red);">' + t('food_load_err') + '</div>';
+    });
+  }
+  function foodRenderAll() { foodRenderChips(); foodRenderList(); }
+  function foodRenderChips() {
+    var el = document.getElementById('food-class-chips');
+    if (!el) return;
+    el.innerHTML = ALL_CLASSES.map(function(c) {
+      var st = _food.students.filter(function(s) { return s.class === c; });
+      var done = st.filter(function(s) { return _food.rows[s.id]; }).length;
+      var active = c === _food.cls, complete = st.length && done === st.length;
+      return '<button onclick="foodSelectClass(\'' + c + '\')" style="padding:7px 11px;border-radius:9px;border:1.5px solid ' +
+        (active ? 'var(--blue)' : 'var(--border)') + ';background:' + (active ? 'var(--blue)' : (complete ? 'var(--green-light)' : 'var(--surface)')) +
+        ';color:' + (active ? '#fff' : 'var(--text-2)') + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">' +
+        c + ' <span style="font-weight:500;opacity:0.8;">' + done + '/' + st.length + '</span></button>';
+    }).join('');
+  }
+  function foodSelectClass(cls) {
+    _food.cls = cls;
+    var s = document.getElementById('food-search'); if (s) s.value = '';
+    foodRenderAll();
+  }
+  function foodRenderList() {
+    var list = document.getElementById('food-list'), summary = document.getElementById('food-class-summary');
+    if (!list || !_food.loaded) return;
+    var q = ((document.getElementById('food-search') || {}).value || '').trim().toLowerCase();
+    var students = q
+      ? _food.students.filter(function(s) { return (s.full_name_en || '').toLowerCase().indexOf(q) !== -1 || (s.full_name_ru || '').toLowerCase().indexOf(q) !== -1; }).slice(0, 40)
+      : _food.students.filter(function(s) { return s.class === _food.cls; });
+    if (summary) {
+      var cnt = { full: 0, half: 0, quarter: 0, none: 0, todo: 0 };
+      students.forEach(function(s) { var r = _food.rows[s.id]; if (r) cnt[r.amount]++; else cnt.todo++; });
+      summary.textContent = q
+        ? students.length + ' ' + t('food_matches')
+        : t('club_gr') + ' ' + _food.cls + ' · ' + students.length + ' ' + t('club_students') + ' · 100%: ' + cnt.full + ' · 50%: ' + cnt.half + ' · 25%: ' + cnt.quarter + ' · ' + t('food_none') + ': ' + cnt.none + ' · ' + t('food_todo') + ': ' + cnt.todo;
+    }
+    if (!students.length) { list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-4);">' + t('food_no_students') + '</div>'; return; }
+    list.innerHTML = students.map(function(s) {
+      var r = _food.rows[s.id];
+      var btns = FOOD_OPTS.map(function(o) {
+        var on = r && r.amount === o.k;
+        return '<button onclick="foodSet(' + s.id + ',\'' + o.k + '\')" style="padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;min-width:84px;line-height:1.25;border:1.5px solid ' +
+          (on ? o.color : 'var(--border)') + ';background:' + (on ? o.color : 'var(--surface)') + ';color:' + (on ? '#fff' : o.color) + ';">' +
+          t('food_' + o.k) + '<br><span style="font-weight:500;opacity:0.85;">' + o.pct + '</span></button>';
+      }).join('');
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid var(--rule-light);flex-wrap:wrap;">' +
+        '<div style="min-width:0;"><div style="font-size:13.5px;font-weight:700;color:var(--text-1);">' + escapeHtml(stuDisplayName(s)) +
+        (q ? ' <span style="font-size:11px;color:var(--text-3);font-weight:600;">· ' + escapeHtml(s.class) + '</span>' : '') + '</div>' +
+        (r && r.marked_by ? '<div style="font-size:10.5px;color:var(--text-4);margin-top:2px;">' + escapeHtml(r.marked_by) + ' · ' + t('club_undo') + '</div>' : '') +
+        '</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' + btns + '</div></div>';
+    }).join('');
+  }
+  function foodSet(studentId, amount) {
+    var stu = null; _food.students.forEach(function(s) { if (s.id === studentId) stu = s; });
+    if (!stu) return;
+    var prev = _food.rows[studentId], date = localDateStr();
+    var hdr = { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json' };
+    var fail = function(e) { console.error('foodSet:', e); if (prev) _food.rows[studentId] = prev; else delete _food.rows[studentId]; foodRenderAll(); showToast(t('club_save_err')); };
+    if (prev && prev.amount === amount) {            // same button again = clear
+      delete _food.rows[studentId]; foodRenderAll();
+      fetch(_SB_URL + '/rest/v1/food_intake?student_id=eq.' + studentId + '&date=eq.' + date + '&meal=eq.lunch', {
+        method: 'DELETE', headers: Object.assign({ 'Prefer': 'return=minimal' }, hdr)
+      }).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); }).catch(fail);
+      return;
+    }
+    var row = { student_id: studentId, class: stu.class, date: date, meal: 'lunch', amount: amount,
+      marked_by: _currentUser ? _currentUser.name : '', updated_at: new Date().toISOString() };
+    _food.rows[studentId] = row; foodRenderAll();
+    fetch(_SB_URL + '/rest/v1/food_intake?on_conflict=student_id,date,meal', {
+      method: 'POST', headers: Object.assign({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }, hdr), body: JSON.stringify(row)
+    }).then(function(r) { if (!r.ok) return r.text().then(function(tx) { throw new Error('HTTP ' + r.status + ': ' + tx); }); }).catch(fail);
+  }
+
   // ══ CLUB ATTENDANCE (7th lesson, Grades 1–6) ══════════════════════════════
   // clubs / club_members / club_attendance tables. One Present button per
   // student: a tap at or before 16:00 is present, after 16:00 is late (time
@@ -7794,7 +7943,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       var ids = clubMyClubs().map(function(c) { return c.id; });
       var today = localDateStr();
       return Promise.all([
-        ids.length ? fetchAllPages(_SB_URL + '/rest/v1/club_attendance?date=eq.' + today + '&club_id=in.(' + ids.join(',') + ')&select=club_id,student_id,status,arrived_at,marked_by') : Promise.resolve([]),
+        ids.length ? fetchAllPages(_SB_URL + '/rest/v1/club_attendance?date=eq.' + today + '&club_id=in.(' + ids.join(',') + ')&select=club_id,student_id,status,arrived_at,marked_by,performance') : Promise.resolve([]),
         fetchAllPages(_SB_URL + '/rest/v1/gate_attendance?date=eq.' + today + '&select=student_id,class,status,arrived_at,departed_at')
       ]);
     }).then(function(res) {
@@ -7883,9 +8032,20 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
         var inSchool = g && g.status !== 'absent' && !g.departed_at;
         dot = '<span title="' + (inSchool ? 'In school' : 'Not in school') + '" style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle;background:' + (inSchool ? '#1F9D57' : '#C53A3B') + ';"></span>';
       }
-      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid var(--rule-light);">' +
+      // Performance (Weak / Average / Good) — only once the student has been marked present
+      var perf = '';
+      if (r) {
+        var PC = { weak: '#C53A3B', average: '#E07E1F', good: '#1F9D57' };
+        perf = ['weak', 'average', 'good'].map(function(p) {
+          var on = r.performance === p;
+          return '<button onclick="clubSetPerf(' + c.id + ',' + st.id + ',\'' + p + '\')" style="padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid ' +
+            (on ? PC[p] : 'var(--border)') + ';background:' + (on ? PC[p] : 'var(--surface)') + ';color:' + (on ? '#fff' : PC[p]) + ';">' + t('club_perf_' + p) + '</button>';
+        }).join('');
+      }
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-bottom:1px solid var(--rule-light);flex-wrap:wrap;">' +
         '<div style="min-width:0;"><div style="font-size:13.5px;font-weight:700;color:var(--text-1);">' + dot + escapeHtml(stuDisplayName(st)) + '</div>' +
-        '<div style="font-size:10.5px;color:var(--text-4);margin-top:2px;">' + meta.join(' · ') + '</div></div>' + btn + '</div>';
+        '<div style="font-size:10.5px;color:var(--text-4);margin-top:2px;">' + meta.join(' · ') + '</div></div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:flex-end;">' + perf + btn + '</div></div>';
     }).join('') || '<div style="padding:30px;text-align:center;color:var(--text-4);">' + t('club_no_students') + '</div>';
   }
 
@@ -7912,6 +8072,20 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
       method: 'POST', headers: Object.assign({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }, hdr), body: JSON.stringify(row)
     }).then(function(r) { if (!r.ok) return r.text().then(function(tx) { throw new Error('HTTP ' + r.status + ': ' + tx); }); })
       .catch(function(e) { console.error('clubMark:', e); delete _club.rows[key]; clubRenderMark(); showToast(t('club_save_err')); });
+  }
+
+  // Weak / Average / Good for a student already marked present. Tap the chosen one again to clear it.
+  function clubSetPerf(clubId, studentId, val) {
+    var key = clubId + '|' + studentId, row = _club.rows[key];
+    if (!row) return;
+    var prev = row.performance || null, next = prev === val ? null : val;
+    row.performance = next; clubRenderMark();
+    fetch(_SB_URL + '/rest/v1/club_attendance?club_id=eq.' + clubId + '&student_id=eq.' + studentId + '&date=eq.' + localDateStr(), {
+      method: 'PATCH',
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ performance: next })
+    }).then(function(r) { if (!r.ok) return r.text().then(function(tx) { throw new Error('HTTP ' + r.status + ': ' + tx); }); })
+      .catch(function(e) { console.error('clubSetPerf:', e); if (_club.rows[key]) _club.rows[key].performance = prev; clubRenderMark(); showToast(t('club_save_err')); });
   }
 
   // ── Club Report ───────────────────────────────────────────────────────────
@@ -10781,6 +10955,11 @@ function saveDailyReport() {
         club_present_btn: 'Present', club_late_btn: 'Late', club_left: 'Left school', club_not_school: 'Not at school today',
         club_undo: 'tap again to undo', club_no_students: 'No students in this club.', club_no_teacher: 'No teacher assigned',
         club_gr: 'Gr', club_mw: 'Mon / Wed', club_tt: 'Tue / Thu',
+        club_perf_weak: 'Weak', club_perf_average: 'Average', club_perf_good: 'Good',
+        nav_food: 'Food Intake', title_food: 'Food Intake', food_title: 'Food Intake', food_sub: 'Lunch', food_refresh: '↻ Refresh',
+        food_search: 'Search any student by name…', food_full: 'Full portion', food_half: 'Half portion', food_quarter: 'Quarter portion', food_none: 'Did not eat',
+        food_todo: 'to do', food_matches: 'matches across all classes', food_no_students: 'No students found.',
+        food_load_err: '⚠ Could not load students. Check your connection and tap Refresh.',
         club_save_err: '⚠ Not saved — check the connection and tap again.', club_undo_err: '⚠ Could not undo — check the connection and try again.',
         club_no_day: 'No clubs run on this day (clubs are Mon–Thu).',
         club_rep_err: '⚠ Could not load the report. Check your connection and tap Refresh.',
@@ -10809,6 +10988,11 @@ function saveDailyReport() {
         club_present_btn: 'Присутствует', club_late_btn: 'Опоздал', club_left: 'Ушёл из школы', club_not_school: 'Сегодня не в школе',
         club_undo: 'нажмите ещё раз, чтобы отменить', club_no_students: 'В этом кружке нет учеников.', club_no_teacher: 'Учитель не назначен',
         club_gr: 'Кл.', club_mw: 'Пн / Ср', club_tt: 'Вт / Чт',
+        club_perf_weak: 'Слабо', club_perf_average: 'Средне', club_perf_good: 'Хорошо',
+        nav_food: 'Питание', title_food: 'Питание', food_title: 'Питание', food_sub: 'Обед', food_refresh: '↻ Обновить',
+        food_search: 'Поиск ученика по имени…', food_full: 'Полная порция', food_half: 'Половина порции', food_quarter: 'Четверть порции', food_none: 'Не ел(а)',
+        food_todo: 'не отмечено', food_matches: 'совпадений по всем классам', food_no_students: 'Ученики не найдены.',
+        food_load_err: '⚠ Не удалось загрузить учеников. Проверьте подключение и нажмите «Обновить».',
         club_save_err: '⚠ Не сохранено — проверьте подключение и нажмите ещё раз.', club_undo_err: '⚠ Не удалось отменить — проверьте подключение.',
         club_no_day: 'В этот день кружков нет (кружки проходят Пн–Чт).',
         club_rep_err: '⚠ Не удалось загрузить отчёт. Проверьте подключение и нажмите «Обновить».',
@@ -10837,6 +11021,11 @@ function saveDailyReport() {
         club_present_btn: 'Keldi', club_late_btn: 'Kechikdi', club_left: 'Maktabdan ketdi', club_not_school: 'Bugun maktabda emas',
         club_undo: 'bekor qilish uchun yana bosing', club_no_students: 'Bu to‘garakda o‘quvchi yo‘q.', club_no_teacher: 'O‘qituvchi tayinlanmagan',
         club_gr: 'Sinf', club_mw: 'Du / Cho', club_tt: 'Se / Pa',
+        club_perf_weak: 'Zaif', club_perf_average: 'O‘rtacha', club_perf_good: 'Yaxshi',
+        nav_food: 'Ovqatlanish', title_food: 'Ovqatlanish', food_title: 'Ovqatlanish', food_sub: 'Tushlik', food_refresh: '↻ Yangilash',
+        food_search: 'O‘quvchini ism bo‘yicha qidirish…', food_full: 'To‘liq porsiya', food_half: 'Yarim porsiya', food_quarter: 'Chorak porsiya', food_none: 'Yemadi',
+        food_todo: 'belgilanmagan', food_matches: 'ta moslik (barcha sinflar)', food_no_students: 'O‘quvchi topilmadi.',
+        food_load_err: '⚠ O‘quvchilarni yuklab bo‘lmadi. Ulanishni tekshirib, «Yangilash»ni bosing.',
         club_save_err: '⚠ Saqlanmadi — ulanishni tekshirib, yana bosing.', club_undo_err: '⚠ Bekor qilib bo‘lmadi — ulanishni tekshiring.',
         club_no_day: 'Bu kuni to‘garak yo‘q (to‘garaklar Du–Pa kunlari).',
         club_rep_err: '⚠ Hisobotni yuklab bo‘lmadi. Ulanishni tekshirib, «Yangilash»ni bosing.',
@@ -10900,6 +11089,7 @@ function saveDailyReport() {
       stuRenderRoster(_selectedClass);
     }
     if (typeof clubOnLang === 'function') clubOnLang();
+    if (typeof foodOnLang === 'function') foodOnLang();
     // Re-translate messenger channel list + incident statuses if visible
     if (typeof msgBuildSidebar === 'function' && document.getElementById('msg-channel-list')) {
       msgBuildSidebar();
@@ -10914,7 +11104,7 @@ function saveDailyReport() {
       subjects:'nav_subjects', results:'nav_results', discipline:'nav_discipline',
       academics:'nav_academics', rubric:'nav_rubric', timetable:'nav_timetable',
       dailyreport:'nav_dailyreport', assessments:'nav_assessments',
-      calendar:'nav_calendar', ai:'nav_ai', clubs:'nav_clubs'
+      calendar:'nav_calendar', ai:'nav_ai', clubs:'nav_clubs', food:'nav_food'
     };
     document.querySelectorAll('.nav-item[data-panel]').forEach(function(item) {
       var panel = item.getAttribute('data-panel');
@@ -10932,7 +11122,7 @@ function saveDailyReport() {
       academics:'title_academics', classes:'title_classes', subjects:'title_subjects',
       results:'title_results', rubric:'title_rubric', timetable:'title_timetable',
       dailyreport:'title_dailyreport', assessments:'title_assessments',
-      calendar:'title_calendar', ai:'title_ai', clubs:'title_clubs'
+      calendar:'title_calendar', ai:'title_ai', clubs:'title_clubs', food:'title_food'
     };
     // Update panelTitles object so showPanel works in new language
     Object.keys(titleMap).forEach(function(p) { panelTitles[p] = t(titleMap[p]); });
