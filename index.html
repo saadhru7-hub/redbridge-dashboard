@@ -2092,6 +2092,10 @@ id="panel-timetable">
         <div style="display:flex;gap:8px;"><button onclick="asmSwitchTab('submit')" id="asm-tab-submit" class="btn btn-primary"><span data-i18n="asm_tab_submit">✍️ Submit Assessment</span></button><button onclick="asmSwitchTab('view')" id="asm-tab-view" class="btn btn-outline"><span data-i18n="asm_tab_view">📊 View Results</span></button></div>
       </div>
       <div id="asm-submit-section">
+        <div id="asm-edit-banner" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding:10px 14px;border-radius:9px;background:#fff7ed;border:1.5px solid #fdba74;color:#9a3412;font-size:13px;font-weight:600;">
+          <span id="asm-edit-banner-text"></span>
+          <button class="btn btn-outline" style="font-size:11.5px;padding:5px 10px;" onclick="asmCancelEdit()" data-i18n="asm_cancel_edit">Cancel edit</button>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px;">
           <div class="card">
             <div class="card-header" style="background:linear-gradient(135deg,#0F172A,#1E293B);"><div><div class="card-title" style="color:white;" data-i18n="asm_details">Assessment Details</div><div class="card-subtitle" style="color:rgba(255,255,255,0.5);" data-i18n="asm_fill_details">Fill in details then enter scores</div></div></div>
@@ -6945,7 +6949,7 @@ Align recommendations with Cambridge IGCSE, AS/A Level, and international school
   function drReportHasContent(rep) {
     if (rep.topic || rep.homework) return true;
     return (rep.students || []).some(function(s) {
-      return (s.cw > 0) || (s.hw > 0) || (s.disc > 0) || s.absent || (s.comment && s.comment.trim());
+      return (s.cw > 0) || (s.hw > 0) || (s.disc > 0) || (s.absent && !s.gateSet) || (s.comment && s.comment.trim());
     });
   }
 
@@ -10623,7 +10627,7 @@ function saveDailyReport() {
       subj_maths: 'Maths',
       dr_export: '⬇ Export',
       dr_date: 'Date',
-      asm_all_types: 'All Types',
+      asm_all_types: 'All Types', asm_edit: '✏️ Edit', asm_delete: '🗑 Delete', asm_cancel_edit: 'Cancel edit', asm_editing: 'Editing assessment', asm_updated: '✓ Assessment updated', asm_deleted: '✓ Assessment deleted', asm_confirm_delete: 'Delete this assessment and all its scores? This cannot be undone.',
       period_1: 'Period 1',
       subj_physics: 'Physics',
       disc_class: 'Class', disc_subject: 'Subject (optional)',
@@ -10813,7 +10817,7 @@ function saveDailyReport() {
       asm_save: '✓ Сохранить оценивание', asm_student_scores: 'Баллы учеников',
       asm_select_both: 'Выберите класс и предмет для загрузки учеников',
       asm_records: 'Записи оценивания', asm_all: 'Все оценивания',
-      asm_all_types: 'Все типы', asm_formative_plain: 'Формативное', asm_summative_plain: 'Суммативное',
+      asm_all_types: 'Все типы', asm_edit: '✏️ Изменить', asm_delete: '🗑 Удалить', asm_cancel_edit: 'Отменить', asm_editing: 'Редактирование оценивания', asm_updated: '✓ Оценивание обновлено', asm_deleted: '✓ Оценивание удалено', asm_confirm_delete: 'Удалить это оценивание и все оценки? Это нельзя отменить.', asm_formative_plain: 'Формативное', asm_summative_plain: 'Суммативное',
 
       // Messenger
       msg_title: '💬 Сообщения', msg_staff: 'Персонал Redbridge', msg_channels: 'Каналы',
@@ -10931,7 +10935,7 @@ function saveDailyReport() {
       asm_save: '✓ Baholashni saqlash', asm_student_scores: 'Oʻquvchi ballari',
       asm_select_both: 'Oʻquvchilarni yuklash uchun sinf va fanni tanlang',
       asm_records: 'Baholash yozuvlari', asm_all: 'Barcha baholashlar',
-      asm_all_types: 'Barcha turlar', asm_formative_plain: 'Formativ', asm_summative_plain: 'Summativ',
+      asm_all_types: 'Barcha turlar', asm_edit: '✏️ Tahrirlash', asm_delete: '🗑 O\'chirish', asm_cancel_edit: 'Bekor qilish', asm_editing: 'Baholashni tahrirlash', asm_updated: '✓ Baholash yangilandi', asm_deleted: '✓ Baholash o\'chirildi', asm_confirm_delete: 'Bu baholash va barcha ballar o\'chirilsinmi? Buni qaytarib bo\'lmaydi.', asm_formative_plain: 'Formativ', asm_summative_plain: 'Summativ',
 
       // Messenger
       msg_title: '💬 Xabarlar', msg_staff: 'Redbridge xodimlari', msg_channels: 'Kanallar',
@@ -11212,6 +11216,7 @@ function saveDailyReport() {
 
   var ASM_FORMATIVE = ['Class Test','Quiz','Oral Test','Science Project','Assignment','Practical'];
   var ASM_SUMMATIVE = ['Weekly Test','Unit Test','Monthly Test','Mid-Term Exam','Final Exam','Term Paper'];
+  var _asmEditId = null, _asmEditRec = null, _asmEditExtras = [];
 
   // Assessments previously had NO safety net at all on a failed save — no
   // retry, no local backup, nothing. If the request failed the only copy of
@@ -11404,6 +11409,7 @@ function saveDailyReport() {
     var wrap = document.getElementById('asm-students-wrap');
     var sub  = document.getElementById('asm-students-sub');
     if (!cls || !subj || !wrap) return;
+    if (_asmEditRec && (cls !== _asmEditRec.class || subj !== _asmEditRec.subject)) _asmEditExtras = [];
 
     wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div>';
 
@@ -11580,11 +11586,14 @@ function saveDailyReport() {
     });
 
     if (!students.length) { showToast('No students found. Load students first.'); return; }
+    var editing = !!_asmEditId;
+    // Students stored on the assessment but no longer on the class roster are kept, never dropped.
+    if (editing) students = students.concat(_asmEditExtras);
 
     var rec = {
-      id:       'asm' + Date.now(),
+      id:       editing ? _asmEditId : 'asm' + Date.now(),
       class:    cls, subject: subj,
-      teacher:  _currentUser ? _currentUser.name : '',
+      teacher:  editing ? _asmEditRec.teacher : (_currentUser ? _currentUser.name : ''),
       type:     _asmType, name: name,
       date:     date, total_marks: total,
       students: students
@@ -11607,11 +11616,21 @@ function saveDailyReport() {
     // Save to Supabase
     updateCloudStatus('saving');
     asmUpsert(payload).then(function() {
-      _asmAssessments.unshift(rec);
+      if (editing) {
+        _asmAssessments = _asmAssessments.map(function(a) { return a.id === rec.id ? rec : a; });
+      } else {
+        _asmAssessments.unshift(rec);
+      }
       var stillPending = asmLoadPending().filter(function(p) { return p.id !== payload.id; });
       asmSavePending(stillPending);
       asmUpdateUnsyncedBanner();
       updateCloudStatus('saved');
+      if (editing) {
+        showToast(t('asm_updated') + ' — ' + name + ' · Class ' + cls);
+        asmCancelEdit();
+        asmSwitchTab('view');
+        return;
+      }
       showToast('✓ Assessment saved — ' + name + ' · Class ' + cls);
       // Clear scores
       document.querySelectorAll('.asm-score-input').forEach(function(i){ i.value=''; });
@@ -11642,6 +11661,99 @@ function saveDailyReport() {
       asmFilterView();
       updateCloudStatus('saved');
     }).catch(function(){ updateCloudStatus('error'); });
+  }
+
+  // Admin-level users manage any assessment; a teacher manages only their own.
+  function asmCanManage(asm) {
+    var u = _currentUser;
+    if (!u) return false;
+    if (u.access === 'all' || u.role === 'admin' || u.role === 'principal' || u.role === 'founder') return true;
+    return !!u.name && asm.teacher === u.name;
+  }
+
+  function asmEnsureOption(sel, value, label) {
+    if (!sel) return;
+    var found = false;
+    for (var i = 0; i < sel.options.length; i++) if (sel.options[i].value === value) found = true;
+    if (!found) { var o = document.createElement('option'); o.value = value; o.textContent = label || value; sel.appendChild(o); }
+    sel.value = value;
+  }
+
+  function asmStartEdit(id) {
+    var rec = null;
+    _asmAssessments.forEach(function(a) { if (a.id === id) rec = a; });
+    if (!rec) return;
+    _asmEditId = id; _asmEditRec = rec; _asmEditExtras = [];
+    asmSwitchTab('submit');
+    asmEnsureOption(document.getElementById('asm-class'), rec.class, 'Class ' + rec.class);
+    asmEnsureOption(document.getElementById('asm-subject'), rec.subject);
+    asmSetType(rec.type || 'formative');
+    asmEnsureOption(document.getElementById('asm-name'), rec.name);
+    var tot = document.getElementById('asm-total'); if (tot) tot.value = rec.total_marks || 100;
+    var dt = document.getElementById('asm-date'); if (dt) dt.value = rec.date || localDateStr();
+    var bn = document.getElementById('asm-edit-banner'), bt = document.getElementById('asm-edit-banner-text');
+    if (bn) bn.style.display = 'flex';
+    if (bt) bt.textContent = '✏️ ' + t('asm_editing') + ': ' + rec.name + ' — Class ' + rec.class + ' · ' + rec.subject + ' · ' + rec.date;
+    var wrap = document.getElementById('asm-students-wrap');
+    if (wrap) wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Loading…</div>';
+    fetchClassStudents(rec.class).then(function(students) {
+      asmRenderStudents(rec.class, rec.subject, students);
+      var byKey = {}, used = {};
+      (rec.students || []).forEach(function(s) { byKey[s.name] = s; });
+      document.querySelectorAll('.asm-score-input').forEach(function(inp) {
+        var s = byKey[inp.dataset.student]; if (!s) return;
+        used[s.name] = true;
+        var chk = inp.closest('tr').querySelector('.asm-absent-check');
+        if (s.absent) { if (chk) { chk.checked = true; chk.dispatchEvent(new Event('change')); } }
+        else if (s.score !== null && s.score !== undefined) { inp.value = s.score; inp.dispatchEvent(new Event('input')); }
+      });
+      _asmEditExtras = (rec.students || []).filter(function(s) { return !used[s.name]; });
+    }).catch(function() {
+      if (wrap) wrap.innerHTML = '<div style="padding:30px;text-align:center;color:var(--red,#dc2626);">⚠ Could not load the class list. Check your connection and try again.</div>';
+    });
+  }
+
+  function asmCancelEdit() {
+    _asmEditId = null; _asmEditRec = null; _asmEditExtras = [];
+    var bn = document.getElementById('asm-edit-banner'); if (bn) bn.style.display = 'none';
+    document.querySelectorAll('.asm-score-input').forEach(function(i) { i.value = ''; i.disabled = false; i.style.opacity = '1'; });
+    document.querySelectorAll('.asm-absent-check').forEach(function(c) { c.checked = false; });
+    document.querySelectorAll('#asm-students-wrap td span').forEach(function(sp) { if (sp.textContent.indexOf('%') !== -1 || sp.textContent === 'Abs') { sp.textContent = '—'; sp.style.color = '#94a3b8'; } });
+    var badge = document.getElementById('asm-pct-badge'); if (badge) badge.innerHTML = '';
+  }
+
+  function asmDelete(id) {
+    var rec = null;
+    _asmAssessments.forEach(function(a) { if (a.id === id) rec = a; });
+    if (!rec) return;
+    if (!confirm(t('asm_confirm_delete') + '\n\n' + rec.name + ' — Class ' + rec.class + ' · ' + rec.subject + ' · ' + rec.date)) return;
+    // shortcut: last 20 deleted assessments kept in this browser only, move server-side if recovery from other devices is needed.
+    try {
+      var kept = JSON.parse(localStorage.getItem('redbridge_deleted_assessments') || '[]');
+      kept.unshift({ deleted_at: new Date().toISOString(), record: rec });
+      localStorage.setItem('redbridge_deleted_assessments', JSON.stringify(kept.slice(0, 20)));
+    } catch (e) {}
+    updateCloudStatus('saving');
+    fetch(_SB_URL + '/rest/v1/assessments?id=eq.' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Prefer': 'return=representation' }
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(tx) { throw new Error('HTTP ' + r.status + ': ' + tx); });
+      return r.json();
+    }).then(function(rows) {
+      if (!rows || !rows.length) throw new Error('Nothing was deleted');
+      _asmAssessments = _asmAssessments.filter(function(a) { return a.id !== id; });
+      asmSavePending(asmLoadPending().filter(function(p) { return p.id !== id; }));
+      asmUpdateUnsyncedBanner();
+      if (_asmEditId === id) asmCancelEdit();
+      updateCloudStatus('saved');
+      showToast(t('asm_deleted'));
+      asmFilterView();
+    }).catch(function(e) {
+      updateCloudStatus('error');
+      showToast('⚠ Could not delete — ' + e.message);
+      console.error(e);
+    });
   }
 
   function asmFilterView() {
@@ -11692,6 +11804,21 @@ function saveDailyReport() {
         '</div>' +
         (classAvg!==null ? '<span style="background:'+avgCol+';color:white;padding:4px 12px;border-radius:20px;font-weight:800;font-size:13px;">'+classAvg.toFixed(1)+'%</span>' : '') +
         '<span style="font-size:18px;color:var(--muted);" class="asm-arr">›</span>';
+
+      if (asmCanManage(asm)) {
+        var acts = document.createElement('span');
+        acts.style.cssText = 'display:inline-flex;gap:6px;';
+        var mkBtn = function(label, color, fn) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.textContent = label;
+          b.style.cssText = 'padding:4px 10px;border-radius:7px;border:1.5px solid ' + color + ';background:white;color:' + color + ';font-size:11.5px;font-weight:700;cursor:pointer;';
+          b.addEventListener('click', function(ev) { ev.stopPropagation(); fn(asm.id); });
+          return b;
+        };
+        acts.appendChild(mkBtn(t('asm_edit'), '#1d4ed8', asmStartEdit));
+        acts.appendChild(mkBtn(t('asm_delete'), '#dc2626', asmDelete));
+        hdr.insertBefore(acts, hdr.querySelector('.asm-arr'));
+      }
 
       var body = document.createElement('div');
       body.style.display = 'none';
